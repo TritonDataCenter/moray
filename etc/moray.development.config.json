@@ -1,0 +1,8 @@
+{
+    "port": 8080,
+    "postgres": {
+        "url": "pg://unit:test@localhost/test",
+        "maxConns": 1,
+        "idleTimeout": 600000
+    }
+}
