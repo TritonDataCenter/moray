@@ -205,6 +205,20 @@ test('find ok', function (t) {
 });
 
 
+test('list ok', function (t) {
+    CLIENT.list(BUCKET, {prefix: '/f', limit: 1}, function (err, keys) {
+        assert.ifError(err);
+        t.ok(keys);
+        t.ok(Array.isArray(keys.keys));
+        t.equal(keys.total, keys.keys.length);
+        t.equal(keys.keys[0].key, '/foo/bar');
+        t.ok(keys.keys[0].etag);
+        t.ok(keys.keys[0].mtime);
+        t.done();
+    });
+});
+
+
 test('delete k/v', function (t) {
     CLIENT.del(BUCKET, KEY, function (err) {
         t.ifError(err);

@@ -11,7 +11,10 @@
 #
 
 $(NODE) $(NPM) $(NODE_WAF): | deps/node/.git
-	(cd deps/node; ./configure $(NODE_CONFIG_FLAGS) && make && make install)
+	(cd deps/node; ./configure $(NODE_CONFIG_FLAGS) && $(MAKE) && $(MAKE) install)
 
 deps/node/.git: deps/node
 	git submodule update --init deps/node
+
+distclean::
+	([[ -d deps/node ]] && cd deps/node && $(MAKE) distclean)

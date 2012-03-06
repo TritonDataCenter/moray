@@ -4,5 +4,9 @@
         "url": "pg://unit:test@localhost/test",
         "maxConns": 1,
         "idleTimeout": 600000
+    },
+    "marker": {
+        "key": "033F904EA7BAA0FE9E1626A6027CE747",
+        "iv": "C02F6CACCF0AB4DCC6E5F35D4EF0E38B"
     }
 }

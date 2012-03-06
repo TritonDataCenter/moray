@@ -1,5 +1,5 @@
 {
-    "name": "orca",
+    "name": "moray",
     "description": "SmartDataCenter H/A Key/Value store",
     "version": "1.0.0",
     "author": "Joyent (joyent.com)",

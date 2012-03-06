@@ -77,7 +77,7 @@
 
 BUILD		?= build
 NODE_INSTALL 	?= $(BUILD)/node
-CLEAN_FILES	+= $(NODE_INSTALL)
+DISTCLEAN_FILES	+= $(NODE_INSTALL)
 
 NODE_CONFIG_FLAGS += --prefix=$(shell pwd)/$(NODE_INSTALL)
 

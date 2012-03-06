@@ -90,7 +90,7 @@ DTP = d.createDTraceProvider(NAME);
 LOG = new Logger({
     level: PARSED.debug ? 'debug' : 'info',
     name: NAME,
-    stream: process.stdout,
+    stream: process.stderr,
     serializers: {
         err: Logger.stdSerializers.err,
         req: Logger.stdSerializers.req,

@@ -18,6 +18,8 @@
 # Tools
 #
 NODEUNIT	:= ./node_modules/.bin/nodeunit
+BUNYAN		:= $(NODE_INSTALL)/bin/bunyan
+JSONTOOL	:= $(NODE_INSTALL)/bin/json
 
 #
 # Files
@@ -28,21 +30,45 @@ JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -C -f ./tools/jsstyle.conf
+SHRINKWRAP	 = npm-shrinkwrap.json
 SMF_MANIFESTS_IN = smf/manifests/moray.xml.in
+
+CLEAN_FILES	+= node_modules $(SHRINKWRAP)
+
 
 include ./tools/mk/Makefile.defs
 include ./tools/mk/Makefile.node.defs
 include ./tools/mk/Makefile.smf.defs
 
 #
+# Env vars
+#
+PATH	:= $(NODE_INSTALL)/bin:${PATH}
+
+#
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) | $(NODEUNIT)
-	$(NPM) rebuild
+all: tools $(SMF_MANIFESTS) $(SHRINKWRAP)
 
-$(NODEUNIT): | $(NPM_EXEC)
+
+.PHONY: tools
+tools: $(BUNYAN) $(JSONTOOL) $(NODEUNIT)
+
+$(BUNYAN): | $(NPM_EXEC)
+	$(NPM) install bunyan -g
+
+$(JSONTOOL): | $(NPM_EXEC)
+	$(NPM) install jsontool -g
+
+$(NODEUNIT): node_modules
+
+.PHONY: node_modules
+node_modules: | $(NPM_EXEC)
 	$(NPM) install
+
+$(SHRINKWRAP): | $(NPM_EXEC)
+	$(NPM) shrinkwrap
 
 .PHONY: test
 test: $(NODEUNIT)
