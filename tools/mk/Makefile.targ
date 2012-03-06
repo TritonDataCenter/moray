@@ -101,6 +101,7 @@ endif
 BUILD		= build
 CLEAN_FILES	+= $(BUILD)
 DOC_BUILD	= $(BUILD)/docs/public
+JSDOC_BUILD	= $(DOC_BUILD)/jsdoc
 
 #
 # Configure JSL_FLAGS_{NODE,WEB} based on JSL_CONF_{NODE,WEB}.
@@ -200,16 +201,18 @@ DOC_MEDIA_FILES := $(shell find docs/media -type f 2>/dev/null)
 DOC_MEDIA_FILES := $(DOC_MEDIA_FILES:docs/media/%=%)
 DOC_MEDIA_FILES_BUILD := $(DOC_MEDIA_FILES:%=$(DOC_BUILD)/media/%)
 
+JSDOC_FILES := lib $(shell ls *.js)
+
 #
 # Like the other targets, "docs" just depends on the final files we want to
 # create in $(DOC_BUILD), leveraging other targets and recipes to define how
 # to get there.
 #
-.PHONY: docs
-docs:							\
+restdown_docs:						\
     $(DOC_FILES:%.restdown=$(DOC_BUILD)/%.html)		\
     $(DOC_FILES:%.restdown=$(DOC_BUILD)/%.json)		\
-    $(DOC_MEDIA_FILES_BUILD)
+    $(DOC_MEDIA_FILES_BUILD)				\
+
 
 #
 # We keep the intermediate files so that the next build can see whether the
@@ -246,6 +249,15 @@ $(DOC_BUILD):
 
 $(DOC_MEDIA_DIRS_BUILD):
 	$(MKDIR) $@
+
+
+$(JSDOC_BUILD):
+	$(MKDIR) $@
+
+
+.PHONY: docs
+docs: restdown_docs | $(JSDOC_BUILD)
+	$(JSDOC) -r -d $(JSDOC_BUILD) $(JSDOC_FILES)
 
 #
 # The default "test" target does nothing. This should usually be overridden by
