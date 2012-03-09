@@ -46,20 +46,9 @@ deps/restdown/.git:
 	git submodule update --init deps/restdown
 
 #
-# jsdoc
-#
-JSDOC_SCRIPT	= deps/jsdoc/jsdoc
-JSDOC		= $(JSDOC_SCRIPT)
-
-$(RESTDOWN): | deps/jsdoc/.git
-
-deps/jsdoc/.git:
-	git submodule update --init deps/jsdoc
-
-#
 # The restdown submodule should be updated before we build "docs".
 #
-docs: $(RESTDOWN) $(JSDOC)
+docs: $(RESTDOWN)
 
 #
 # JSL and JSSTYLE must be around before we build "check".
