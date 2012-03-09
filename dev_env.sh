@@ -7,3 +7,6 @@ function mcurl() {
     /usr/bin/curl -is -H 'Accept-Version: >=1.0' -H 'Accept: application/json' -H 'Content-Type: application/json' --url http://localhost:8080$@ | json;
     echo "";
 }
+
+export MH=http://localhost:8080
+alias moray='/usr/bin/curl -is -H "Accept-Version: >=1.0" -H "Accept: application/json" -H "Content-Type: application/json"'
