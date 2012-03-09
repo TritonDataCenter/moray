@@ -84,7 +84,22 @@ test('delete bucket', function (t) {
 });
 
 test('create bucket with indexes', function (t) {
-    CLIENT.createBucket(BUCKET, ['foo', 'bar'], function (err) {
+    var indexes = {
+        foo: {
+            type: 'string'
+        },
+        bar: {
+            type: 'string',
+            unique: true
+        },
+        num: {
+            type: 'number'
+        },
+        bool: {
+            type: 'boolean'
+        }
+    };
+    CLIENT.createBucket(BUCKET, indexes, function (err) {
         t.ifError(err);
         t.done();
     });
@@ -96,9 +111,16 @@ test('list buckets', function (t) {
         t.ok(buckets);
         t.equal(typeof (buckets), 'object');
         t.ok(buckets[BUCKET]);
-        t.ok(Array.isArray(buckets[BUCKET]));
-        t.equal(buckets[BUCKET][0], 'foo');
-        t.equal(buckets[BUCKET][1], 'bar');
+        t.ok(buckets[BUCKET].foo);
+        t.ok(buckets[BUCKET].bar);
+        t.equal(buckets[BUCKET].foo.type, 'string');
+        t.equal(buckets[BUCKET].foo.unique, false);
+        t.equal(buckets[BUCKET].bar.type, 'string');
+        t.equal(buckets[BUCKET].bar.unique, true);
+        t.equal(buckets[BUCKET].num.type, 'number');
+        t.equal(buckets[BUCKET].num.unique, false);
+        t.equal(buckets[BUCKET].bool.type, 'boolean');
+        t.equal(buckets[BUCKET].bool.unique, false);
         t.done();
     });
 });
@@ -116,6 +138,7 @@ test('get k/v (original)', function (t) {
     CLIENT.get(BUCKET, KEY, function (err, obj) {
         t.ifError(err);
         t.ok(obj);
+        console.log(obj);
         t.equal(obj.bucket, BUCKET);
         t.equal(obj.key, KEY);
         t.equal(obj.data.foo, 'foo');

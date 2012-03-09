@@ -10,3 +10,6 @@
 [submodule "deps/jsdoc"]
 	path = deps/jsdoc
 	url = git://github.com/micmath/jsdoc.git
+[submodule "deps/node"]
+	path = deps/node
+	url = git://github.com/joyent/node.git
