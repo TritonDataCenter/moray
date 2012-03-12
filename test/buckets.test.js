@@ -165,8 +165,8 @@ test('create bucket ok string index', function (t) {
         t.ok(obj.foo);
         t.equal(obj.foo.type, 'string');
         t.equal(obj.foo.unique, false);
-        CLIENT.del('/' + BUCKET, function (err) {
-            t.ifError(err);
+        CLIENT.del('/' + BUCKET, function (err2) {
+            t.ifError(err2);
             t.done();
         });
     });
@@ -186,8 +186,8 @@ test('create bucket ok string index array', function (t) {
         t.equal(obj.foo.unique, false);
         t.equal(obj.bar.type, 'string');
         t.equal(obj.bar.unique, false);
-        CLIENT.del('/' + BUCKET, function (err) {
-            t.ifError(err);
+        CLIENT.del('/' + BUCKET, function (err2) {
+            t.ifError(err2);
             t.done();
         });
     });
@@ -210,8 +210,8 @@ test('create bucket ok object string, non-unique', function (t) {
         t.ok(obj.foo);
         t.equal(obj.foo.type, 'string');
         t.equal(obj.foo.unique, false);
-        CLIENT.del('/' + BUCKET, function (err) {
-            t.ifError(err);
+        CLIENT.del('/' + BUCKET, function (err2) {
+            t.ifError(err2);
             t.done();
         });
     });
@@ -234,8 +234,8 @@ test('create bucket ok object string, unique', function (t) {
         t.ok(obj.foo);
         t.equal(obj.foo.type, 'string');
         t.equal(obj.foo.unique, true);
-        CLIENT.del('/' + BUCKET, function (err) {
-            t.ifError(err);
+        CLIENT.del('/' + BUCKET, function (err2) {
+            t.ifError(err2);
             t.done();
         });
     });
@@ -258,8 +258,8 @@ test('create bucket ok object number, unique', function (t) {
         t.ok(obj.foo);
         t.equal(obj.foo.type, 'number');
         t.equal(obj.foo.unique, true);
-        CLIENT.del('/' + BUCKET, function (err) {
-            t.ifError(err);
+        CLIENT.del('/' + BUCKET, function (err2) {
+            t.ifError(err2);
             t.done();
         });
     });

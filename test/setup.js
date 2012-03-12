@@ -32,4 +32,3 @@ if (exec('pg_ctl start -w -D ' + DBHOME).code !== 0)
 
 if (exec('createdb unit_test').code !== 0)
     error('Unable to create database');
-
