@@ -9,3 +9,4 @@ cscope.out
 smf/manifests/moray.xml
 cscope.files
 *.log
+logfile

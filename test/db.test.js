@@ -1,6 +1,6 @@
 // Copyright 2012 Joyent, Inc.  All rights reserved.
 //
-// You can set PG_URL to connect to a database, and LOG_LEVEL to turn off
+// You can set PG_URL to connect to a database, and LOG_LEVEL to turn on
 // bunyan debug logs.
 //
 
@@ -12,23 +12,19 @@ var uuid = require('node-uuid');
 
 var DB = require('../lib').DB;
 
-var test = require('./helper').test;
+var helper = require('./helper');
 
 
 
 ///--- Globals
 
+var test = helper.test;
+
 var BUCKET = process.env.BUCKET || 'a' + uuid().replace('-', '').substr(0, 7);
 var CLIENT;
 var DB_URL = process.env.DATABASE_URL || 'pg://unit:test@localhost/test';
 var KEY = '/foo/bar';
-var LOG = new Logger({
-    level: (process.env.LOG_LEVEL || 'info'),
-    name: 'db.test.js',
-    stream: process.stderr,
-    src: true,
-    serializers: Logger.stdSerializers
-});
+var LOG = helper.log;
 
 
 
@@ -138,7 +134,6 @@ test('get k/v (original)', function (t) {
     CLIENT.get(BUCKET, KEY, function (err, obj) {
         t.ifError(err);
         t.ok(obj);
-        console.log(obj);
         t.equal(obj.bucket, BUCKET);
         t.equal(obj.key, KEY);
         t.equal(obj.data.foo, 'foo');

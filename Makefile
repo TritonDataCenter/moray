@@ -72,7 +72,9 @@ $(SHRINKWRAP): | $(NPM_EXEC)
 
 .PHONY: test
 test: $(NODEUNIT)
+	$(NODE) test/setup.js
 	$(NODEUNIT) test/*.test.js --reporter tap
+	$(NODE) test/teardown.js
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.node.targ
