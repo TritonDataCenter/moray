@@ -11,20 +11,12 @@ require('shelljs/global');
 
 ///--- Globals
 
-var DBHOME = '/tmp/pg_unit_test' || process.env.MORAY_DB_HOME;
+var DBHOME = '/tmp/moray_unit_test' || process.env.MORAY_DB_HOME;
 
 
+/// Ignore all failures
 
-///--- Set up scratch area for database
-
-function error(msg) {
-    echo(msg);
-    exit(1);
-}
-
-mkdir('-p', DBHOME);
-
-if (exec('pg_ctl stop -w -D ' + DBHOME).code !== 0)
-    error('Error: pg_ctl stop failed');
-
+exec('dropdb test');
+exec('dropdb ' + process.env.USER);
+exec('pg_ctl -D ' + DBHOME + ' stop');
 rm('-fr', DBHOME);

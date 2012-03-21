@@ -25,7 +25,7 @@ JSONTOOL	:= $(NODE_INSTALL)/bin/json
 # Files
 #
 DOC_FILES	 = index.restdown
-JS_FILES	:= $(shell ls *.js) $(shell find lib test -name '*.js')
+JS_FILES	:= $(shell ls *.js) $(shell find lib test -name '*.js' | grep -v sql.js)
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
@@ -33,7 +33,7 @@ JSSTYLE_FLAGS    = -C -f ./tools/jsstyle.conf
 SHRINKWRAP	 = npm-shrinkwrap.json
 SMF_MANIFESTS_IN = smf/manifests/moray.xml.in
 
-CLEAN_FILES	+= node_modules $(SHRINKWRAP)
+CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 
 
 include ./tools/mk/Makefile.defs
@@ -67,14 +67,15 @@ $(NODEUNIT): node_modules
 node_modules: | $(NPM_EXEC)
 	$(NPM) install
 
-$(SHRINKWRAP): | $(NPM_EXEC)
+shrinkwrap: | $(NPM_EXEC)
 	$(NPM) shrinkwrap
 
 .PHONY: test
 test: $(NODEUNIT)
-	$(NODE) test/setup.js
-	$(NODEUNIT) test/*.test.js --reporter tap
-	$(NODE) test/teardown.js
+	$(NODEUNIT) test/db/buckets.test.js --reporter tap
+	$(NODEUNIT) test/db/objects.test.js --reporter tap
+	$(NODEUNIT) test/buckets.test.js --reporter tap
+	$(NODEUNIT) test/objects.test.js --reporter tap
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.node.targ

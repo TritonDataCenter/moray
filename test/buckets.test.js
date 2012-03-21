@@ -32,9 +32,9 @@ function checkBucketSchema(t, obj) {
     t.equal(obj.email.type, 'string');
     t.equal(obj.email.unique, true);
     t.equal(obj.age.type, 'number');
-    t.equal(obj.age.unique, false);
+    t.ok(!obj.age.unique);
     t.equal(obj.ismanager.type, 'boolean');
-    t.equal(obj.ismanager.unique, false);
+    t.ok(!obj.ismanager.unique);
 }
 
 
@@ -55,22 +55,8 @@ test('start server', function (t) {
 });
 
 
-test('create missing bucket', function (t) {
-    var opts = {};
-    CLIENT.post('/', opts, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'MissingParameter');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
 test('create invalid bucket', function (t) {
-    var opts = {
-        bucket: uuid() + '%%*foo'
-    };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + uuid(), {}, function (err, req, res, obj) {
         t.ok(err);
         t.equal(err.code, 'InvalidArgument');
         t.ok(err.message);
@@ -80,10 +66,7 @@ test('create invalid bucket', function (t) {
 
 
 test('create reserved bucket', function (t) {
-    var opts = {
-        bucket: 'search'
-    };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/search', {}, function (err, req, res, obj) {
         t.ok(err);
         t.equal(err.code, 'InvalidArgument');
         t.ok('search is a reserved name');
@@ -94,10 +77,11 @@ test('create reserved bucket', function (t) {
 
 test('create index bad type', function (t) {
     var opts = {
-        bucket: BUCKET,
-        index: 9
+        schema: {
+            index: 9
+        }
     };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
         t.ok(err);
         t.equal(err.code, 'InvalidArgument');
         t.ok(err.message);
@@ -108,26 +92,11 @@ test('create index bad type', function (t) {
 
 test('create index bad type (array)', function (t) {
     var opts = {
-        bucket: BUCKET,
-        index: [9]
-    };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'InvalidArgument');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
-test('create index bad type object (object)', function (t) {
-    var opts = {
-        bucket: BUCKET,
-        index: {
-            'foo': 9
+        schema: {
+            index: [9]
         }
     };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
         t.ok(err);
         t.equal(err.code, 'InvalidArgument');
         t.ok(err.message);
@@ -138,14 +107,13 @@ test('create index bad type object (object)', function (t) {
 
 test('create index object ok index type bad', function (t) {
     var opts = {
-        bucket: BUCKET,
-        index: {
+        schema: {
             'foo': {
                 type: 'foo'
             }
         }
     };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
         t.ok(err);
         t.equal(err.code, 'InvalidArgument');
         t.ok(err.message);
@@ -156,36 +124,14 @@ test('create index object ok index type bad', function (t) {
 
 test('create bucket ok string index', function (t) {
     var opts = {
-        bucket: BUCKET,
-        index: 'foo'
+        schema: {
+            foo: {
+                type: 'string'
+            }
+        }
     };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
         t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.foo);
-        t.equal(obj.foo.type, 'string');
-        t.equal(obj.foo.unique, false);
-        CLIENT.del('/' + BUCKET, function (err2) {
-            t.ifError(err2);
-            t.done();
-        });
-    });
-});
-
-
-test('create bucket ok string index array', function (t) {
-    var opts = {
-        bucket: BUCKET,
-        index: ['foo', 'bar']
-    };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.foo);
-        t.equal(obj.foo.type, 'string');
-        t.equal(obj.foo.unique, false);
-        t.equal(obj.bar.type, 'string');
-        t.equal(obj.bar.unique, false);
         CLIENT.del('/' + BUCKET, function (err2) {
             t.ifError(err2);
             t.done();
@@ -196,20 +142,15 @@ test('create bucket ok string index array', function (t) {
 
 test('create bucket ok object string, non-unique', function (t) {
     var opts = {
-        bucket: BUCKET,
-        index: {
+        schema: {
             foo: {
                 type: 'string',
                 unique: false
             }
         }
     };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
         t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.foo);
-        t.equal(obj.foo.type, 'string');
-        t.equal(obj.foo.unique, false);
         CLIENT.del('/' + BUCKET, function (err2) {
             t.ifError(err2);
             t.done();
@@ -220,20 +161,15 @@ test('create bucket ok object string, non-unique', function (t) {
 
 test('create bucket ok object string, unique', function (t) {
     var opts = {
-        bucket: BUCKET,
-        index: {
+        schema: {
             foo: {
                 type: 'string',
                 unique: true
             }
         }
     };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
         t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.foo);
-        t.equal(obj.foo.type, 'string');
-        t.equal(obj.foo.unique, true);
         CLIENT.del('/' + BUCKET, function (err2) {
             t.ifError(err2);
             t.done();
@@ -244,20 +180,15 @@ test('create bucket ok object string, unique', function (t) {
 
 test('create bucket ok object number, unique', function (t) {
     var opts = {
-        bucket: BUCKET,
-        index: {
+        schema: {
             foo: {
                 type: 'number',
                 unique: true
             }
         }
     };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
         t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.foo);
-        t.equal(obj.foo.type, 'number');
-        t.equal(obj.foo.unique, true);
         CLIENT.del('/' + BUCKET, function (err2) {
             t.ifError(err2);
             t.done();
@@ -268,8 +199,7 @@ test('create bucket ok object number, unique', function (t) {
 
 test('create bucket ok indexes of all types', function (t) {
     var opts = {
-        bucket: BUCKET,
-        index: {
+        schema: {
             id: {
                 type: 'number',
                 unique: true
@@ -286,10 +216,8 @@ test('create bucket ok indexes of all types', function (t) {
             }
         }
     };
-    CLIENT.post('/', opts, function (err, req, res, obj) {
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
         t.ifError(err);
-        t.ok(obj);
-        checkBucketSchema(t, obj);
         t.done();
     });
 });
@@ -300,14 +228,15 @@ test('list buckets ok', function (t) {
         t.ifError(err);
         t.ok(obj);
         t.ok(obj[BUCKET]);
-        checkBucketSchema(t, obj[BUCKET]);
+        t.ok(obj[BUCKET].schema);
+        checkBucketSchema(t, obj[BUCKET].schema);
         t.done();
     });
 });
 
 
 test('get bucket 404', function (t) {
-    CLIENT.get('/' + uuid() + '?schema=true', function (err, req, res, obj) {
+    CLIENT.get('/' + uuid(), function (err, req, res) {
         t.ok(err);
         t.equal(err.code, 'ResourceNotFound');
         t.ok(err.message);
@@ -316,10 +245,11 @@ test('get bucket 404', function (t) {
 });
 
 test('get bucket (schema) ok', function (t) {
-    CLIENT.get('/' + BUCKET + '?schema=true', function (err, req, res, obj) {
+    CLIENT.get('/' + BUCKET, function (err, req, res, obj) {
         t.ifError(err);
         t.ok(obj);
-        checkBucketSchema(t, obj);
+        t.ok(obj.schema);
+        checkBucketSchema(t, obj.schema);
         t.done();
     });
 });

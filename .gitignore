@@ -10,3 +10,5 @@ smf/manifests/moray.xml
 cscope.files
 *.log
 logfile
+.coverage_data
+cover_html

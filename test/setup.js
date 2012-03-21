@@ -11,7 +11,7 @@ require('shelljs/global');
 
 ///--- Globals
 
-var DBHOME = '/tmp/pg_unit_test' || process.env.MORAY_DB_HOME;
+var DBHOME = '/tmp/moray_unit_test' || process.env.MORAY_DB_HOME;
 
 
 
@@ -30,5 +30,9 @@ if (exec('pg_ctl init -w -D ' + DBHOME).code !== 0)
 if (exec('pg_ctl start -w -D ' + DBHOME).code !== 0)
     error('Error: pg_ctl start failed');
 
-if (exec('createdb unit_test').code !== 0)
+exec('createdb', process.env.USER); // this might already exist
+if (exec('createdb', 'test').code !== 0)
     error('Unable to create database');
+
+if (exec('psql -f ' +__dirname + '/createuser.sql test').code !== 0)
+    error('Unable to create user');
