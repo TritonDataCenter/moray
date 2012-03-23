@@ -50,7 +50,7 @@ PATH	:= $(NODE_INSTALL)/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: tools $(SMF_MANIFESTS) $(SHRINKWRAP)
+all: tools $(SMF_MANIFESTS)
 
 
 .PHONY: tools
