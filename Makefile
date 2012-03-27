@@ -18,6 +18,7 @@
 # Tools
 #
 NODEUNIT	:= ./node_modules/.bin/nodeunit
+NODECOVER	:= ./node_modules/.bin/cover
 BUNYAN		:= $(NODE_INSTALL)/bin/bunyan
 JSONTOOL	:= $(NODE_INSTALL)/bin/json
 
@@ -72,10 +73,13 @@ shrinkwrap: | $(NPM_EXEC)
 
 .PHONY: test
 test: $(NODEUNIT)
-	$(NODEUNIT) test/db/buckets.test.js --reporter tap
-	$(NODEUNIT) test/db/objects.test.js --reporter tap
-	$(NODEUNIT) test/buckets.test.js --reporter tap
-	$(NODEUNIT) test/objects.test.js --reporter tap
+	$(NODEUNIT) test/*.test.js --reporter tap
+
+.PHONY: cover
+cover: $(NODECOVER)
+	@rm -fr ./.coverage_data
+	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/*.test.js
+	$(NODECOVER) report html
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.node.targ

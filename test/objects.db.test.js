@@ -6,10 +6,12 @@
 
 var uuid = require('node-uuid');
 
-var db = require('../../lib/db');
-var errors = require('../../lib/errors');
+var db = require('../lib/db');
+var errors = require('../lib/errors');
 
-var helper = require('../helper');
+if (require.cache[__dirname + '/helper.js'])
+    delete require.cache[__dirname + '/helper.js'];
+var helper = require('./helper.js');
 
 
 
@@ -51,13 +53,20 @@ test('create object manager', function (t) {
         url: URL
     });
     t.ok(PG);
-    db.createObjectManager({
+    db.createBucketManager({
         log: helper.log,
         pgClient: PG
-    }, function (err, om) {
+    }, function (err, bm) {
         t.ifError(err);
-        OM = om;
-        t.done();
+        db.createObjectManager({
+            bucketManager: bm,
+            log: helper.log,
+            pgClient: PG
+        }, function (err2, om) {
+            t.ifError(err2);
+            OM = om;
+            t.done();
+        });
     });
 });
 

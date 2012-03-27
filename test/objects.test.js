@@ -9,8 +9,11 @@ var util = require('util');
 
 var Logger = require('bunyan');
 var uuid = require('node-uuid');
+var restify = require('restify');
 
-var helper = require('./helper');
+if (require.cache[__dirname + '/helper.js'])
+    delete require.cache[__dirname + '/helper.js'];
+var helper = require('./helper.js');
 
 
 
@@ -18,10 +21,13 @@ var helper = require('./helper');
 
 var test = helper.test;
 
+var InvalidArgumentError = restify.InvalidArgumentError;
+
 var BUCKET = process.env.BUCKET || 'a' + uuid().replace('-', '').substr(0, 7);
 var CLIENT;
 var ETAG;
 var SERVER;
+
 
 
 ///--- Helpers
@@ -255,6 +261,87 @@ test('delete object conditionally ok', function (t) {
     };
     CLIENT.del(opts, function (err) {
         t.ifError(err);
+        t.done();
+    });
+});
+
+
+test('put bucket with hooks', function (t) {
+    var opts = {
+        schema: {
+            id: {
+                type: 'number',
+                unique: true
+            },
+            email: {
+                type: 'string',
+                unique: true
+            },
+            name: {
+                type: 'string'
+            }
+        },
+        pre: [
+            function enforceEmail(req, cb) {
+                /* JSSTYLED */
+                var EMAIL_RE = /[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
+                var email = req.value.email;
+                if (!email || EMAIL_RE.test(email))
+                    return cb();
+
+                return cb(new InvalidArgumentError('email is invalid'));
+            }.toString()
+        ],
+        post: [
+            function writeExtraValue(req, cb) {
+                var b = req.bucket;
+                var k = req.key + '_post';
+                var v = JSON.stringify({hello: 'world with a post handler'});
+                var pg = req.pgClient;
+                var sql = 'INSERT INTO ' + b + '_entry (key, value, etag) ' +
+                    'VALUES ($1, $2, $3)';
+                return pg.query(sql, [k, v, 'foo'], cb);
+            }.toString()
+        ]
+    };
+    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.done();
+    });
+});
+
+if (!process.env.MORAY_COVERAGE)
+test('pre hook passes', function (t) {
+    var data = {
+        id: 10,
+        email: uuid() + '@joyent.com',
+        name: uuid()
+    };
+    var k = uuid();
+    CLIENT.put(key(k), data, function (err, req, res) {
+        t.ifError(err);
+        t.equal(res.statusCode, 204);
+        CLIENT.get(key(k + '_post'), function (err2, _, __, obj) {
+            t.ifError(err2);
+            t.ok(obj);
+            t.done();
+        });
+    });
+});
+
+
+if (!process.env.MORAY_COVERAGE)
+test('pre hook fails', function (t) {
+    var data = {
+        id: 11,
+        email: uuid() + '<joyent.com',
+        name: uuid()
+    };
+    CLIENT.put(key(uuid()), data, function (err, req, res) {
+        t.ok(err);
+        t.equal(err.restCode, 'InvalidArgument');
+        t.equal(res.statusCode, 409);
         t.done();
     });
 });

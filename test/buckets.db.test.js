@@ -6,10 +6,12 @@
 
 var uuid = require('node-uuid');
 
-var db = require('../../lib/db');
-var errors = require('../../lib/errors');
+var db = require('../lib/db');
+var errors = require('../lib/errors');
 
-var helper = require('../helper');
+if (require.cache[__dirname + '/helper.js'])
+    delete require.cache[__dirname + '/helper.js'];
+var helper = require('./helper.js');
 
 
 

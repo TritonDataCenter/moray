@@ -14,6 +14,14 @@
     "dtrace-provider": {
       "version": "0.0.6"
     },
+    "expiring-lru-cache": {
+      "version": "2.0.0",
+      "dependencies": {
+        "lru-cache": {
+          "version": "1.0.5"
+        }
+      }
+    },
     "generic-pool": {
       "version": "1.0.9"
     },
@@ -85,7 +93,7 @@
       "version": "0.0.2"
     },
     "cover": {
-      "version": "0.2.4",
+      "version": "0.2.7",
       "dependencies": {
         "cli-table": {
           "version": "0.0.1",
@@ -101,8 +109,8 @@
         "underscore.string": {
           "version": "2.0.0"
         },
-        "compress-buffer": {
-          "version": "0.5.1"
+        "which": {
+          "version": "1.0.5"
         }
       }
     },

@@ -10,7 +10,9 @@ var util = require('util');
 var Logger = require('bunyan');
 var uuid = require('node-uuid');
 
-var helper = require('./helper');
+if (require.cache[__dirname + '/helper.js'])
+    delete require.cache[__dirname + '/helper.js'];
+var helper = require('./helper.js');
 
 
 
