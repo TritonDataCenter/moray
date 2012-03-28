@@ -68,6 +68,7 @@ $(NODEUNIT): node_modules
 node_modules: | $(NPM_EXEC)
 	$(NPM) install
 
+.PHONY: shrinkwrap
 shrinkwrap: | $(NPM_EXEC)
 	$(NPM) shrinkwrap
 

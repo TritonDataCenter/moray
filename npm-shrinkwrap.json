@@ -18,7 +18,7 @@
       "version": "2.0.0",
       "dependencies": {
         "lru-cache": {
-          "version": "1.0.5"
+          "version": "1.0.6"
         }
       }
     },
@@ -52,11 +52,11 @@
       }
     },
     "pg": {
-      "version": "0.6.12"
+      "version": "0.6.17"
     },
     "restify": {
       "version": "1.3.1",
-      "from": "git://github.com/mcavage/node-restify.git#6d4663b1f2332c22215e0eaeafefd4ade2e03fbd",
+      "from": "git://github.com/mcavage/node-restify.git#master",
       "dependencies": {
         "formidable": {
           "version": "1.0.9"
