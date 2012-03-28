@@ -73,12 +73,18 @@ shrinkwrap: | $(NPM_EXEC)
 
 .PHONY: test
 test: $(NODEUNIT)
-	$(NODEUNIT) test/*.test.js --reporter tap
+	$(NODEUNIT) test/buckets.db.test.js --reporter tap
+	$(NODEUNIT) test/objects.db.test.js --reporter tap
+	$(NODEUNIT) test/buckets.test.js --reporter tap
+	$(NODEUNIT) test/objects.test.js --reporter tap
 
 .PHONY: cover
 cover: $(NODECOVER)
 	@rm -fr ./.coverage_data
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/*.test.js
+	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.db.test.js
+	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/objects.db.test.js
+	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
+	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
 	$(NODECOVER) report html
 
 include ./tools/mk/Makefile.deps
