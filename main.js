@@ -1,8 +1,10 @@
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
 var cluster = require('cluster');
+var net = require('net');
 var os = require('os');
 var path = require('path');
+var repl = require('repl');
 
 var d = require('dtrace-provider');
 var Logger = require('bunyan');
@@ -19,6 +21,7 @@ var DEFAULT_CFG = __dirname + '/etc/' + NAME + '.config.json';
 var LOG;
 var PARSED;
 var DTP;
+var SERVERS = [];
 
 var OPTS = {
     'debug': Number,
@@ -57,7 +60,7 @@ function usage(code, message) {
 }
 
 
-function run() {
+function run(callback) {
     var opts = {
         file: PARSED.file || DEFAULT_CFG,
         overrides: PARSED,
@@ -73,8 +76,22 @@ function run() {
         DTP.enable();
 
         server.start(function () {
+            SERVERS.push(server);
             LOG.info('%s listening at %s', NAME, server.url);
+            if (typeof (callback) === 'function')
+                return callback();
+            return false;
         });
+    });
+}
+
+
+function startREPL() {
+    net.createServer(function (socket) {
+        var r = repl.start('moray> ', socket);
+        r.context.SERVERS = SERVERS;
+    }).listen(5001, 'localhost', function () {
+        LOG.info('REPL started on 5001');
     });
 }
 
@@ -102,7 +119,7 @@ if (PARSED.debug) {
     if (PARSED.debug > 1)
         LOG.level('trace');
 
-    run();
+    run(startREPL());
 } else if (cluster.isMaster) {
     for (var i = 0; i < os.cpus().length; i++)
         cluster.fork();
@@ -111,6 +128,7 @@ if (PARSED.debug) {
         LOG.error({worker: worker}, 'worker %d exited');
     });
 
+    startREPL();
 } else {
     run();
 }
