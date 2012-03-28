@@ -9,43 +9,42 @@ Tickets/bugs: <https://devhub.joyent.com/jira/browse/MANTA>
 
 # Overview
 
-This repo contains Orca, the highly-available key/value store cowboy'd up by
+This repo contains Moray, the highly-available key/value store cowboy'd up by
 Joyent.
 
 
 # Development
 
-To run the Orca server:
+You need a Postgres instance up and running first, so do this:
 
-    git clone git@git.joyent.com:orca.git
-    cd orca
-    git submodule update --init
-    make all
-    make start
+    pkgin -y install postgresql91-client postgresql91-adminpack \
+        postgresql91-server
+    svcadm enable postgresql:pg91
+    createdb -U postgres moray
+    Password: postgres
 
-To update the docs, edit "docs/index.restdown" and run `make docs`
-to update "docs/index.html".
+Then get the Moray server:
+
+git clone git@git.joyent.com:moray.git
+    cd moray
+    make
+
+edit the ./etc/moray.development.config.json file to have the Postgres URL as
+
+    pg://postgres:postgres@localhost/moray
+
+Then, source in ./dev_env.sh (this ensures you have the moray node et al) and
+run:
+
+    . ./dev_env.sh
+    node main.js -f ./etc/moray.development.config.json 2>&1 | bunyan
 
 Before commiting/pushing run `make prepush` and get a code review from either
 Mark or Yunong.
 
-
-
 # Testing
 
-You need a Postgres running:
-
-    mkdir /var/db/orca
-    pgctl -D /var/db/orca start
-    createdb test
-
-Then:
-
-    make test
-
-If you want log verbosity:
-
-    LOG_LEVEL=debug make test
+    LOG_LEVEL=$level make test
 
 # Design
 
