@@ -22,7 +22,6 @@ var test = helper.test;
 var BM;
 var BUCKET = process.env.BUCKET || 'a' + uuid().replace('-', '').substr(0, 7);
 var KEY = '/foo/bar';
-var PG;
 var SCHEMA = {
     email: {
         type: 'string',
@@ -44,14 +43,9 @@ var URL = process.env.DATABASE_URL || 'pg://unit:test@localhost/test';
 ///--- Tests
 
 test('create postgres client', function (t) {
-    PG = new db.Postgres({
-        log: helper.log,
-        url: URL
-    });
-    t.ok(PG);
     db.createBucketManager({
         log: helper.log,
-        pgClient: PG
+        url: URL
     }, function (err, bm) {
         t.ifError(err);
         BM = bm;
@@ -127,7 +121,7 @@ test('cleanup bucket', function (t) {
 
 
 test('destroy postgres client', function (t) {
-    PG.shutdown(function () {
+    BM.pgClient.shutdown(function () {
         t.done();
     });
 });

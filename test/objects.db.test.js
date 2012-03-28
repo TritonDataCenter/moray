@@ -26,7 +26,6 @@ var OBJECT = {
     department: 123
 };
 var OM;
-var PG;
 var SCHEMA = {
     email: {
         type: 'string',
@@ -48,20 +47,15 @@ var URL = process.env.DATABASE_URL || 'pg://unit:test@localhost/test';
 ///--- Tests
 
 test('create object manager', function (t) {
-    PG = new db.Postgres({
-        log: helper.log,
-        url: URL
-    });
-    t.ok(PG);
     db.createBucketManager({
         log: helper.log,
-        pgClient: PG
+        url: URL
     }, function (err, bm) {
         t.ifError(err);
         db.createObjectManager({
             bucketManager: bm,
             log: helper.log,
-            pgClient: PG
+            url: URL
         }, function (err2, om) {
             t.ifError(err2);
             OM = om;
@@ -151,7 +145,9 @@ test('cleanup bucket', function (t) {
 
 
 test('shutdown', function (t) {
-    PG.shutdown(function () {
-        t.done();
+    OM.pgClient.shutdown(function () {
+        OM.bucketManager.pgClient.shutdown(function () {
+            t.done();
+        });
     });
 });
