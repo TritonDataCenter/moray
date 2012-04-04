@@ -132,3 +132,10 @@ if (PARSED.debug) {
 } else {
     run();
 }
+
+process.on('uncaughtException', function (err) {
+    LOG.fatal({err: err}, 'uncaughtException: %s', err.stack);
+    server.stop(function () {
+        process.exit(1);
+    });
+});
