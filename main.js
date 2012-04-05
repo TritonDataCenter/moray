@@ -73,7 +73,6 @@ function run(callback) {
             console.error('Unable to create server: %s', err.message);
             process.exit(1);
         }
-        DTP.enable();
 
         server.start(function () {
             SERVERS.push(server);
@@ -121,7 +120,7 @@ if (PARSED.debug) {
 
     run(startREPL());
 } else if (cluster.isMaster) {
-    for (var i = 0; i < os.cpus().length; i++)
+    for (var i = 0; i < os.cpus().length - 1; i++)
         cluster.fork();
 
     cluster.on('death', function (worker) {
@@ -134,8 +133,6 @@ if (PARSED.debug) {
 }
 
 process.on('uncaughtException', function (err) {
-    LOG.fatal({err: err}, 'uncaughtException: %s', err.stack);
-    server.stop(function () {
-        process.exit(1);
-    });
+    LOG.fatal({err: err}, 'uncaughtException handler (exiting error code 1)');
+    process.exit(1);
 });
