@@ -13,3 +13,4 @@ cscope.files
 logfile
 .coverage_data
 cover_html
+bin

@@ -56,7 +56,7 @@ test('start server', function (t) {
 test('create bucket', function (t) {
     var opts = {
         schema: {
-            id: {
+            _id: {
                 type: 'number',
                 unique: true
             },
@@ -89,7 +89,7 @@ test('put object bad bucket', function (t) {
 
 test('put object ok', function (t) {
     var data = {
-        id: 1,
+        _id: 1,
         email: 'mark.cavage@joyent.com',
         name: 'mark'
     };
@@ -187,7 +187,7 @@ test('put object conditionally ok', function (t) {
 
 test('put object unique attribute taken', function (t) {
     var data = {
-        id: 2,
+        _id: 2,
         email: 'mark.cavage@joyent.com',
         name: 'mark'
     };
@@ -203,7 +203,7 @@ test('put object unique attribute taken', function (t) {
 
 test('put object ok duplicate non-unique index', function (t) {
     var data = {
-        id: 2,
+        _id: 2,
         email: 'mcavage@gmail.com',
         name: 'mark'
     };
@@ -220,7 +220,7 @@ test('get object ok', function (t) {
     CLIENT.get(key('mark'), function (err, req, res, obj) {
         t.ifError(err);
         t.ok(obj);
-        t.equal(obj.id, 1);
+        t.equal(obj._id, 1);
         t.equal(obj.email, 'mark.cavage@joyent.com');
         t.equal(obj.name, 'mark');
         t.done();
@@ -269,7 +269,7 @@ test('delete object conditionally ok', function (t) {
 test('put bucket with hooks', function (t) {
     var opts = {
         schema: {
-            id: {
+            _id: {
                 type: 'number',
                 unique: true
             },
@@ -314,7 +314,7 @@ test('put bucket with hooks', function (t) {
 if (!process.env.MORAY_COVERAGE)
 test('pre hook passes', function (t) {
     var data = {
-        id: 10,
+        _id: 10,
         email: uuid() + '@joyent.com',
         name: uuid()
     };
@@ -334,7 +334,7 @@ test('pre hook passes', function (t) {
 if (!process.env.MORAY_COVERAGE)
 test('pre hook fails', function (t) {
     var data = {
-        id: 11,
+        _id: 11,
         email: uuid() + '<joyent.com',
         name: uuid()
     };

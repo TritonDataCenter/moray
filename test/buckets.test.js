@@ -29,8 +29,8 @@ var SERVER;
 ///--- Common checks
 
 function checkBucketSchema(t, obj) {
-    t.equal(obj.id.type, 'number');
-    t.equal(obj.id.unique, true);
+    t.equal(obj._id.type, 'number');
+    t.equal(obj._id.unique, true);
     t.equal(obj.email.type, 'string');
     t.equal(obj.email.unique, true);
     t.equal(obj.age.type, 'number');
@@ -202,7 +202,7 @@ test('create bucket ok object number, unique', function (t) {
 test('create bucket ok indexes of all types', function (t) {
     var opts = {
         schema: {
-            id: {
+            _id: {
                 type: 'number',
                 unique: true
             },
@@ -259,7 +259,7 @@ test('get bucket (schema) ok', function (t) {
 
 test('put key #1', function (t) {
     var key = '/' + BUCKET + '/foo';
-    CLIENT.put(key, {id: 1}, function (err, req, res, obj) {
+    CLIENT.put(key, {_id: 1}, function (err, req, res, obj) {
         t.ifError(err);
         t.done();
     });
@@ -268,7 +268,7 @@ test('put key #1', function (t) {
 
 test('put key #2', function (t) {
     var key = '/' + BUCKET + '/bar';
-    CLIENT.put(key, {id: 2}, function (err, req, res, obj) {
+    CLIENT.put(key, {_id: 2}, function (err, req, res, obj) {
         t.ifError(err);
         t.done();
     });
