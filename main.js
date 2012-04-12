@@ -125,6 +125,7 @@ if (PARSED.debug) {
 
     cluster.on('death', function (worker) {
         LOG.error({worker: worker}, 'worker %d exited');
+        cluster.fork();
     });
 
     startREPL();
