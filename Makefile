@@ -19,8 +19,8 @@
 #
 NODEUNIT	:= ./node_modules/.bin/nodeunit
 NODECOVER	:= ./node_modules/.bin/cover
-BUNYAN		:= $(NODE_INSTALL)/bin/bunyan
-JSONTOOL	:= $(NODE_INSTALL)/bin/json
+BUNYAN		:= ./node_modules/.bin/bunyan
+JSONTOOL	:= ./node_modules/.bin/json
 
 #
 # Files
@@ -55,12 +55,6 @@ all: tools $(SMF_MANIFESTS)
 
 .PHONY: tools
 tools: $(BUNYAN) $(JSONTOOL) $(NODEUNIT)
-
-$(BUNYAN): | $(NPM_EXEC)
-	$(NPM) install bunyan -g
-
-$(JSONTOOL): | $(NPM_EXEC)
-	$(NPM) install jsontool -g
 
 $(NODEUNIT): node_modules
 
