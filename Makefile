@@ -42,6 +42,25 @@ include ./tools/mk/Makefile.node.defs
 include ./tools/mk/Makefile.smf.defs
 
 #
+# Variables
+#
+
+# Mountain Gorilla-spec'd versioning.
+# Need GNU awk for multi-char arg to "-F".
+AWK := $(shell (which gawk 2>/dev/null | grep -v "^no ") || (which nawk 2>/dev/null | grep -v "^no ") || which awk)
+BRANCH := $(shell git symbolic-ref HEAD | $(AWK) -F/ '{print $$3}')
+ifeq ($(TIMESTAMP),)
+	TIMESTAMP := $(shell date -u "+%Y%m%dT%H%M%SZ")
+endif
+GITDESCRIBE := g$(shell git describe --all --long --dirty | $(AWK) -F'-g' '{print $$NF}')
+STAMP := $(BRANCH)-$(TIMESTAMP)-$(GITDESCRIBE)
+
+ROOT                    := $(shell pwd)
+RELEASE_TARBALL         := moray-pkg-$(STAMP).tar.bz2
+TMPDIR                  := /tmp/$(STAMP)
+
+
+#
 # Env vars
 #
 PATH	:= $(NODE_INSTALL)/bin:${PATH}
@@ -50,16 +69,10 @@ PATH	:= $(NODE_INSTALL)/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: tools $(SMF_MANIFESTS)
+all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS)
+	$(NPM) install
 
-
-.PHONY: tools
-tools: $(BUNYAN) $(JSONTOOL) $(NODEUNIT)
-
-$(NODEUNIT): node_modules
-
-.PHONY: node_modules
-node_modules: | $(NPM_EXEC)
+$(NODEUNIT): | $(NPM_EXEC)
 	$(NPM) install
 
 .PHONY: shrinkwrap
@@ -81,6 +94,37 @@ cover: $(NODECOVER)
 	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
 	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
 	$(NODECOVER) report html
+
+.PHONY: pkg
+pkg: all
+
+.PHONY: release
+release: pkg
+	@echo "Building $(RELEASE_TARBALL)"
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray
+	@mkdir -p $(TMPDIR)/site
+	@touch $(TMPDIR)/site/.do-not-delete-me
+	@mkdir -p $(TMPDIR)/root
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/ssl
+	cp -r   $(ROOT)/build \
+		$(ROOT)/lib \
+		$(ROOT)/main.js \
+		$(ROOT)/node_modules \
+		$(ROOT)/package.json \
+		$(ROOT)/smf \
+		$(TMPDIR)/root/opt/smartdc/moray/
+	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
+	@rm -rf $(TMPDIR)
+
+.PHONY: publish
+publish: release
+	@if [[ -z "$(BITS_DIR)" ]]; then \
+		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
+		exit 1; \
+	fi
+	mkdir -p $(BITS_DIR)/moray
+	cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/moray/$(RELEASE_TARBALL)
+
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.node.targ
