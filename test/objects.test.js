@@ -194,8 +194,6 @@ test('put object unique attribute taken', function (t) {
     CLIENT.put(key('markus'), data, function (err, req, res) {
         t.ok(err);
         t.equal(err.code, 'InvalidArgument');
-        t.equal(err.message,
-                'Key (email)=(mark.cavage@joyent.com) already exists.');
         t.done();
     });
 });
