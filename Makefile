@@ -46,14 +46,6 @@ include ./tools/mk/Makefile.smf.defs
 #
 
 # Mountain Gorilla-spec'd versioning.
-# Need GNU awk for multi-char arg to "-F".
-AWK := $(shell (which gawk 2>/dev/null | grep -v "^no ") || (which nawk 2>/dev/null | grep -v "^no ") || which awk)
-BRANCH := $(shell git symbolic-ref HEAD | $(AWK) -F/ '{print $$3}')
-ifeq ($(TIMESTAMP),)
-	TIMESTAMP := $(shell date -u "+%Y%m%dT%H%M%SZ")
-endif
-GITDESCRIBE := g$(shell git describe --all --long --dirty | $(AWK) -F'-g' '{print $$NF}')
-STAMP := $(BRANCH)-$(TIMESTAMP)-$(GITDESCRIBE)
 
 ROOT                    := $(shell pwd)
 RELEASE_TARBALL         := moray-pkg-$(STAMP).tar.bz2
@@ -95,17 +87,14 @@ cover: $(NODECOVER)
 	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
 	$(NODECOVER) report html
 
-.PHONY: pkg
-pkg: all
-
 .PHONY: release
-release: pkg
+release: all docs $(SMF_MANIFESTS)
 	@echo "Building $(RELEASE_TARBALL)"
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray
 	@mkdir -p $(TMPDIR)/site
 	@touch $(TMPDIR)/site/.do-not-delete-me
 	@mkdir -p $(TMPDIR)/root
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/ssl
+	@mkdir -p $(tmpdir)/root/opt/smartdc/moray/ssl
 	cp -r   $(ROOT)/build \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
@@ -116,10 +105,11 @@ release: pkg
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(TMPDIR)
 
+
 .PHONY: publish
 publish: release
 	@if [[ -z "$(BITS_DIR)" ]]; then \
-		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
+		@echo "error: 'BITS_DIR' must be set for 'publish' target"; \
 		exit 1; \
 	fi
 	mkdir -p $(BITS_DIR)/moray

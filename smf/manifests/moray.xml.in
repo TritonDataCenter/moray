@@ -7,26 +7,49 @@
 	whereever this package gets installed.
  -->
 
-<service_bundle type="manifest" name="smartdc-ca-castashsvc">
-<service name="smartdc/application/bapi" type="service" version="1">
+<service_bundle type="manifest" name="smartdc-moray">
+    <service name="smartdc/application/moray" type="service" version="1">
 
-<dependency name="network" grouping="require_all" restart_on="error" type="service">
-	<service_fmri value="svc:/network/physical" />
-</dependency>
-<dependency name="filesystem" grouping="require_all" restart_on="error" type="service">
-	<service_fmri value="svc:/system/filesystem/local" />
-</dependency>
+        <dependency name="network" grouping="require_all" restart_on="error" type="service">
+	    <service_fmri value="svc:/network/physical" />
+        </dependency>
+        <dependency name="filesystem" grouping="require_all" restart_on="error" type="service">
+	    <service_fmri value="svc:/system/filesystem/local" />
+        </dependency>
 
-<exec_method type="method" name="start" exec="@@NODE@@ @@PREFIX@@/server.js &amp;" timeout_seconds="30" />
-<exec_method type="method" name="stop" exec=":kill" timeout_seconds="30" />
+        <exec_method
+            type="method"
+            name="start"
+            exec="@@NODE@@ @@PREFIX@@ -f etc/moray.config.json &amp;"
+            timeout_seconds="30">
+            <method_context working_directory="/opt/smartdc/moray">
+                <method_credential user="nobody"
+                                   group="nobody"
+                                   privileges="basic,net_privaddr"/>
+                <method_environment>
+                    <envvar name="PATH"
+                            value="/opt/smartdc/moray/build/bin:/opt/local/bin:/usr/bin:/usr/sbin:/bin"/>
+                    <envvar name="LD_PRELOAD_32"
+                            value="/usr/lib/extendedFILE.so.1" />
+                </method_environment>
+            </method_context>
+        </exec_method>
 
-<instance name="default" enabled="true" />
 
-<stability value='Unstable' />
+        <exec_method type="method"
+                     name="stop"
+                     exec=":kill"
+                     timeout_seconds="30" />
 
-<template>
-	<common_name><loctext xml:lang="C">Joyent Boilerplate Service</loctext></common_name>
-</template>
+        <property_group name="application" type="application" />
+        <instance name="default" enabled="true" />
+        <stability value='Unstable' />
 
-</service>
+        <template>
+            <common_name>
+                <loctext xml:lang="C">Joyent Moray Service</loctext>
+            </common_name>
+        </template>
+
+    </service>
 </service_bundle>
