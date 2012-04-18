@@ -7,7 +7,6 @@ docs/*.html
 cscope.in.out
 cscope.po.out
 cscope.out
-smf/manifests/moray.xml
 cscope.files
 *.log
 logfile

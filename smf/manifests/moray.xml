@@ -1,26 +1,26 @@
 <?xml version="1.0"?>
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
-<!--
-	Copyright (c) 2012, Joyent, Inc. All rights reserved.
- 	This is a sample SMF manifest. If you want to actually use it, you'll
- 	need to replace @@PREFIX@@ in the *generated* file with the path to
-	whereever this package gets installed.
- -->
-
 <service_bundle type="manifest" name="smartdc-moray">
     <service name="smartdc/application/moray" type="service" version="1">
 
-        <dependency name="network" grouping="require_all" restart_on="error" type="service">
+        <dependency name="network"
+                    grouping="require_all"
+                    restart_on="error"
+                    type="service">
 	    <service_fmri value="svc:/network/physical" />
         </dependency>
-        <dependency name="filesystem" grouping="require_all" restart_on="error" type="service">
+
+        <dependency name="filesystem"
+                    grouping="require_all"
+                    restart_on="error"
+                    type="service">
 	    <service_fmri value="svc:/system/filesystem/local" />
         </dependency>
 
         <exec_method
             type="method"
             name="start"
-            exec="@@NODE@@ @@PREFIX@@ -f etc/moray.config.json &amp;"
+            exec="/opt/smartdc/moray/build/node/bin/node main.js -f etc/config.json &amp;"
             timeout_seconds="30">
             <method_context working_directory="/opt/smartdc/moray">
                 <method_credential user="nobody"

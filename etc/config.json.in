@@ -1,0 +1,12 @@
+{
+    "port": 80,
+    "postgres": {
+        "url": "$PG_URL",
+        "maxConns": 10,
+        "idleTimeout": 600000
+    },
+    "marker": {
+        "key": "13F435C10F0EC0C403E7AACB61429713",
+        "iv": "FF5442563050A98984F7DC703185B965"
+    }
+}
