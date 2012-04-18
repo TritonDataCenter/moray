@@ -96,6 +96,7 @@ release: all docs $(SMF_MANIFESTS)
 	@mkdir -p $(TMPDIR)/root
 	@mkdir -p $(tmpdir)/root/opt/smartdc/moray/ssl
 	cp -r   $(ROOT)/build \
+		$(ROOT)/etc/config.json.in \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \
