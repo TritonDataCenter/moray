@@ -94,15 +94,16 @@ release: all docs $(SMF_MANIFESTS)
 	@mkdir -p $(TMPDIR)/site
 	@touch $(TMPDIR)/site/.do-not-delete-me
 	@mkdir -p $(TMPDIR)/root
-	@mkdir -p $(tmpdir)/root/opt/smartdc/moray/ssl
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/ssl
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/etc
 	cp -r   $(ROOT)/build \
-		$(ROOT)/etc/config.json.in \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \
 		$(ROOT)/package.json \
 		$(ROOT)/smf \
 		$(TMPDIR)/root/opt/smartdc/moray/
+	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/moray/etc
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(TMPDIR)
 
