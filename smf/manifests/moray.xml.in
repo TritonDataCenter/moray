@@ -7,14 +7,14 @@
                     grouping="require_all"
                     restart_on="error"
                     type="service">
-	    <service_fmri value="svc:/network/physical" />
+            <service_fmri value="svc:/network/physical" />
         </dependency>
 
         <dependency name="filesystem"
                     grouping="require_all"
                     restart_on="error"
                     type="service">
-	    <service_fmri value="svc:/system/filesystem/local" />
+            <service_fmri value="svc:/system/filesystem/local" />
         </dependency>
 
         <exec_method
