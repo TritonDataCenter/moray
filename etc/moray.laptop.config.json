@@ -1,7 +1,7 @@
 {
-    "port": 8080,
+    "port": 8081,
     "postgres": {
-        "url": "pg://unit:test@localhost/moray",
+        "url": "pg://moray:test@localhost/moray",
         "maxConns": 10,
         "idleTimeout": 600000
     },
