@@ -62,6 +62,9 @@
 #
 #	BASH		Path to bash (default: bash)
 #
+#	CSCOPE_DIRS	Directories to search for source files for the cscope
+#			index. (default: ".")
+#
 #	JSL		Path to JavaScriptLint (default: "jsl")
 #
 #	JSL_FLAGS_NODE	Additional flags to pass through to JSL
@@ -80,18 +83,19 @@ BASH		?= bash
 BASHSTYLE	?= tools/bashstyle
 CP		?= cp
 CSCOPE		?= cscope
+CSCOPE_DIRS	?= .
 JSL		?= jsl
 JSSTYLE		?= jsstyle
 MKDIR		?= mkdir -p
 MV		?= mv
-RESTDOWN	?= restdown
 RESTDOWN_FLAGS	?=
 RMTREE		?= rm -rf
 JSL_FLAGS  	?= --nologo --nosummary
-TAR		?= tar
 
 ifeq ($(shell uname -s),SunOS)
-	TAR	= gtar
+	TAR	?= gtar
+else
+	TAR	?= tar
 endif
 
 
@@ -116,6 +120,24 @@ endif
 #
 # Targets. For descriptions on what these are supposed to do, see the
 # Joyent Engineering Guide.
+#
+
+#
+# Instruct make to keep around temporary files. We have rules below that
+# automatically update git submodules as needed, but they employ a deps/*/.git
+# temporary file. Without this directive, make tries to remove these .git
+# directories after the build has completed.
+#
+.SECONDARY: $($(wildcard deps/*):%=%/.git)
+
+#
+# This rule enables other rules that use files from a git submodule to have
+# those files depend on deps/module/.git and have "make" automatically check
+# out the submodule as needed.
+#
+deps/%/.git:
+	git submodule update --init deps/$*
+
 #
 # These recipes make heavy use of dynamically-created phony targets. The parent
 # Makefile defines a list of input files like BASH_FILES. We then say that each
@@ -142,16 +164,16 @@ check-jsl-node: $(JSL_FILES_NODE:%=%.jslnodechk)
 
 check-jsl-web: $(JSL_FILES_WEB:%=%.jslwebchk)
 
-%.jslnodechk: % $(JSL_SCRIPT)
+%.jslnodechk: % $(JSL_EXEC)
 	$(JSL) $(JSL_FLAGS) $(JSL_FLAGS_NODE) $<
 
-%.jslwebchk: % $(JSL_SCRIPT)
+%.jslwebchk: % $(JSL_EXEC)
 	$(JSL) $(JSL_FLAGS) $(JSL_FLAGS_WEB) $<
 
 .PHONY: check-jsstyle
 check-jsstyle: $(JSSTYLE_FILES:%=%.jsstylechk)
 
-%.jsstylechk: % $(JSSTYLE_SCRIPT)
+%.jsstylechk: % $(JSSTYLE_EXEC)
 	$(JSSTYLE) $(JSSTYLE_FLAGS) $<
 
 .PHONY: check
@@ -160,11 +182,11 @@ check: check-jsl check-jsstyle check-bash
 
 .PHONY: clean
 clean::
-	$(RMTREE) $(CLEAN_FILES)
+	-$(RMTREE) $(CLEAN_FILES)
 
 .PHONY: distclean
 distclean:: clean
-	$(RMTREE) $(DISTCLEAN_FILES)
+	-$(RMTREE) $(DISTCLEAN_FILES)
 
 CSCOPE_FILES = cscope.in.out cscope.out cscope.po.out
 CLEAN_FILES += $(CSCOPE_FILES)
@@ -175,8 +197,8 @@ xref: cscope.files
 
 .PHONY: cscope.files
 cscope.files:
-	find lib -name '*.c' -o -name '*.h' -o -name '*.cc' -o -name '*.js' \
-	    -o -name '*.s' -o -name '*.cpp' > $@
+	find $(CSCOPE_DIRS) -name '*.c' -o -name '*.h' -o -name '*.cc' \
+	    -o -name '*.js' -o -name '*.s' -o -name '*.cpp' > $@
 
 #
 # The "docs" target is complicated because we do several things here:
@@ -242,7 +264,7 @@ $(DOC_MEDIA_FILES_BUILD): | $(DOC_MEDIA_DIRS_BUILD)
 $(DOC_BUILD)/%: docs/% | $(DOC_BUILD)
 	$(CP) $< $@
 
-docs/%.json docs/%.html: docs/%.restdown | $(DOC_BUILD)
+docs/%.json docs/%.html: docs/%.restdown | $(DOC_BUILD) $(RESTDOWN_EXEC)
 	$(RESTDOWN) $(RESTDOWN_FLAGS) -m $(DOC_BUILD) $<
 
 $(DOC_BUILD):
@@ -250,7 +272,6 @@ $(DOC_BUILD):
 
 $(DOC_MEDIA_DIRS_BUILD):
 	$(MKDIR) $@
-
 
 #
 # The default "test" target does nothing. This should usually be overridden by

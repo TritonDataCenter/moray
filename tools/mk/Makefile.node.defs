@@ -30,14 +30,14 @@
 #     you from using them directly as a filename.  If you want that, see (2).
 #
 #     Wherever you use one of these variables, you MUST include a dependency on
-#     them as well, like so:
+#     the corresponding *_EXEC variable as well, like so:
 #
-#	node_modules/restify: deps/restify $(NPM)
+#	node_modules/restify: deps/restify $(NPM_EXEC)
 #		$(NPM) install deps/restify
 #
 #     or better, use an order-only dependency to avoid spurious rebuilds:
 #
-#	node_modules/restify: deps/restify | $(NPM)
+#	node_modules/restify: deps/restify | $(NPM_EXEC)
 #		$(NPM) install deps/restify
 #
 #     Otherwise, the underlying file will not get built.  We don't
@@ -51,14 +51,12 @@
 #     files from the root of the workspace.  You MUST NOT use these variables
 #     to invoke these commands during the build process.  See (1) instead.
 #
-#     Since you never use the files referenced by these variables directly
-#     during the build, you don't ever need to depend on them like you do in
-#     (1).  However, in order to work at runtime, you must build the
-#     corresponding tool as well.  That is, if you use NODE_EXEC to specify the
-#     path to node, you must depend on NODE somewhere.  This usually happens
-#     anyway because you usually need them during the build process too, but if
-#     you don't then you need to explicitly add $(NODE) (or whichever) to your
-#     "all" target.
+#     However, in order to work at runtime, you must build the tool as well.
+#     That is, if you use NODE_EXEC to specify the path to node, you must
+#     depend on NODE_EXEC somewhere. This usually happens anyway because you
+#     usually need them during the build process too, but if you don't then
+#     you need to explicitly add NODE_EXEC (or whichever) to your "all"
+#     target.
 #
 # When including this Makefile, you MAY also specify:
 #
@@ -72,14 +70,17 @@
 #				(default: "--with-dtrace" on SmartOS; empty
 #				otherwise.)
 #
-#      NPM_FLAGS               extra flags to pass to npm invocations
+#	NPM_FLAGS		extra flags to pass to npm invocations
+#				(default: empty)
 #
+
+TOP ?= $(error You must include Makefile.defs before this makefile)
 
 BUILD		?= build
 NODE_INSTALL 	?= $(BUILD)/node
 DISTCLEAN_FILES	+= $(NODE_INSTALL)
 
-NODE_CONFIG_FLAGS += --prefix=$(shell pwd)/$(NODE_INSTALL)
+NODE_CONFIG_FLAGS += --prefix=$(TOP)/$(NODE_INSTALL)
 
 ifeq ($(shell uname -s),SunOS)
 	NODE_CONFIG_FLAGS += 	--with-dtrace \
@@ -91,6 +92,8 @@ NODE_EXEC	= $(NODE_INSTALL)/bin/node
 NODE_WAF_EXEC	= $(NODE_INSTALL)/bin/node-waf
 NPM_EXEC	= $(NODE_INSTALL)/bin/npm
 
-NODE		= $(NODE_EXEC)
-NODE_WAF	= $(NODE_WAF_EXEC)
-NPM		= $(NPM_EXEC) $(NPM_FLAGS)
+# Ensure these use absolute paths to the executables to allow running
+# from a dir other than the project top.
+NODE		:= $(TOP)/$(NODE_EXEC)
+NODE_WAF	:= $(TOP)/$(NODE_WAF_EXEC)
+NPM		:= PATH=$(TOP)/$(NODE_INSTALL)/bin:$(PATH) $(TOP)/$(NPM_EXEC) $(NPM_FLAGS)

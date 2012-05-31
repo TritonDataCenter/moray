@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2012, Joyent, Inc. All rights reserved.
 #
-# Makefile.node.targ: See Makefile.node.defs.
+# Makefile.node_deps.targ: targets for Makefile.node_deps.defs.
 #
 # NOTE: This makefile comes from the "eng" repo. It's designed to be dropped
 # into other repos as-is without requiring any modifications. If you find
@@ -10,10 +10,7 @@
 # eng.git and then update your repo to use the new version.
 #
 
-$(NODE_EXEC) $(NPM_EXEC) $(NODE_WAF_EXEC): | deps/node/.git
-	(cd deps/node; ./configure $(NODE_CONFIG_FLAGS) && $(MAKE) && $(MAKE) install)
+NPM_EXEC  ?= $(error NPM_EXEC must be defined for Makefile.node_deps.targ)
 
-DISTCLEAN_FILES += $(NODE_INSTALL)
-
-distclean::
-	-([[ -d deps/node ]] && cd deps/node && $(MAKE) distclean)
+node_modules/%: src/node-% | $(NPM_EXEC)
+	$(NPM) install $<
