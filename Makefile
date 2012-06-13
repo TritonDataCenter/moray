@@ -36,19 +36,23 @@ SMF_MANIFESTS_IN = smf/manifests/moray.xml.in
 
 CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 
-
-include ./tools/mk/Makefile.defs
-include ./tools/mk/Makefile.node.defs
-include ./tools/mk/Makefile.smf.defs
-
 #
 # Variables
 #
 
-# Mountain Gorilla-spec'd versioning.
+NODE_PREBUILT_VERSION	:= v0.6.19
 
-ROOT                    := $(shell pwd)
+include ./tools/mk/Makefile.defs
+include ./tools/mk/Makefile.node_prebuilt.defs
+include ./tools/mk/Makefile.node_deps.defs
+include ./tools/mk/Makefile.smf.defs
+
+#
+# MG Variables
+#
+
 RELEASE_TARBALL         := moray-pkg-$(STAMP).tar.bz2
+ROOT                    := $(shell pwd)
 TMPDIR                  := /tmp/$(STAMP)
 
 
@@ -119,6 +123,6 @@ publish: release
 
 
 include ./tools/mk/Makefile.deps
-include ./tools/mk/Makefile.node.targ
+include ./tools/mk/Makefile.node_prebuilt.targ
 include ./tools/mk/Makefile.smf.targ
 include ./tools/mk/Makefile.targ
