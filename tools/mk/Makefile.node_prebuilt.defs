@@ -56,8 +56,8 @@
 #	NODE_PREBUILT_TAG	The 'sdcnode' project supports special
 #				configuration builds of node, e.g. say a
 #				build configured `--without-ssl`. These
-#				special configurations are given a tag
-#				name that is used in the filename. Optionally
+#				special configurations are given a tag, e.g.
+#				'gz', that is used in the filename. Optionally
 #				specify a tag name here.
 #				(default: empty)
 #
