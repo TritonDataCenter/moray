@@ -43,6 +43,9 @@ CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 NODE_PREBUILT_TAG	= zone
 NODE_PREBUILT_VERSION	:= v0.6.19
 
+# RELENG-341: no npm cache is making builds unreliable
+NPM_FLAGS :=
+
 include ./tools/mk/Makefile.defs
 include ./tools/mk/Makefile.node_prebuilt.defs
 include ./tools/mk/Makefile.node_deps.defs
