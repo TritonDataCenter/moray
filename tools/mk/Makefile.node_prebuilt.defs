@@ -149,4 +149,4 @@ NPM_EXEC	:= $(BUILD)/prebuilt-npm-$(NODE_PREBUILT_NAME)
 # from a dir other than the project top.
 NODE		:= $(TOP)/$(NODE_INSTALL)/bin/node
 NODE_WAF	:= $(TOP)/$(NODE_INSTALL)/bin/node-waf
-NPM		:= PATH=$(TOP)/$(NODE_INSTALL)/bin:$(PATH) $(TOP)/$(NODE_INSTALL)/bin/npm $(NPM_FLAGS)
+NPM		:= PATH=$(TOP)/$(NODE_INSTALL)/bin:$(PATH) node $(TOP)/$(NODE_INSTALL)/bin/npm $(NPM_FLAGS)
