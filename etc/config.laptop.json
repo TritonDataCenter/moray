@@ -1,0 +1,15 @@
+{
+        "port": 8080,
+        "postgres": {
+                "url": "pg://postgres@localhost/moray",
+                "maxConnections": 20,
+                "maxIdleTime": 30000,
+                "checkInterval": 10000
+        },
+        "zookeeper": {
+                "servers": [ {
+                        "host": "127.0.0.1",
+                        "port": 2181
+                } ]
+        }
+}
