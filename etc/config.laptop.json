@@ -1,19 +1,22 @@
 {
         "port": 2020,
-        "postgres": {
-                "url": "pg://postgres@127.0.0.1/moray",
-                "maxConnections": 20,
-                "maxIdleTime": 30000,
-                "checkInterval": 10000
+        "manatee": {
+                "domain": "1.pg.moray.bh1-kvm1.joyent.us",
+                "pg": {
+                        "maxConnections": 20,
+                        "maxIdleTime": 30000,
+                        "checkInterval": 10000
+                },
+                "zk": {
+                        "servers": [ {
+                                "host": "127.0.0.1",
+                                "port": 2181
+                        } ],
+                        "timeout": 10000
+                }
         },
         "cache": {
                 "size": 1000,
                 "expiry": 60
-        },
-        "zookeeper": {
-                "servers": [ {
-                        "host": "127.0.0.1",
-                        "port": 2181
-                } ]
         }
 }

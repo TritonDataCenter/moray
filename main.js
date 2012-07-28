@@ -100,7 +100,7 @@ function run(options) {
 
         var opts = clone(options);
         opts.log = LOG;
-        opts.postgres.log = LOG;
+        opts.manatee.log = LOG;
         opts.name = NAME;
 
         var server = app.createServer(opts);
