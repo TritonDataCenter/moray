@@ -178,7 +178,6 @@ test('create bucket triggers not function', function (t) {
 
 
 test('get bucket 404', function (t) {
-        var b = this.bucket;
         var c = this.client;
         c.getBucket(uuid.v4().substr(0, 7), function (err) {
                 t.ok(err);
