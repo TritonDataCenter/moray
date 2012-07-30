@@ -25,9 +25,10 @@
         },
         "devDependencies": {
                 "cover": "0.2.8",
+                "moray", "git+ssh://git@git.joyent.com:node-moray.git#498e97d",
                 "nodeunit": "0.7.4"
         },
         "scripts": {
-                "test": "./node_modules/.bin/nodeunit test/*.test.js 3>&1 1>&2 2>&1 | ./node_modules/.bin/bunyan"
+                "test": "make test"
         }
 }

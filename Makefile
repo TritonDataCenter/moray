@@ -17,6 +17,7 @@
 #
 # Tools
 #
+NODE		:= ./build/node/bin/node
 NODEUNIT	:= ./node_modules/.bin/nodeunit
 NODECOVER	:= ./node_modules/.bin/cover
 BUNYAN		:= ./node_modules/.bin/bunyan
@@ -81,18 +82,14 @@ shrinkwrap: | $(NPM_EXEC)
 
 .PHONY: test
 test: $(NODEUNIT)
-	$(NODEUNIT) test/buckets.db.test.js --reporter tap
-	$(NODEUNIT) test/objects.db.test.js --reporter tap
-	$(NODEUNIT) test/buckets.test.js --reporter tap
-	$(NODEUNIT) test/objects.test.js --reporter tap
+	$(NODEUNIT) test/buckets.test.js | $(BUNYAN)
+
 
 .PHONY: cover
 cover: $(NODECOVER)
 	@rm -fr ./.coverage_data
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.db.test.js
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/objects.db.test.js
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
+	LOG_LEVEL=error $(NODECOVER) run main.js -f ./etc/config.laptop.json &
+	$(NODEUNIT) test/buckets.test.js | $(BUNYAN)
 	$(NODECOVER) report html
 
 .PHONY: release

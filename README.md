@@ -1,62 +1,53 @@
 # Joyent Engineering Guide
 
-Repository: <git@git.joyent.com:orca.git>
-Browsing: <https://mo.joyent.com/orca>
-Who: Mark Cavage, Yunong Xiao
-Docs: <https://head.no.de/docs/orca>
+Repository: <git@git.joyent.com:moray.git>
+Browsing: <https://mo.joyent.com/moray>
+Who: Mark Cavage
+Docs: <https://mo.joyent.com/docs/moray>
 Tickets/bugs: <https://devhub.joyent.com/jira/browse/MANTA>
 
 
 # Overview
 
-This repo contains Moray, the highly-available key/value store cowboy'd up by
-Joyent.
-
+This repo contains Moray, the highly-available key/value store from Joyent.
+Moray offers a simple put/get/del (as well as search) protocol on top of
+Postgres 9.x, over plain TCP see <https://github.com/mcavage/node-fast>.
 
 # Development
 
-You need a Postgres instance up and running first, so do this:
+You'll want a Manatee instance up and running first (which itself requires
+ZooKeeper),  so the easiest way is to point at an existing COAL or Manta
+standup.  Once you have that, you'll need to create a database and the minimal
+schema necessary to bootstrap moray (issue these against whatever DB is
+currently `primary` in manatee):
 
-    pkgin -y install postgresql91-client postgresql91-adminpack \
-        postgresql91-server
-    svcadm enable postgresql:pg91
     createdb -U postgres moray
-    Password: postgres
+    psql -U postgres moray
 
-OPTIONAL: After doing that, then go ahead and hack up
-`/var/pgsql/data91/pg_hba.conf` and `s|password|trust|` in all the lines at
-the bottom. After that you can stop being prompted for passwords.
+    moray=# CREATE TABLE buckets_config (
+        name text PRIMARY KEY,
+        index text NOT NULL,
+        pre text NOT NULL,
+        post text NOT NULL,
+        mtime timestamp without time zone DEFAULT now() NOT NULL
+    );
 
-Then get the Moray server:
+Note if you want to use a different database name than `moray`, you can, you
+just need to set the environment variable `MORAY_DB_NAME` to whatever you want
+before starting the server.
 
-git clone git@git.joyent.com:moray.git
-    cd moray
-    make
-
-edit the ./etc/config.laptop.json file to have the Postgres URL as
-
-    pg://postgres:@localhost/moray
-
-Then, source in ./dev_env.sh (this ensures you have the moray node et al) and
-run:
+Once the above is done, edit `./etc/config.laptop.json` file to have the correct
+ZooKeeper endpoint(s) and domain name (note the domain name is the DNS name of
+the manatee to back this Moray instance - that DNS name is "mapped" into
+ZooKeeper). Then, source in ./dev_env.sh (this ensures you have the moray node
+et al) and run:
 
     . ./dev_env.sh
-    node main.js -f ./etc/config.laptop.json 2>&1 | bunyan
+    moray
 
-Before commiting/pushing run `make prepush` and get a code review from either
-Mark or Yunong.
+Which will open up Moray on port 2020.  You can now use the CLI in
+`node-moray.git` or whatever other means you want of talking to the server.
 
 # Testing
 
-    LOG_LEVEL=$level make test
-
-# Design
-
-TODO :)
-
-
-# TODO
-
-Remaining work for this repo:
-
-- everything...
+    make prepush
