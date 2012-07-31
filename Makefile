@@ -111,7 +111,7 @@ release: all docs $(SMF_MANIFESTS)
 		$(ROOT)/smf \
 		$(TMPDIR)/root/opt/smartdc/moray/
 	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/moray/etc
-	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
+	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root)
 	@rm -rf $(TMPDIR)
 
 
