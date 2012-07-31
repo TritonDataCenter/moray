@@ -83,6 +83,7 @@ shrinkwrap: | $(NPM_EXEC)
 .PHONY: test
 test: $(NODEUNIT)
 	$(NODEUNIT) test/buckets.test.js | $(BUNYAN)
+	$(NODEUNIT) test/objects.test.js | $(BUNYAN)
 
 
 .PHONY: cover
@@ -90,8 +91,8 @@ cover: $(NODECOVER)
 	@rm -fr ./.coverage_data
 	LOG_LEVEL=error $(NODECOVER) run main.js -- -f ./etc/config.laptop.json -c -s &
 	@sleep 3
-	$(NODEUNIT) test/buckets.test.js | $(BUNYAN)
-	$(NODEUNIT) test/objects.test.js | $(BUNYAN)
+	$(NODEUNIT) test/buckets.test.js
+	$(NODEUNIT) test/objects.test.js
 	@pkill -17 node
 	@sleep 3
 	$(NODECOVER) report

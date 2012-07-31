@@ -202,6 +202,143 @@ test('CRUD objects unique indexes', function (t) {
 });
 
 
+test('put object w/etag ok', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var v2 = {
+                str: 'hello world'
+        };
+        var etag;
+        var self = this;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function get(_, cb) {
+                        c.getObject(b, k, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v);
+                                etag = obj._etag;
+                                return (cb());
+                        });
+                }, function overwrite(_, cb) {
+                        c.putObject(b, k, v2, {etag: etag}, cb);
+                }, function getAgain(_, cb) {
+                        c.getObject(b, k, {noCache: true}, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v2);
+                                return (cb());
+                        });
+                }, function del(_, cb) {
+                        c.delObject(b, k, cb);
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
+test('del object w/etag ok', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var etag;
+        var self = this;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function get(_, cb) {
+                        c.getObject(b, k, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v);
+                                etag = obj._etag;
+                                return (cb());
+                        });
+                }, function del(_, cb) {
+                        c.delObject(b, k, {etag: etag}, cb);
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
+test('put object w/etag conflict', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function overwrite(_, cb) {
+                        c.putObject(b, k, {}, {etag: 'foo'}, function (err) {
+                                t.ok(err);
+                                if (err)
+                                        t.equal(err.name, 'EtagConflictError');
+                                cb();
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+
+                t.end();
+        });
+});
+
+
+test('del object w/etag conflict', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function drop(_, cb) {
+                        c.delObject(b, k, {etag: 'foo'}, function (err) {
+                                t.ok(err);
+                                if (err)
+                                        t.equal(err.name, 'EtagConflictError');
+                                cb();
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+
+                t.end();
+        });
+});
+
 
 test('find (like marlin)', function (t) {
         var b = this.bucket;
