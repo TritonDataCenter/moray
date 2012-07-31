@@ -88,18 +88,19 @@ test: $(NODEUNIT)
 .PHONY: cover
 cover: $(NODECOVER)
 	@rm -fr ./.coverage_data
-	LOG_LEVEL=error $(NODECOVER) run main.js -f ./etc/config.laptop.json &
+	LOG_LEVEL=error $(NODECOVER) run main.js -- -f ./etc/config.laptop.json -c -s &
+	@sleep 3
 	$(NODEUNIT) test/buckets.test.js | $(BUNYAN)
-	$(NODECOVER) report html
+	$(NODEUNIT) test/objects.test.js | $(BUNYAN)
+	@pkill -17 node
+	@sleep 3
+	$(NODECOVER) report
 
 .PHONY: release
 release: all docs $(SMF_MANIFESTS)
 	@echo "Building $(RELEASE_TARBALL)"
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray
-	@mkdir -p $(TMPDIR)/site
-	@touch $(TMPDIR)/site/.do-not-delete-me
 	@mkdir -p $(TMPDIR)/root
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/ssl
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/etc
 	cp -r   $(ROOT)/build \
 		$(ROOT)/lib \

@@ -42,10 +42,13 @@ var LOG = bunyan.createLogger({
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('psvf:(file)', process.argv);
+        var parser = new getopt.BasicParser('cpsvf:(file)', process.argv);
 
         while ((option = parser.getopt()) !== undefined) {
                 switch (option.option) {
+                case 'c':
+                        opts.cover = true;
+                        break;
                 case 'f':
                         opts.file = option.optarg;
                         break;
@@ -135,4 +138,10 @@ if (cluster.isMaster && _config.fork) {
                 cluster.fork();
 } else {
         run(_config);
+
+        if (_options.cover) {
+                process.on('SIGUSR2', function () {
+                        process.exit(0);
+                });
+        }
 }
