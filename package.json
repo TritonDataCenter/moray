@@ -10,7 +10,7 @@
                 "clone": "0.1.0",
                 "crc": "0.2.0",
                 "deep-equal": "0.0.0",
-                "expiring-lru-Cache": "2.1.0",
+                "expiring-lru-cache": "2.1.0",
                 "fast": "0.1.1",
                 "ldapjs": "0.5.4",
                 "microtime": "0.3.1",
