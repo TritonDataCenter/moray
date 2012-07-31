@@ -158,7 +158,7 @@ test('create bucket bad index type', function (t) {
         var c = this.client;
         c.createBucket(b, {index: {foo: 'foo'}}, function (err) {
                 t.ok(err);
-                t.equal(err.name, 'InvalidIndexError');
+                t.equal(err.name, 'InvalidBucketConfigError');
                 t.ok(err.message);
                 t.end();
         });
