@@ -25,6 +25,9 @@ var BUCKET_CFG = {
                         type: 'string',
                         unique: true
                 },
+                str_2: {
+                        type: 'string'
+                },
                 num: {
                         type: 'number'
                 },
@@ -104,6 +107,17 @@ test('get object 404', function (t) {
 });
 
 
+test('del object 404', function (t) {
+        var c = this.client;
+        c.delObject(this.bucket, uuid.v4().substr(0, 7), function (err) {
+                t.ok(err);
+                t.equal(err.name, 'ObjectNotFoundError');
+                t.ok(err.message);
+                t.end();
+        });
+});
+
+
 test('CRUD object', function (t) {
         var b = this.bucket;
         var c = this.client;
@@ -127,7 +141,7 @@ test('CRUD object', function (t) {
 
                                 t.ok(obj);
                                 self.assertObject(t, obj, k, v);
-                                cb();
+                                return (cb());
                         });
                 }, function overwrite(_, cb) {
                         c.putObject(b, k, v2, cb);
@@ -139,7 +153,7 @@ test('CRUD object', function (t) {
                                 t.ok(obj);
                                 v2.pre = 'pre_overwrite';
                                 self.assertObject(t, obj, k, v2);
-                                cb();
+                                return (cb());
                         });
                 }, function del(_, cb) {
                         c.delObject(b, k, cb);
@@ -147,6 +161,85 @@ test('CRUD object', function (t) {
                 arg: {}
         }, function (err) {
                 t.ifError(err);
+                t.end();
+        });
+});
+
+
+test('CRUD objects unique indexes', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var k2 = uuid.v4();
+        var v = {
+                str_u: 'hi'
+        };
+        var v2 = {
+                str_u: 'hi'
+        };
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function putFail(_, cb) {
+                        c.putObject(b, k2, v2, function (err) {
+                                t.ok(err);
+                                t.equal(err.name, 'UniqueAttributeError');
+                                cb();
+                        });
+                }, function delK1(_, cb) {
+                        c.delObject(b, k, cb);
+                }, function putK2(_, cb) {
+                        c.putObject(b, k2, v2, cb);
+                }, function delK2(_, cb) {
+                        c.delObject(b, k2, cb);
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
+
+test('find (like marlin)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hello',
+                str_2: 'world'
+        };
+        var found = false;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function find(_, cb) {
+                        var f = '(&(str=hello)(!(str_2=usa)))';
+                        var req = c.findObjects(b, f);
+                        req.once('error', cb);
+                        req.once('end', cb);
+                        req.once('record', function (obj) {
+                                t.ok(obj);
+                                if (!obj)
+                                        return (undefined);
+
+                                t.equal(obj.bucket, b);
+                                t.equal(obj.key, k);
+                                t.deepEqual(obj.value, v);
+                                t.ok(obj._id);
+                                t.ok(obj._etag);
+                                t.ok(obj._mtime);
+                                found = true;
+                                return (undefined);
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.ok(found);
                 t.end();
         });
 });
