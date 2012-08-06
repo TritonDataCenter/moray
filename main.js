@@ -106,16 +106,7 @@ function run(options) {
         opts.manatee.log = LOG;
         opts.name = NAME;
 
-        var server = app.createServer(opts);
-
-        server.on('error', function (err) {
-                LOG.error({err: err}, 'server error');
-                process.exit(1);
-        });
-
-        server.listen(options.port, function () {
-                LOG.info('moray listening on %d', options.port);
-        });
+        app.createServer(opts);
 }
 
 

@@ -1,7 +1,7 @@
 {
         "port": 2020,
         "manatee": {
-                "domain": "pg.1.moray.bh1-kvm1.joyent.us",
+                "domain": "pg.smartdc.joyent.com",
                 "pg": {
                         "maxConnections": 20,
                         "maxIdleTime": 30000,
@@ -9,7 +9,7 @@
                 },
                 "zk": {
                         "servers": [ {
-                                "host": "10.2.201.114",
+                                "host": "10.99.99.11",
                                 "port": 2181
                         } ],
                         "timeout": 10000
