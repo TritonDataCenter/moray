@@ -19,13 +19,12 @@ var app = require('./lib');
 var DEFAULTS = {
         file: process.cwd() + '/etc/config.json',
         fork: true,
-        logLevel: bunyan.WARN,
-        port: 1234
+        port: 2020
 };
 var NAME = 'moray';
 var LOG = bunyan.createLogger({
         name: NAME,
-        level: (process.env.LOG_LEVEL || 'warn'),
+        level: (process.env.LOG_LEVEL || 'info'),
         stream: process.stderr,
         serializers: {
                 err: bunyan.stdSerializers.err,
