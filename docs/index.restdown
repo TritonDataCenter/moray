@@ -86,7 +86,7 @@ Where `req` is an object like this:
 That is, you are passed in the name of the bucket, the name of the key, the
 value (as a JS object) the user wanted to write, the bucket configuration, a
 bunyan instance you can use to log to the Moray log, and the current Postgres
-connection (which is a raw [node-pg]<https://github.com/brianc/node-postgres/>
+connection (which is a raw [node-pg](https://github.com/brianc/node-postgres/)
 handle).
 
 ### post
@@ -562,7 +562,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 
 ### CLI
 
-    $ indobjects -d email foo "(email=*@joyent.com)"
+    $ findobjects -d email foo "(email=*@joyent.com)"
     {
       "bucket": "foo",
       "key": "yunong",
