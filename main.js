@@ -123,9 +123,14 @@ _config = readConfig(_options);
 LOG.debug({config: _config}, 'configuration loaded');
 
 if (cluster.isMaster && _config.fork) {
-        var numCPUs = process.env.MORAY_THREADS || (os.cpus().length - 1 || 1);
-        for (var i = 0; i < numCPUs; i++)
+        var min_child_ram = 64 * 1024;
+        var cpus = os.cpus().length;
+        var slots = Math.ceil(os.totalmem() / min_child_ram);
+        var max_forks = (cpus >= slots) ? slots : cpus;
+
+        for (var i = 0; i < max_forks; i++)
                 cluster.fork();
+
 } else {
         run(_config);
 
