@@ -1,3 +1,3 @@
-export PATH=$PWD/build/node/bin:$PWD/node_modules/.bin:$PATH
+export PATH=$PWD/build/node/bin:$PWD/node_modules/.bin:node_modules/moray/bin:$PATH
 
-alias moray='node main.js -f ./etc/config.laptop.json -vvv -s 2>&1 | bunyan'
+alias moray='node main.js -f ./etc/config.coal.json -vvv -s 2>&1 | bunyan'

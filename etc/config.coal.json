@@ -1,7 +1,7 @@
 {
         "port": 2020,
         "manatee": {
-                "domain": "pg.smartdc.joyent.com",
+                "path": "/manatee/1.moray.joyent.coal",
                 "pg": {
                         "maxConnections": 20,
                         "maxIdleTime": 30000,
@@ -9,7 +9,7 @@
                 },
                 "zk": {
                         "servers": [ {
-                                "host": "10.99.99.11",
+                                "host": "10.99.99.78",
                                 "port": 2181
                         } ],
                         "timeout": 10000
