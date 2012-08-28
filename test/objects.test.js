@@ -380,3 +380,48 @@ test('find (like marlin)', function (t) {
                 t.end();
         });
 });
+
+
+test('find _mtime', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var now = Date.now();
+        var v = {
+                str: 'hello',
+                str_2: 'world'
+        };
+        var found = false;
+
+        vasync.pipeline({
+                funcs: [ function wait(_, cb) {
+                        setTimeout(cb, 500);
+                }, function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function find(_, cb) {
+                        var f = '(_mtime>=' + now + ')';
+                        var req = c.findObjects(b, f);
+                        req.once('error', cb);
+                        req.once('end', cb);
+                        req.once('record', function (obj) {
+                                t.ok(obj);
+                                if (!obj)
+                                        return (undefined);
+
+                                t.equal(obj.bucket, b);
+                                t.equal(obj.key, k);
+                                t.deepEqual(obj.value, v);
+                                t.ok(obj._id);
+                                t.ok(obj._etag);
+                                t.ok(obj._mtime);
+                                found = true;
+                                return (undefined);
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.ok(found);
+                t.end();
+        });
+});
