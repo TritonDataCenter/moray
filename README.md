@@ -1,4 +1,4 @@
-# Joyent Engineering Guide
+# Moray, the highly-available key/value store
 
 Repository: <git@git.joyent.com:moray.git>
 Browsing: <https://mo.joyent.com/moray>
