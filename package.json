@@ -5,9 +5,9 @@
         "author": "Joyent (joyent.com)",
         "private": true,
         "dependencies": {
-                "assert-plus": "0.1.0",
+                "assert-plus": "0.1.1",
                 "bunyan": "0.13.5",
-                "clone": "0.1.0",
+                "clone": "0.1.1",
                 "crc": "0.2.0",
                 "deep-equal": "0.0.0",
                 "expiring-lru-cache": "2.1.0",
@@ -15,13 +15,13 @@
                 "ldapjs": "0.5.4",
                 "microtime": "0.3.1",
                 "node-uuid": "1.3.3",
-                "pg": "0.8.1",
+                "pg": "0.8.4",
                 "pooling": "0.3.0",
                 "posix-getopt": "1.0.0",
                 "vasync": "1.3.2",
                 "verror": "1.3.3",
                 "xtend": "1.0.3",
-                "zkplus": "git://github.com/mcavage/node-zkplus.git#e7ad8a"
+                "zkplus": "git://github.com/mcavage/node-zkplus.git#733906c"
         },
         "devDependencies": {
                 "cover": "0.2.8",

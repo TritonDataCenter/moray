@@ -1,7 +1,7 @@
 {
         "port": 2020,
         "manatee": {
-                "path": "/manatee/3.moray.bh1-kvm1.joyent.us",
+                "path": "/manatee/3.moray.bh1-kvm7.joyent.us",
                 "pg": {
                         "maxConnections": 5,
                         "maxIdleTime": 30000,
@@ -9,8 +9,9 @@
                         "queryTimeout": 5000
                 },
                 "zk": {
+                        "connectTimeout": 1000,
                         "servers": [ {
-                                "host": "10.2.201.221",
+                                "host": "10.2.207.172",
                                 "port": 2181
                         } ],
                         "timeout": 10000
