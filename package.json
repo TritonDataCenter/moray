@@ -11,8 +11,8 @@
                 "crc": "0.2.0",
                 "deep-equal": "0.0.0",
                 "expiring-lru-cache": "2.1.0",
-                "fast": "git://github.com:mcavage/node-fast.git#73d9658",
-                "ldapjs": "git://github.com:mcavage/node-ldapjs.git#1531d89",
+                "fast": "0.1.6",
+                "ldapjs": "git://github.com/mcavage/node-ldapjs.git#1531d89",
                 "microtime": "0.3.1",
                 "node-uuid": "1.3.3",
                 "pg": "0.8.4",
@@ -25,7 +25,7 @@
         },
         "devDependencies": {
                 "cover": "0.2.8",
-                "moray": "git+ssh://git@git.joyent.com:node-moray.git#f7665c9",
+                "moray": "git+ssh://git@git.joyent.com:node-moray.git#master",
                 "nodeunit": "0.7.4"
         },
         "scripts": {
