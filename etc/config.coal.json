@@ -9,8 +9,9 @@
                         "queryTimeout": 5000
                 },
                 "zk": {
+                        "connectTimeout": 1000,
                         "servers": [ {
-                                "host": "ZK_IP",
+                                "host": "10.99.99.11",
                                 "port": 2181
                         } ],
                         "timeout": 10000

@@ -1,5 +1,5 @@
 ---
-title: Moray: Joyent's Key-value Store.
+title: Moray: Joyent's Key/Value Store.
 markdown2extras: wiki-tables, code-friendly
 apisections: Buckets, Objects
 ---
@@ -7,14 +7,25 @@ apisections: Buckets, Objects
 # Moray
 
 This is the reference documentation for Moray, which is a key/value store built
-on top of [Postgres](http://www.postgresql.org/) and
-[ZooKeeper](http://zookeeper.apache.org/), which Moray to be high-availabile and
-strongly consistent.
+on top of [Manatee](https://mo.joyent.com/docs/manatee/master/), and
+[fast](https://github.com/mcavage/node-fast).
 
-This documentation provides descriptions of the (HTTP) APIs that Moray offers,
-as well as the semantics they provide.  Note that in the API sections, only
-"extra" errors returned by that particular operation are listed.  You can always
-get things like 400/405/... from the service.
+This documentation provides descriptions of the APIs that Moray offers, as well
+as how to use the (node.js) [client SDK](https://mo.joyent.com/node-moray) to
+interact with Moray.
+
+## Conventions
+
+Any content formatted like this:
+
+    $ getbucket foo
+
+is a command-line example that you can run from a shell. All other examples and
+information are formatted like this:
+
+    client.createBucket(foo, {}, function (err) {
+        assert.ifError(err);
+    });
 
 # Overview
 
@@ -24,665 +35,634 @@ and bucket `bar` can have a key `mykey` with different values.  There is no
 limit on the number of buckets, nor on the number of keys in a bucket.  That
 said, a single Moray instance is backed by a single logical Postgres instance,
 so you are practically limited to how much data you can maintain.  The basic
-operations on objects in a bucket are PUT, GET, DELETE.
+operations on objects in a bucket are `put`, `get`, and `delete`.
 
 Upon creating a bucket you are allowed to define the bucket to have indexes,
-which allow you to later search for multiple records that match those indexes.
-You need to choose wisely, as the "schema" for a bucket cannot be modified after
-it has been created.  If indexes are defined on a bucket, when you write a
-key/value pair, the value is automatically indexed server-side in Moray for you.
-Indexes can be defined to be of type `number`, `boolean` or `string`.  They can
-optionally be defined to enforce uniquness of a value.
+which allow you to later `search` for multiple records that match those indexes.
+If indexes are defined on a bucket, when you write a key/value pair, the value
+is automatically indexed server-side in Moray for you.  Indexes can be defined
+to be of type `number`, `boolean` or `string`.  They can optionally be defined to
+enforce uniquness of a value.
 
-Lastly, all records in a bucket are automatically "tombstoned" on update/delete,
-which allows you to roll-back in the event you need to (note: not in the
-transactional sense of "rollback").  You can query the tombstone only by the
-key of a record.
+## Triggers
 
+While a quasi-advanced topic, Moray does support `pre` and `post` "triggers" on
+buckets, which are guaranteed to run before and after a write
+(so put|del object) is performed.  You write them as just plain old JS functions
+when you create your bucket, and note that they are guaranteed to run as part of
+the transaction scope.  You typically will use `pre` triggers to transform
+and/or validate data before being saved, and use `post` triggers to write an
+audit log or some such thing (UFDS leverages `post` triggers to generate the
+changelog).  The are guaranteed to run in the order you define them.  Note that
+`pre` triggers only run before `putObject`, whereas `post` runs after both
+`putObject` and `delObject`.
+
+In general, you need to be super careful with these, as they run in the same VM
+that Moray does, so a null pointer deref will bring down the whole server.  This
+is intentional for performance reasons.  So basically, don't screw up.
+
+### pre
+
+The definition for a pre trigger looks like this:
+
+    function myPreTrigger(req, cb) {
+        ....
+        cb();
+    }
+
+Where `req` is an object like this:
+
+    {
+        bucket: 'foo',
+        key: 'bar',
+        log: <logger>,
+        pg: <postgres handle>,
+        schema: <index configuration>,
+        value: {
+            email: 'mark.cavage@joyent.com'
+        }
+    }
+
+That is, you are passed in the name of the bucket, the name of the key, the
+value (as a JS object) the user wanted to write, the bucket configuration, a
+bunyan instance you can use to log to the Moray log, and the current Postgres
+connection (which is a raw [node-pg](https://github.com/brianc/node-postgres/)
+handle).
+
+### post
+
+The definition for a post trigger is nearly identical:
+
+
+    function myPostTrigger(req, cb) {
+        ....
+        cb();
+    }
+
+Where `req` is an object like this:
+
+    {
+        bucket: 'foo',
+        key: 'bar',
+        id: 123,
+        log: <logger>,
+        pg: <postgres handle>,
+        schema: <index configuration>,
+        value: {
+            email: 'mark.cavage@joyent.com'
+        }
+    }
+
+The `req` object is basically the same, except you will now also have the
+database `id` (a monotonically increasing sequence number) tacked in as well,
+should you want to use that for something.
+
+# Basic MorayClient usage
+
+In order to interact with Moray, you are assumed to be using the `node-moray`
+package, which you can install like:
+
+    $ npm install git+ssh://git@git.joyent.com:node-moray.git
+
+In order to then use it, here's some sample code:
+
+    var bunyan = require('bunyan');
+    var moray = require('moray');
+
+    var client = moray.createClient({
+        host: '127.0.0.1',
+        port: 2020,
+        log: bunyan.createLogger({
+            name: 'moray',
+            level: 'INFO',
+            stream: process.stdout,
+            serializers: bunyan.stdSerializers
+        })
+    });
+
+    client.on('error', function (err) {
+         // client is no longer usable
+         // ...
+    });
+
+    client.on('connect', function () {
+        client.close();
+    });
+
+Note that connect timeout and backoff/retry are options that are currently not
+supported, but are on the (very) short-term TODO list.
+
+All of the APIs shown below have an optional `options` argument that is always
+second to last (callback being last). Typically, you would use this to pass in
+a `req_id` that we can use to correlate logs from one service to the
+interactions of moray.  Some APIs (namely put/get/del object) have additional
+logic there to allow cache bypassing, etc.  For example, both of these are
+valid:
+
+    client.getObject('foo', 'bar', function (err, obj) {
+        ...
+    });
+
+    var opts = {
+        req_id: 1,
+        noCache: true
+    };
+    client.getObject('foo', 'bar', opts, function (err, obj) {
+        ...
+    });
 
 # Buckets
 
-## CreateBucket (POST /)
+## CreateBucket
 
-Creates a new bucket.  Name must be globally unique.  To allow "easy"
-on-boarding, indexes default to type string, not unique, so you can easily
-use curl.  If you need something outside that, you must create a bucket with a
-JSON object.  The JSON "schema" is effectively:
+Creates a new bucket given a name and a `config` object.  The `config` object
+defines an `index` section and optionally a `pre`, `post` array of trigger
+functions.
 
-    {
-      "name": :name,
-      "index": {
-        :attribute: {
-          "type": <string|number|boolean>,
-          "unique": <true|false>
-        }
-      }
+### API
+
+ A "fully loaded" config (w/o post triggers) would look like this:
+
+    var cfg = {
+        index: {
+            email: {
+                type: "string",
+                unique: true
+            },
+            userid: {
+                type: "number",
+                unique: true
+            },
+            ismanager: {
+                type: "boolean"
+            }
+        },
+        pre: [
+            function enforceEmail(req, cb) {
+                if (!req.value.email)
+                    return (cb(new Error('email is required')));
+
+                return (cb());
+            },
+            function setUID(req, cb) {
+                req.value.userid = Math.floor(Math.random() * 100001);
+                cb();
+            }
+        ]
     }
 
-
-Where `:name` is your value (and must match the regex `/[a-zA-Z0-9_\-\.~]+/`),
-`:attribute` is the name of the key(s) you want to create indexes on from posted
-values (an arbitrary number of these can be specified) and the constraints are
-as above.
+    client.createBucket('foo', cfg, function (err) {
+        assert.ifError(err);
+    });
 
 ### Inputs
 
 ||**Field**||**Type**||**Description**||
 ||name||string||globally unique name for the bucket||
-||index||object||The set of indexes and constraints to apply to future values||
-
-### Returns
-
-201 on success, and an object that adheres to the "schema" above.
+||config||object||configuration (indexes/pre/post) for the bucket||
+||options||object||any optional parameters (req_id)||
+||callback||function||only argument is `err`||
 
 ### Errors
 
-* BucketAlready
-* MissingParameter
-* InvalidArgument
+* InvalidBucketConfigError
+* InvalidBucketNameError
+* InvalidIndexDefinitionError
+* NoDatabaseError
+* NotFunctionError
 
-## ListBuckets (GET /)
+Plus any currently unhandled Postgres Errors (such as relation already exists).
 
-Returns a list of all known buckets in Moray.
+### CLI
+
+To add that config above, you can use this invocation (`-s says wait for stdin`):
+
+    $ putbucket -s foo < test.json
+
+Or if you're not using triggers (more common, actually):
+
+    $ putbucket -u email -u userid:number -i ismanager:boolean foo
+
+Note there is no `createbucket` command; `putbucket` wraps up `CreateBucket` and
+`UpdateBucket`.
+
+## GetBucket
+
+Returns the configuration for the bucket only.  There really are no options here
+besides the name of the bucket you want to fetch (and of course request_id).
+
+### API
+
+     client.getBucket('foo', function (err, bucket) {
+        assert.ifError(err);
+        console.log(util.inspect(bucket));
+    });
 
 ### Inputs
 
-* None
+||**Field**||**Type**||**Description**||
+||name||string||globally unique name for the bucket||
+||options||object||any optional parameters (req_id)||
+||callback||function||only argument is `err`||
 
-### Returns
+### Errors
 
-200 on success, and an object where the keys are the bucket names, and the
-values each bucket's schema:
+* BucketNotFoundError
+* NoDatabaseError
 
-    $ moray $MH/
+### CLI
 
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: e4de6e08-b125-4935-adcb-61f7bddedc44
-    Access-Control-Allow-Methods: GET
-    X-Api-Version: 1.0.0
-    Connection: close
-    Content-Length: 49
-    Content-MD5: 9n4EWK1WGJerOk1veyuL0A==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 20:02:08 GMT
-    X-Response-Time: 16
+    $ getbucket foo
 
     {
-      "foo": {
-        "name": {
+      "name": foo",
+      "index": {
+        "email": {
           "type": "string",
-          "unique": false
+          "unique": true
+        },
+        "userid": {
+          "type": "number",
+          "unique": true
+        },
+        "ismanager": {
+          "type": "boolean"
         }
-      }
+      },
+      "pre": [
+        "function enforceEmail(req, cb) {
+           if (!req.value.email) {
+             return (cb(new Error('email is required')));
+           }
+           return (cb());
+         }",
+        "function setUID(req, cb) {
+          req.value.userid = Math.floor(Math.random() * 100001);
+          cb();
+        }"
+      ],
+      "post": [],
+      "mtime": "2012-07-31T19:43:32.268Z"
     }
 
+Note the `\n's` inside the `pre` functions were inserted for readability in this
+document; they were not actually returned, and are not legal JSON.
 
-### Errors
+## UpdateBucket
 
-* None
+Updates a bucket given a name and a `config` object.  Basically, looks exactly
+like `CreateBucket`.  The only reason we have `create|update bucket` and not
+`putBucket` is so that users can selectively _not_ stomp all over a bucket if
+they don't intend to (note there is a `putBucket` API in the client).
 
-## GetBucket [ListKeys] (GET /:bucket)
+Note that if you *add* new indexes via updateBucket, then any *new* data will
+be indexed accordingly, but _old_ data will not.  You would need to rewrite
+all data for that to work.
 
-Returns a (potentially) paginated list of keys in the bucket. You can optionally
-ask for the schema in this API call as well.
+Also, note that all operations involving the bucket configuration in Moray will
+use a cached copy of the bucket configuration, so it may take a few minutes for
+your update to take effect.
 
-The return value will be an object where the keys are marked `keys`, and each
-"subkey" contains `etag` and `mtime` (as ISO8601, not an RFC822 timestamp). On
-the first call to this API, you can specify `limit` and `prefix`, which cap the
-number of keys in a single response, and a prefix match to start looking at keys
-from, respectively.  If the result set is "truncated", meaning there are
-additional keys, there will be a "marker" in the `Link` header that you can pass
-as an input value to the next call.  This marker will override prefix/limit
-values, as it forces each "page" to be "homogonous" to first call.
+### API
 
-Example:
-
-    $ moray $MH/foo?limit=1
-
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 459ed9c0-2366-4c0c-99ac-0a94247102bd
-    Access-Control-Allow-Methods: GET
-    X-Api-Version: 1.0.0
-    x-total-keys: 2
-    Link: </foo?marker=c6LrwWs3pdHkt35dXEOpktCJ%2F4i8oMvPyvbHadx6AlxPZuLMEyqAQikn6tQ5hppD,next>; rel="%s"
-    Connection: close
-    Content-Length: 95
-    Content-MD5: Ppb/Jx7orcxzP1r0rIe4Sw==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 20:09:36 GMT
-    X-Response-Time: 10
-
-    {
-      "keys": {
-        "bar": {
-          "etag": "92ed38d56614548c447c7ab1f306167b",
-          "mtime": "2012-03-09T11:24:54.497Z"
-        }
-      }
+    var cfg = {
+        index: {
+            email: {
+                type: "string",
+                unique: true
+            },
+            userid: {
+                type: "number",
+                unique: true
+            }
+        },
+        pre: [],
+        post: []
     }
 
+    client.updateBucket('foo', cfg, function (err) {
+        assert.ifError(err);
+    });
 
-And continuing:
+Or alternatively:
 
-    $ moray $MH/foo?marker=c6LrwWs3pdHkt35dXEOpktCJ%2F4i8oMvPyvbHadx6AlxPZuLMEyqAQikn6tQ5hppD
-
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 435fe15f-9857-468b-9a49-d65e4d6fb7b4
-    Access-Control-Allow-Methods: GET
-    X-Api-Version: 1.0.0
-    x-total-keys: 2
-    Connection: close
-    Content-Length: 95
-    Content-MD5: 6W2ZZAElhdbkmdpyLVB56g==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 20:10:35 GMT
-    X-Response-Time: 8
-
-    {
-      "keys": {
-        "baz": {
-          "etag": "85c9f9fd33bb1d81b3660fb50d0fd545",
-          "mtime": "2012-03-09T12:09:30.881Z"
-        }
-      }
-    }
+    client.putBucket('foo', cfg, function (err) {
+        assert.ifError(err);
+    });
 
 ### Inputs
 
 ||**Field**||**Type**||**Description**||
-||limit||number||maximum number of keys to return per page||
-||marker||string||A continuation token that retrieves the next page||
-||prefix||string||An optional key to start listing from||
-
-### Returns
-
-200 on success, and an object that looks like the above.
+||name||string||globally unique name for the bucket||
+||config||object||configuration (indexes/pre/post) for the bucket||
+||options||object||any optional parameters (req_id)||
+||callback||function||only argument is `err`||
 
 ### Errors
 
-* MissingParameter
-* InvalidArgument
-* ResourceNotFound
+* BucketNotFoundError
+* InvalidBucketConfigError
+* InvalidIndexDefinitionError
+* NoDatabaseError
+* NotFunctionError
 
-## SearchBucket (GET /search/:bucket)
+### CLI
 
-Allows you to query a bucket for a set of records that match an index.  Note
-this is not a streaming API (and it does not currently paginate), so be careful
-about what you ask for here, or at least until pagination is added.
+    $ putbucket -s foo < test.json
+    $ putbucket -u email -u userid:number foo
 
-When searching for values, what you can pass in depends on what your schema was.
-Currently this is basically in existence to serve up string query matches,
-including glob matching (not full regex).  I.e., if the index was a string, you
-can either search for exact match, or wildcard and put the `*` character
-wherever you want.
+## DeleteBucket
 
-Moray currently only supports one attribute/value lookup per request; put
-another way, you cannot do AND/OR queries.
+Deletes a bucket, *and all data in that bucket!* No real options to speak of.
 
-Integer and boolean types are (currently) exact match only.
+### API
 
-    $ moray $MH/search/foo?name=*
-
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 080e7bd0-a443-4bc7-8f82-41413aea1c31
-    Access-Control-Allow-Methods: GET
-    X-Api-Version: 1.0.0
-    etag: 526a549bf03e75e58cb1bd0c6a47622a
-    Connection: close
-    Content-Length: 39
-    Content-MD5: UmpUm/A+deWMsb0MakdiKg==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 20:14:43 GMT
-    X-Response-Time: 6
-
-    [
-      {
-        "name": "markc",
-        "whoami": "developer"
-      }
-    ]
-
+     client.delBucket('foo', function (err) {
+        assert.ifError(err);
+    });
 
 ### Inputs
 
 ||**Field**||**Type**||**Description**||
-||$attribute||$type||Value search you are interested in||
-
-### Returns
-
-200 on success, and an object that looks like the above.
+||name||string||globally unique name for the bucket||
+||options||object||any optional parameters (req_id)||
+||callback||function||only argument is `err`||
 
 ### Errors
 
-* MissingParameter
-* InvalidArgument
-* ResourceNotFound
+* BucketNotFoundError
+* NoDatabaseError
 
-## DeleteBucket (GET /:bucket)
+### CLI
 
-Deletes a bucket *and all objects in the bucket*.  There is no recovery or
-rollback from this operation.
-
-    $ moray $MH/foo -X DELETE
-
-    HTTP/1.1 204 No Content
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 342fda6e-88e0-4bbf-ac67-0b749ec2862d
-    Access-Control-Allow-Methods: DELETE
-    X-Api-Version: 1.0.0
-    Connection: close
-    Date: Fri, 09 Mar 2012 21:35:51 GMT
-    X-Response-Time: 37
-
-
-### Inputs
-
-* None
-
-### Returns
-
-204 on success.
-
-### Errors
-
-* ResourceNotFound
-
+    $ delbucket foo
 
 # Objects
 
-## PutObject (PUT /:bucket/:key)
+## PutObject
 
-Idempotently writes a document to a given key.  If the key did not previously
-exist, it is created. If it did exist, the old value will be overwritten, and
-the old value will be available in the tombstone (see below).  Any fields in the
-JSON document will be automatically indexed.
+Creates or overwrites an object given a bucket, key and value.  The bucket must
+obviously already exist, and the key can be any string at all.  The value must
+be a JS object of any form that can be run through `JSON.stringify()`.  Any keys
+in the object that match the names of those defined in the bucket's `index`
+section are indexed, and available for searching later.
 
-Note this call works with HTTP conditional request headers; namely `If-Match`
-and `If-None-Match`, which you can use to achieve test/set semantics.  You can
-technically use the `Last-Modified` suite of headers as well, but that's not as
-precise as an Etag, so you know, don't.
+As far as options, besides the usual `req_id`, notably you can set the flag
+`etag`, which will make moray _atomically_ test/set your new value (this is
+useful if you're implementing something like a lock semantic).  Obviously that
+works on existing records only.
 
-No content will be returned from this call.
+### API
 
-    $ moray $MH/foo/bar -X PUT -d '{"name":"mark","email":"mark.cavage@joyent.com"}'
-
-    HTTP/1.1 204 No Content
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: d0f419ca-dd24-4d1f-a253-b709e052df87
-    Access-Control-Allow-Methods: PUT
-    X-Api-Version: 1.0.0
-    etag: 25f4ce69950ca7b19615c19cf1c459fd
-    Connection: close
-    Date: Fri, 09 Mar 2012 21:47:50 GMT
-    X-Response-Time: 9
+    var data = {
+        email: 'mark.cavage@joyent.com',
+        ismanager: false
+    };
+    client.putObject('foo', 'mcavage', data, function (err) {
+        assert.ifError(err);
+    });
 
 ### Inputs
 
-* None, besides your JSON document.
-
-### Returns
-
-204 on success.
+||**Field**||**Type**||**Description**||
+||bucket||string||bucket to write this key in||
+||key||string||bucket to write this key in||
+||value||object||free-form JS object||
+||options||object||any optional parameters (req_id, etag)||
+||callback||function||only argument is `err`||
 
 ### Errors
 
-* PreconditionFailed
-* ResourceNotFound
+* BucketNotFoundError
+* EtagConflictError
+* NoDatabaseError
+* UniqueAttributeError
 
-## GetObject (GET /:bucket/:key)
+Plus any currently unhandled Postgres Errors (such as relation already exists).
 
-Retrieves a document from Moray.  You can use HTTP conditional headers here to
-build an intelligent cache (i.e., 304 may be returned if using those headers).
+### CLI
 
-Note that you can receive a 410 ResourceGone error if the object was deleted;
-this is an indication that the key once existed, but was deleted.  You can
-restore the object from the tombstone.
+    $ putobject -d '{"email": "mark.cavage@joyent.com"}' foo mcavage
 
-    $ moray $MH/foo/bar | json
+## GetObject
 
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 8052d1e1-e624-44ee-850a-cc5c20a86944
-    Access-Control-Allow-Methods: GET
-    X-Api-Version: 1.0.0
-    etag: 25f4ce69950ca7b19615c19cf1c459fd
-    Last-Modified: Fri, 09 Mar 2012 13:47:50 GMT
-    Connection: close
-    Content-Length: 48
-    Content-MD5: JfTOaZUMp7GWFcGc8cRZ/Q==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 21:53:25 GMT
-    X-Response-Time: 6
+Retrieves an object by bucket/key.  An important option to keep in mind is the
+`noCache` option.  By default, Moray keeps a fairly small in-memory cache for
+`GetObject` specifically, so if you want strong consistency on reads, set
+`noCache: true` in the client.  Note also that if noCache is not set, Moray will
+try to read from the Postgres asynchronous slave.  So, if you want guaranteed read
+after write consistency, set `noCache`.  This can be done on a request by
+request basis.
 
-    {
-      "name": "mark",
-      "email": "mark.cavage@joyent.com"
-    }
+### API
+
+    client.getObject('foo', 'mcavage', function (err, obj) {
+        assert.ifError(err);
+        console.log(util.inspect(obj));
+    });
+
+Would output an object that has the attributes `bucket`, `key`, `value`,
+`_id`, `_etag`, `_mtime` (in epoch time).  If all you care about is the
+original user-set value, just use `obj.value`.  See the example CLI
+output below for a full example.
 
 ### Inputs
 
-* None
-
-### Returns
-
-200 on success (with content), 304 on success if using `If-None-Match` and the
-document was not modified.
+||**Field**||**Type**||**Description**||
+||bucket||string||bucket to write this key in||
+||key||string||bucket to write this key in||
+||options||object||any optional parameters (req_id, noCache)||
+||callback||function||arguments of `err` and `obj`||
 
 ### Errors
 
-* PreconditionFailed
-* ResourceNotFound
-* ResourceGone
+* BucketNotFoundError
+* ObjectNotFoundError
+* NoDatabaseError
 
-## DeleteObject (DELETE /:bucket/:key)
+Plus any currently unhandled Postgres Errors (such as relation already exists).
 
-Deletes an object, and moves the key/value to the tombstone.  You can use
-conditional request headers here, as with put/get.
+### CLI
 
-    $ moray $MH/foo/bar -X DELETE
+    $ getobject foo mcavage
 
-    HTTP/1.1 204 No Content
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: c99aa8d3-2ea4-4f97-8ded-e41af11f3135
-    Access-Control-Allow-Methods: DELETE
-    X-Api-Version: 1.0.0
-    etag: 25f4ce69950ca7b19615c19cf1c459fd
-    Last-Modified: Fri, 09 Mar 2012 13:47:50 GMT
-    Connection: close
-    Date: Fri, 09 Mar 2012 21:57:11 GMT
-    X-Response-Time: 21
+    {
+      "bucket": "foo",
+      "key": "mcavage",
+      "value": {
+        "email": "mark.cavage@joyent.com",
+        "userid": 54408
+       },
+       "_id": 1,
+       "_etag": "D4DC3CFE",
+       "_mtime": 1343724604354
+    }
+
+## FindObjects
+
+Allows you to query a bucket for a set of records that match indexed fields.
+Note this is not a streaming API (there is no pagination. do that yourself if
+you want it).
+
+Search filters are fully specified according to LDAP search filter rules (which
+is one of the few sane parts of LDAP).  Whatever you search on must be part of
+the index on the bucket config; this is non-negotiable.  Ask markc for a soapbox
+speech if you really want to argue.
+
+In addition to the search filter, you can specify `limit`, `offset`, and `sort`;
+the first two act like they usually do in DBs, and `sort` must be a JS object
+specifying the attribute to sort by, and an order, which is one of `ASC` or
+`DESC` (so also like DBs).  The default `limit` setting is `1000`. There is
+no default `offset`.  The default `sort` order is `ASC`, and the default
+attribute is `_id` (which means records are returned in the order they were
+*created*).
+
+### API
+
+Note that the client API is implemented as an `EventEmitter`, as you should
+expect to receive back up to N records from this call.
+
+    var opts = {
+        sort: {
+           attribute: 'userid',
+           order: 'DESC'
+        }
+    };
+    var req = client.findObjects('foo', '(email=*@joyent.com)', opts);
+
+    req.once('error', function (err) {
+        console.error(err.stack);
+        process.exit(1);
+    });
+
+    req.on('record', function (obj) {
+        console.log(JSON.stringify(obj, null, 2));
+    });
+
+    req.on('end', function () {
+       ...
+    });
+
 
 ### Inputs
 
-* None
-
-### Returns
-
-204 on success.
+||**Field**||**Type**||**Description**||
+||bucket||string||bucket to write this key in||
+||filter||string||search filter string||
+||options||object||any optional parameters (req_id, limit, offset, sort)||
 
 ### Errors
 
-* PreconditionFailed
-* ResourceNotFound
+* BucketNotFoundError
+* InvalidQueryError
+* NoDatabaseError
+* NotIndexedError
 
-## GetObjectTombstone (GET /:bucket/:key/tombstone)
+Plus any currently unhandled Postgres Errors (such as relation already exists).
 
-Allows you to retrieve the previous value of a given object.  The value in the
-tombstone could be becaues of an overwrite or a deletion.  Conditional requests
-are supported.
+### CLI
 
-    $ moray $MH/foo/bar/tombstone
-
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 3dbe4e5f-e12a-48b7-aca5-c96cbcfe04e0
-    Access-Control-Allow-Methods: GET
-    X-Api-Version: 1.0.0
-    etag: 25f4ce69950ca7b19615c19cf1c459fd
-    Last-Modified: Fri, 09 Mar 2012 13:57:11 GMT
-    Connection: close
-    Content-Length: 48
-    Content-MD5: JfTOaZUMp7GWFcGc8cRZ/Q==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 21:59:49 GMT
-    X-Response-Time: 4
-
+    $ findobjects -d email foo "(email=*@joyent.com)"
     {
-      "name": "mark",
-      "email": "mark.cavage@joyent.com"
+      "bucket": "foo",
+      "key": "yunong",
+      "value": {
+        "email": "yunong@joyent.com",
+        "userid": 74265
+      },
+      "_id": 4,
+      "_etag": "09D27A3F",
+      "_mtime": 1343726032177
     }
+    {
+      "bucket": "foo",
+      "key": "mcavage",
+      "value": {
+        "email": "mark.cavage@joyent.com",
+        "userid": 54408
+      },
+      "_id": 1,
+      "_etag": "D4DC3CFE",
+      "_mtime": 1343724604354
+    }
+    {
+      "bucket": "foo",
+      "key": "dap",
+      "value": {
+        "email": "dap@joyent.com",
+        "userid": 23175
+      },
+      "_id": 3,
+      "_etag": "84C510D7",
+      "_mtime": 1343726026322
+    }
+
+## DeleteObject
+
+Deletes an object by bucket/key.  Like `PutObject`, you can set an `etag` in
+options to get `test/set` semantics.
+
+### API
+
+    var opts = {
+        etag: 'D4DC3CFE'
+    };
+    client.delObject('foo', 'mcavage', opts, function (err) {
+        assert.ifError(err);
+    });
 
 ### Inputs
 
-* None
-
-### Returns
-
-200 on success, or 304 if using `If-None-Match`
+||**Field**||**Type**||**Description**||
+||bucket||string||bucket to write this key in||
+||key||string||bucket to write this key in||
+||options||object||any optional parameters (req_id, etag)||
+||callback||function||only argument is `err`||
 
 ### Errors
 
-* PreconditionFailed
-* ResourceNotFound
+* BucketNotFoundError
+* EtagConflictError
+* ObjectNotFoundError
+* NoDatabaseError
 
-## RestoreObject (POST /:bucket/:key/tombstone)
+Plus any currently unhandled Postgres Errors (such as relation already exists).
 
-Allows you to restore an object to its tombstone value.  If the object is
-currently "live", then the values are swapped. Example: if `/foo/bar` has value
-`2`, and the tombstone has value `3`, performing a `RestoreObject` will mean
-requests to `/foo/bar` will return `3` and the tombstone will now hold the value
-`2`.  If the key does not have a live value, then the tombstone is simply moved
-over, and there will no longer be a tombstone value at all.
+### CLI
 
-    $ moray $MH/foo/bar/tombstone -X POST
+    $ delobject foo mcavage
 
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 148b4649-849a-4e2b-b8b9-47baa8f9e2f8
-    Access-Control-Allow-Methods: POST
-    X-Api-Version: 1.0.0
-    etag: 25f4ce69950ca7b19615c19cf1c459fd
-    Last-Modified: Fri, 09 Mar 2012 14:04:03 GMT
-    Connection: close
-    Content-Length: 48
-    Content-MD5: JfTOaZUMp7GWFcGc8cRZ/Q==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 22:04:03 GMT
-    X-Response-Time: 9
+# Other
 
-    {
-      "name": "mark",
-      "email": "mark.cavage@joyent.com"
-    }
+## sql
 
-The value that will now be live is returned.
+An API that really only exists for two reasons: (1) for humans to quickly get
+some debug info from moray, and (2) for systems like UFDS that need to create
+extra tables et al in Moray for `post` triggers.
+
+### API
+
+    var req = client.sql('select * from buckets_config');
+    req.on('record, function (r) {
+        console.log(JSON.stringify(r));
+    });
+    req.on('error', function (err) {
+        ...
+    });
+    req.on('end', function () {
+        ...
+    });
 
 ### Inputs
 
-* None
+||**Field**||**Type**||**Description**||
+||statement||string||SQL statement to run||
+||values||Array||values to insert (see node-postgres)||
+||options||object||any optional parameters (req_id)||
 
-### Returns
+### CLI
 
-200 on success, and the new (old) live value.
-
-### Errors
-
-* PreconditionFailed
-* ResourceNotFound
-
-
-# Using cURL with Moray
-
-Here's an easy alias to save on curl annoyances:
-
-    $ alias moray='/usr/bin/curl -is -H "Accept-Version: >=1.0"" -H "Accept: application/json" -H "Content-Type: application/json"
-
-To save 19 characters each time...
-
-    $ export MH=http://localhost:8080
-
-Then you could say run the following sequence:
-
-Create a bucket `foo` with a (non-unique string) index on `name`.
-
-    $ moray $MH/?bucket=foo\&index=name -X POST
-
-    HTTP/1.1 201 Created
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: f766f756-ce29-438b-a25e-c780e7d6dd06
-    Access-Control-Allow-Methods: POST
-    X-Api-Version: 1.0.0
-    Location: /foo
-    Connection: close
-    Content-Length: 41
-    Content-MD5: Qye3VCQFxCqE86tIRhgUcQ==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 19:20:01 GMT
-    X-Response-Time: 22
-
+    $ sql "select now() from buckets_config;"
     {
-      "name": {
-        "type": "string",
-        "unique": false
-      }
+        "now": "2012-08-01T15:50:33.291Z"
     }
-
-Add a document under `/foo/bar`:
-
-    $ moray $MH/foo/bar -X PUT -d '{"name": "markc", "whoami": "developer"}'
-
-    HTTP/1.1 204 No Content
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 2c6a0309-a801-4ae6-b54e-4ed49727c3ca
-    Access-Control-Allow-Methods: PUT
-    X-Api-Version: 1.0.0
-    etag: 92ed38d56614548c447c7ab1f306167b
-    Connection: close
-    Date: Fri, 09 Mar 2012 19:23:00 GMT
-    X-Response-Time: 16
-
-Overwrite said document:
-
-    $ moray $MH/foo/bar -X PUT -d '{"name":"Dr_Aweseome","whoami":"awesome"}'
-
-    HTTP/1.1 204 No Content
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 2349b5c4-9581-4730-ab2e-96f20dd5cef8
-    Access-Control-Allow-Methods: PUT
-    X-Api-Version: 1.0.0
-    etag: 67e5adbe7517e4880cdc929f66120239
-    Last-Modified: Fri, 09 Mar 2012 11:23:00 GMT
-    Connection: close
-    Date: Fri, 09 Mar 2012 19:23:57 GMT
-    X-Response-Time: 16
-
-Find all records based on the `name` index that match `Dr*`:
-
-    $ moray $MH/search/foo?name=Dr*
-
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 823ec46b-da8a-44b1-bb2e-bc1993af2d95
-    Access-Control-Allow-Methods: GET
-    X-Api-Version: 1.0.0
-    etag: bd0bb18184132213d4823742f33e2912
-    Connection: close
-    Content-Length: 43
-    Content-MD5: vQuxgYQTIhPUgjdC8z4pEg==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 19:24:26 GMT
-    X-Response-Time: 7
-
-    [
-      {
-        "name": "Dr_Aweseome",
-        "whoami": "awesome"
-      }
-    ]
-
-Restore the previous `bar` document from the graveyard:
-
-    $ moray $MH/foo/bar/tombstone -X POST
-
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: 0af90dfa-a05f-4599-8493-7bee5652831e
-    Access-Control-Allow-Methods: POST
-    X-Api-Version: 1.0.0
-    etag: 92ed38d56614548c447c7ab1f306167b
-    Last-Modified: Fri, 09 Mar 2012 11:24:54 GMT
-    Connection: close
-    Content-Length: 37
-    Content-MD5: ku041WYUVIxEfHqx8wYWew==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 19:24:54 GMT
-    X-Response-Time: 16
-
-    {
-      "name": "markc",
-      "whoami": "developer"
-    }
-
-Ensure the new (old?) value is actually there, but let's do it conditionally
-based on the `etag` of the 'dr awesome` value:
-
-    $ moray -H 'If-None-Match: bd0bb18184132213d4823742f33e2912' $MH/foo/bar
-
-    HTTP/1.1 200 OK
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version
-    Access-Control-Expose-Headers: X-Api-Version, X-Request-Id, X-Response-Time
-    Server: Moray 1.0.0
-    X-Request-Id: d2af173b-1fea-4750-9ae0-af5e380d65cb
-    Access-Control-Allow-Methods: GET
-    X-Api-Version: 1.0.0
-    etag: 92ed38d56614548c447c7ab1f306167b
-    Last-Modified: Fri, 09 Mar 2012 11:24:54 GMT
-    Connection: close
-    Content-Length: 37
-    Content-MD5: ku041WYUVIxEfHqx8wYWew==
-    Content-Type: application/json
-    Date: Fri, 09 Mar 2012 19:32:22 GMT
-    X-Response-Time: 4
-
-    {
-      "name": "markc",
-      "whoami": "developer"
-    }
-
-# TODO
-
-* Add pagination to search
-* Add And/Or/Not (maybe) to search
-* Add range queries on numbers to search
-* Add "triggers"; that is, JS guaranteed to run after DB write but before commit.
-* REST API test code

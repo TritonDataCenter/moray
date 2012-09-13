@@ -1,139 +1,142 @@
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
 var cluster = require('cluster');
-var net = require('net');
+var fs = require('fs');
 var os = require('os');
-var path = require('path');
-var repl = require('repl');
 
-var d = require('dtrace-provider');
-var Logger = require('bunyan');
-var nopt = require('nopt');
-var restify = require('restify');
+var assert = require('assert-plus');
+var bunyan = require('bunyan');
+var clone = require('clone');
+var getopt = require('posix-getopt');
+var extend = require('xtend');
 
-var app = require('./lib').app;
+var app = require('./lib');
+
 
 
 ///--- Globals
 
+var DEFAULTS = {
+        file: process.cwd() + '/etc/config.json',
+        fork: true,
+        port: 2020
+};
 var NAME = 'moray';
-var DEFAULT_CFG = __dirname + '/etc/' + NAME + '.config.json';
-var LOG;
-var PARSED;
-var DTP;
-var SERVERS = [];
-
-var OPTS = {
-    'debug': Number,
-    'file': String,
-    'port': Number,
-    'help': Boolean
-};
-
-var SHORT_OPTS = {
-    'd': ['--debug'],
-    'f': ['--file'],
-    'p': ['--port'],
-    'h': ['--help']
-};
+var LOG = bunyan.createLogger({
+        name: NAME,
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr,
+        serializers: {
+                err: bunyan.stdSerializers.err,
+                pg: function (client) {
+                        return (client ? client._moray_id : undefined);
+                }
+        }
+});
 
 
 
 ///--- Internal Functions
 
-function usage(code, message) {
-    var _opts = '';
-    Object.keys(SHORT_OPTS).forEach(function (k) {
-        var longOpt = SHORT_OPTS[k][0].replace('--', '');
-        var type = OPTS[longOpt].name || 'string';
-        if (type && type === 'boolean') type = '';
-        type = type.toLowerCase();
+function parseOptions() {
+        var option;
+        var opts = {};
+        var parser = new getopt.BasicParser('cpsvf:(file)', process.argv);
 
-        _opts += ' [--' + longOpt + ' ' + type + ']';
-    });
+        while ((option = parser.getopt()) !== undefined) {
+                switch (option.option) {
+                case 'c':
+                        opts.cover = true;
+                        break;
+                case 'f':
+                        opts.file = option.optarg;
+                        break;
 
-    var msg = (message ? message + '\n' : '') +
-        'usage: ' + path.basename(process.argv[1]) + _opts;
+                case 'p':
+                        opts.port = parseInt(option.optarg, 10);
+                        break;
 
-    console.error(msg);
-    process.exit(code);
-}
+                case 's':
+                        opts.fork = false;
+                        break;
 
+                case 'v':
+                        // Allows us to set -vvv -> this little hackery
+                        // just ensures that we're never < TRACE
+                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
+                        if (LOG.level() <= bunyan.DEBUG)
+                                LOG = LOG.child({src: true});
+                        break;
 
-function run(callback) {
-    var opts = {
-        file: PARSED.file || DEFAULT_CFG,
-        overrides: PARSED,
-        log: LOG,
-        dtrace: DTP
-    };
-
-    return app.createServer(opts, function (err, server) {
-        if (err) {
-            console.error('Unable to create server: %s', err.message);
-            process.exit(1);
+                default:
+                        process.exit(1);
+                        break;
+                }
         }
 
-        server.start(function () {
-            SERVERS.push(server);
-            LOG.info('%s listening at %s', NAME, server.url);
-            if (typeof (callback) === 'function')
-                return callback();
-            return false;
-        });
-    });
+        return (opts);
 }
 
 
-function startREPL() {
-    net.createServer(function (socket) {
-        var r = repl.start('moray> ', socket);
-        r.context.SERVERS = SERVERS;
-    }).listen(5001, 'localhost', function () {
-        LOG.info('REPL started on 5001');
-    });
+function readConfig(options) {
+        assert.object(options);
+
+        var cfg;
+
+        try {
+                cfg = JSON.parse(fs.readFileSync(options.file, 'utf8'));
+        } catch (e) {
+                LOG.fatal({
+                        err: e,
+                        file: options.file
+                }, 'Unable to read/parse configuration file');
+                process.exit(1);
+        }
+
+        return (extend({}, clone(DEFAULTS), cfg, options));
 }
 
+
+function run(options) {
+        assert.object(options);
+
+        var opts = clone(options);
+        opts.log = LOG;
+        opts.manatee.log = LOG;
+        opts.name = NAME;
+
+        app.createServer(opts);
+}
 
 
 ///--- Mainline
+//
+// Because everyone asks, the '_' here is because this is still in the global
+// namespace.
+//
 
-PARSED = nopt(OPTS, SHORT_OPTS, process.argv, 2);
-if (PARSED.help)
-    usage(0);
+var _config;
+var _options = parseOptions();
 
-DTP = d.createDTraceProvider(NAME);
-LOG = new Logger({
-    level: PARSED.debug ? 'debug' : 'info',
-    name: NAME,
-    stream: process.stderr,
-    serializers: {
-        err: Logger.stdSerializers.err,
-        req: Logger.stdSerializers.req,
-        res: restify.bunyan.serializers.response
-    }
-});
+LOG.debug({options: _options}, 'command line options parsed');
+_config = readConfig(_options);
+LOG.debug({config: _config}, 'configuration loaded');
 
-if (PARSED.debug) {
-    if (PARSED.debug > 1)
-        LOG.level('trace');
+if (cluster.isMaster && _config.fork) {
+        var min_child_ram = 64 * 1024;
+        var cpus = os.cpus().length;
+        var slots = Math.ceil(os.totalmem() / min_child_ram);
+        var max_forks = (cpus >= slots) ? slots : cpus;
 
-    run(startREPL());
-} else if (cluster.isMaster) {
-    for (var i = 0; i < os.cpus().length - 1; i++)
-        cluster.fork();
+        for (var i = 0; i < max_forks; i++)
+                cluster.fork();
 
-    cluster.on('death', function (worker) {
-        LOG.error({worker: worker}, 'worker %d exited');
-        cluster.fork();
-    });
-
-    startREPL();
 } else {
-    run();
-}
+        run(_config);
 
-process.on('uncaughtException', function (err) {
-    LOG.fatal({err: err}, 'uncaughtException handler (exiting error code 1)');
-    process.exit(1);
-});
+        if (_options.cover) {
+                process.on('SIGUSR2', function () {
+                        process.exit(0);
+                });
+        }
+}

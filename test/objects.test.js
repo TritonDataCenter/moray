@@ -1,360 +1,472 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
-//
-// You can set PG_URL to connect to a database, and LOG_LEVEL to turn on
-// bunyan debug logs.
-//
+// Copyright 2012 Joyent.  All rights reserved.
 
-var assert = require('assert');
-var util = require('util');
-
-var Logger = require('bunyan');
+var clone = require('clone');
 var uuid = require('node-uuid');
-var restify = require('restify');
+var vasync = require('vasync');
 
 if (require.cache[__dirname + '/helper.js'])
-    delete require.cache[__dirname + '/helper.js'];
+        delete require.cache[__dirname + '/helper.js'];
 var helper = require('./helper.js');
 
 
 
 ///--- Globals
 
+var after = helper.after;
+var before = helper.before;
 var test = helper.test;
 
-var InvalidArgumentError = restify.InvalidArgumentError;
+var BUCKET_CFG = {
+        index: {
+                str: {
+                        type: 'string'
+                },
+                str_u: {
+                        type: 'string',
+                        unique: true
+                },
+                str_2: {
+                        type: 'string'
+                },
+                num: {
+                        type: 'number'
+                },
+                num_u: {
+                        type: 'number',
+                        unique: true
+                },
+                bool: {
+                        type: 'boolean'
+                },
+                bool_u: {
+                        type: 'boolean',
+                        unique: true
+                }
+        },
+        pre: [function (req, cb) {
+                var v = req.value;
+                if (v.pre)
+                        v.pre = 'pre_overwrite';
 
-var BUCKET = process.env.BUCKET || 'a' + uuid().replace('-', '').substr(0, 7);
-var CLIENT;
-var ETAG;
-var SERVER;
+                cb();
+        }],
+        post: [function (req, cb) {
+                cb();
+        }]
+};
 
 
 
 ///--- Helpers
 
-function key(k) {
-    return '/' + BUCKET + '/' + encodeURIComponent(k);
-}
+function assertObject(b, t, obj, k, v) {
+        t.ok(obj);
+        if (!obj)
+                return (undefined);
 
+        t.equal(obj.bucket, b);
+        t.equal(obj.key, k);
+        t.deepEqual(obj.value, v);
+        t.ok(obj._id);
+        t.ok(obj._etag);
+        t.ok(obj._mtime);
+        return (undefined);
+}
 
 ///--- Tests
 
-test('start server', function (t) {
-    helper.createServer(function (err, server) {
-        t.ifError(err);
-        t.ok(server);
-        SERVER = server;
-        SERVER.start(function () {
-            CLIENT = helper.createClient();
-            t.ok(CLIENT);
-            t.done();
+before(function (cb) {
+        var self = this;
+        this.bucket = 'moray_unit_test_' + uuid.v4().substr(0, 7);
+        this.assertObject = assertObject.bind(this, this.bucket);
+        this.client = helper.createClient();
+        this.client.on('connect', function () {
+                var b = self.bucket;
+                self.client.createBucket(b, BUCKET_CFG, cb);
         });
-    });
 });
 
 
-test('create bucket', function (t) {
-    var opts = {
-        schema: {
-            _id: {
-                type: 'number',
-                unique: true
-            },
-            email: {
-                type: 'string',
-                unique: true
-            },
-            name: {
-                type: 'string'
-            }
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.done();
-    });
-});
-
-
-test('put object bad bucket', function (t) {
-    CLIENT.put('/a' + uuid().substr(0, 7) + '/foo', {}, function (err) {
-        t.ok(err);
-        t.equal(err.code, 'ResourceNotFound');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
-test('put object ok', function (t) {
-    var data = {
-        _id: 1,
-        email: 'mark.cavage@joyent.com',
-        name: 'mark'
-    };
-    CLIENT.put(key('mark'), data, function (err, req, res) {
-        t.ifError(err);
-        t.ok(res.headers['etag']);
-        ETAG = res.headers['etag'];
-        t.equal(res.statusCode, 204);
-        t.done();
-    });
-});
-
-
-test('get object ok', function (t) {
-    var opts = {
-        path: key('mark'),
-        headers: {
-            'If-Match': ETAG
-        }
-    };
-    CLIENT.get(opts, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.equal(obj.id, 1);
-        t.done();
-    });
-});
-
-
-test('get object 304', function (t) {
-    var opts = {
-        path: key('mark'),
-        headers: {
-            'If-None-Match': ETAG
-        }
-    };
-    CLIENT.get(opts, function (err, req, res, obj) {
-        t.ifError(err);
-        t.equal(res.statusCode, 304);
-        t.done();
-    });
-});
-
-
-test('get object 412', function (t) {
-    var opts = {
-        path: key('mark'),
-        headers: {
-            'If-Match': uuid()
-        }
-    };
-    CLIENT.get(opts, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'PreconditionFailed');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
-test('put object 412', function (t) {
-    var opts = {
-        path: key('mark'),
-        headers: {
-            'If-Match': uuid()
-        }
-    };
-    CLIENT.put(opts, {}, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'PreconditionFailed');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
-test('put object conditionally ok', function (t) {
-    var opts = {
-        path: key('mark'),
-        headers: {
-            'If-Match': ETAG
-        }
-    };
-    var body = {
-        foo: 'bar',
-        email: 'mark.cavage@joyent.com'
-    };
-    CLIENT.put(opts, body, function (err, req, res, obj) {
-        t.ifError(err);
-        ETAG = res.headers['etag'];
-        t.done();
-    });
-});
-
-
-test('put object unique attribute taken', function (t) {
-    var data = {
-        _id: 2,
-        email: 'mark.cavage@joyent.com',
-        name: 'mark'
-    };
-    CLIENT.put(key('markus'), data, function (err, req, res) {
-        t.ok(err);
-        t.equal(err.code, 'InvalidArgument');
-        t.done();
-    });
-});
-
-
-test('put object ok duplicate non-unique index', function (t) {
-    var data = {
-        _id: 2,
-        email: 'mcavage@gmail.com',
-        name: 'mark'
-    };
-    CLIENT.put(key('mcavage'), data, function (err, req, res) {
-        t.ifError(err);
-        t.ok(res.headers['etag']);
-        t.equal(res.statusCode, 204);
-        t.done();
-    });
-});
-
-
-test('get object ok', function (t) {
-    CLIENT.get(key('mark'), function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.equal(obj._id, 1);
-        t.equal(obj.email, 'mark.cavage@joyent.com');
-        t.equal(obj.name, 'mark');
-        t.done();
-    });
-});
-
-
-test('delete ok', function (t) {
-    CLIENT.del(key('mcavage'), function (err) {
-        t.ifError(err);
-        t.done();
-    });
-});
-
-
-test('delete object 412', function (t) {
-    var opts = {
-        path: key('mark'),
-        headers: {
-            'If-Match': uuid()
-        }
-    };
-    CLIENT.del(opts, function (err) {
-        t.ok(err);
-        t.equal(err.code, 'PreconditionFailed');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
-test('delete object conditionally ok', function (t) {
-    var opts = {
-        path: key('mark'),
-        headers: {
-            'If-Match': ETAG
-        }
-    };
-    CLIENT.del(opts, function (err) {
-        t.ifError(err);
-        t.done();
-    });
-});
-
-
-test('put bucket with hooks', function (t) {
-    var opts = {
-        schema: {
-            _id: {
-                type: 'number',
-                unique: true
-            },
-            email: {
-                type: 'string',
-                unique: true
-            },
-            name: {
-                type: 'string'
-            }
-        },
-        pre: [
-            function enforceEmail(req, cb) {
-                /* JSSTYLED */
-                var EMAIL_RE = /[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
-                var email = req.value.email;
-                if (!email || EMAIL_RE.test(email))
-                    return cb();
-
-                return cb(new InvalidArgumentError('email is invalid'));
-            }.toString()
-        ],
-        post: [
-            function writeExtraValue(req, cb) {
-                var b = req.bucket;
-                var k = req.key + '_post';
-                var v = JSON.stringify({hello: 'world with a post handler'});
-                var pg = req.pgClient;
-                var sql = 'INSERT INTO ' + b + '_entry (key, value, etag) ' +
-                    'VALUES ($1, $2, $3)';
-                return pg.query(sql, [k, v, 'foo'], cb);
-            }.toString()
-        ]
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.done();
-    });
-});
-
-if (!process.env.MORAY_COVERAGE)
-test('pre hook passes', function (t) {
-    var data = {
-        _id: 10,
-        email: uuid() + '@joyent.com',
-        name: uuid()
-    };
-    var k = uuid();
-    CLIENT.put(key(k), data, function (err, req, res) {
-        t.ifError(err);
-        t.equal(res.statusCode, 204);
-        CLIENT.get(key(k + '_post'), function (err2, _, __, obj) {
-            t.ifError(err2);
-            t.ok(obj);
-            t.done();
+after(function (cb) {
+        var self = this;
+        this.client.delBucket(this.bucket, function (err) {
+                self.client.close();
+                cb(err);
         });
-    });
 });
 
 
-if (!process.env.MORAY_COVERAGE)
-test('pre hook fails', function (t) {
-    var data = {
-        _id: 11,
-        email: uuid() + '<joyent.com',
-        name: uuid()
-    };
-    CLIENT.put(key(uuid()), data, function (err, req, res) {
-        t.ok(err);
-        t.equal(err.restCode, 'InvalidArgument');
-        t.equal(res.statusCode, 409);
-        t.done();
-    });
+test('get object 404', function (t) {
+        var c = this.client;
+        c.getObject(this.bucket, uuid.v4().substr(0, 7), function (err) {
+                t.ok(err);
+                t.equal(err.name, 'ObjectNotFoundError');
+                t.ok(err.message);
+                t.end();
+        });
 });
 
 
-test('delete bucket', function (t) {
-    CLIENT.del('/' + BUCKET, function (err) {
-        t.ifError(err);
-        t.done();
-    });
+test('del object 404', function (t) {
+        var c = this.client;
+        c.delObject(this.bucket, uuid.v4().substr(0, 7), function (err) {
+                t.ok(err);
+                t.equal(err.name, 'ObjectNotFoundError');
+                t.ok(err.message);
+                t.end();
+        });
 });
 
 
-test('stop server', function (t) {
-    SERVER.stop(function () {
-        t.done();
-    });
+test('CRUD object', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var v2 = {
+                str: 'hello world',
+                pre: 'hi'
+        };
+        var self = this;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function get(_, cb) {
+                        c.getObject(b, k, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v);
+                                return (cb());
+                        });
+                }, function overwrite(_, cb) {
+                        c.putObject(b, k, v2, cb);
+                }, function getAgain(_, cb) {
+                        c.getObject(b, k, {noCache: true}, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                v2.pre = 'pre_overwrite';
+                                self.assertObject(t, obj, k, v2);
+                                return (cb());
+                        });
+                }, function del(_, cb) {
+                        c.delObject(b, k, cb);
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
+test('CRUD objects unique indexes', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var k2 = uuid.v4();
+        var v = {
+                str_u: 'hi'
+        };
+        var v2 = {
+                str_u: 'hi'
+        };
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function putFail(_, cb) {
+                        c.putObject(b, k2, v2, function (err) {
+                                t.ok(err);
+                                t.equal(err.name, 'UniqueAttributeError');
+                                cb();
+                        });
+                }, function delK1(_, cb) {
+                        c.delObject(b, k, cb);
+                }, function putK2(_, cb) {
+                        c.putObject(b, k2, v2, cb);
+                }, function delK2(_, cb) {
+                        c.delObject(b, k2, cb);
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
+test('put object w/etag ok', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var v2 = {
+                str: 'hello world'
+        };
+        var etag;
+        var self = this;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function get(_, cb) {
+                        c.getObject(b, k, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v);
+                                etag = obj._etag;
+                                return (cb());
+                        });
+                }, function overwrite(_, cb) {
+                        c.putObject(b, k, v2, {etag: etag}, cb);
+                }, function getAgain(_, cb) {
+                        c.getObject(b, k, {noCache: true}, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v2);
+                                return (cb());
+                        });
+                }, function del(_, cb) {
+                        c.delObject(b, k, cb);
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
+test('del object w/etag ok', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var etag;
+        var self = this;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function get(_, cb) {
+                        c.getObject(b, k, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v);
+                                etag = obj._etag;
+                                return (cb());
+                        });
+                }, function del(_, cb) {
+                        c.delObject(b, k, {etag: etag}, cb);
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
+test('put object w/etag conflict', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function overwrite(_, cb) {
+                        c.putObject(b, k, {}, {etag: 'foo'}, function (err) {
+                                t.ok(err);
+                                if (err)
+                                        t.equal(err.name, 'EtagConflictError');
+                                cb();
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+
+                t.end();
+        });
+});
+
+
+test('del object w/etag conflict', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function drop(_, cb) {
+                        c.delObject(b, k, {etag: 'foo'}, function (err) {
+                                t.ok(err);
+                                if (err)
+                                        t.equal(err.name, 'EtagConflictError');
+                                cb();
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+
+                t.end();
+        });
+});
+
+
+test('find (like marlin)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hello',
+                str_2: 'world'
+        };
+        var found = false;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function find(_, cb) {
+                        var f = '(&(str=hello)(!(str_2=usa)))';
+                        var req = c.findObjects(b, f);
+                        req.once('error', cb);
+                        req.once('end', cb);
+                        req.once('record', function (obj) {
+                                t.ok(obj);
+                                if (!obj)
+                                        return (undefined);
+
+                                t.equal(obj.bucket, b);
+                                t.equal(obj.key, k);
+                                t.deepEqual(obj.value, v);
+                                t.ok(obj._id);
+                                t.ok(obj._etag);
+                                t.ok(obj._mtime);
+                                found = true;
+                                return (undefined);
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.ok(found);
+                t.end();
+        });
+});
+
+
+test('find _mtime', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var now = Date.now();
+        var v = {
+                str: 'hello',
+                str_2: 'world'
+        };
+        var found = false;
+
+        vasync.pipeline({
+                funcs: [ function wait(_, cb) {
+                        setTimeout(cb, 500);
+                }, function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function find(_, cb) {
+                        var f = '(_mtime>=' + now + ')';
+                        var req = c.findObjects(b, f);
+                        req.once('error', cb);
+                        req.once('end', cb);
+                        req.once('record', function (obj) {
+                                t.ok(obj);
+                                if (!obj)
+                                        return (undefined);
+
+                                t.equal(obj.bucket, b);
+                                t.equal(obj.key, k);
+                                t.deepEqual(obj.value, v);
+                                t.ok(obj._id);
+                                t.ok(obj._etag);
+                                t.ok(obj._mtime);
+                                found = true;
+                                return (undefined);
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.ok(found);
+                t.end();
+        });
+});
+
+
+test('find MANTA-156', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var now = Date.now();
+        var v = {
+                num: 0,
+                num_u: 1
+        };
+        var found = false;
+
+        vasync.pipeline({
+                funcs: [ function wait(_, cb) {
+                        setTimeout(cb, 500);
+                }, function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function find(_, cb) {
+                        var f = '(num>=0)';
+                        var req = c.findObjects(b, f);
+                        req.once('error', cb);
+                        req.once('end', cb);
+                        req.once('record', function (obj) {
+                                t.ok(obj);
+                                if (!obj)
+                                        return (undefined);
+
+                                t.equal(obj.bucket, b);
+                                t.equal(obj.key, k);
+                                t.deepEqual(obj.value, v);
+                                t.ok(obj._id);
+                                t.ok(obj._etag);
+                                t.ok(obj._mtime);
+                                found = true;
+                                return (undefined);
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.ok(found);
+                t.end();
+        });
 });

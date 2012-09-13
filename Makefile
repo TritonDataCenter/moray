@@ -17,6 +17,7 @@
 #
 # Tools
 #
+NODE		:= ./build/node/bin/node
 NODEUNIT	:= ./node_modules/.bin/nodeunit
 NODECOVER	:= ./node_modules/.bin/cover
 BUNYAN		:= ./node_modules/.bin/bunyan
@@ -41,7 +42,7 @@ CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 #
 
 NODE_PREBUILT_TAG	= zone
-NODE_PREBUILT_VERSION	:= v0.6.19
+NODE_PREBUILT_VERSION	:= v0.8.8
 
 # RELENG-341: no npm cache is making builds unreliable
 NPM_FLAGS :=
@@ -81,28 +82,26 @@ shrinkwrap: | $(NPM_EXEC)
 
 .PHONY: test
 test: $(NODEUNIT)
-	$(NODEUNIT) test/buckets.db.test.js --reporter tap
-	$(NODEUNIT) test/objects.db.test.js --reporter tap
-	$(NODEUNIT) test/buckets.test.js --reporter tap
-	$(NODEUNIT) test/objects.test.js --reporter tap
+	$(NODEUNIT) test/buckets.test.js | $(BUNYAN)
+	$(NODEUNIT) test/objects.test.js | $(BUNYAN)
+
 
 .PHONY: cover
 cover: $(NODECOVER)
 	@rm -fr ./.coverage_data
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.db.test.js
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/objects.db.test.js
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
-	@MORAY_COVERAGE=1 LOG_LEVEL=error $(NODECOVER) run $(NODEUNIT) test/buckets.test.js
-	$(NODECOVER) report html
+	LOG_LEVEL=error $(NODECOVER) run main.js -- -f ./etc/config.laptop.json -c -s &
+	@sleep 3
+	$(NODEUNIT) test/buckets.test.js
+	$(NODEUNIT) test/objects.test.js
+	@pkill -17 node
+	@sleep 3
+	$(NODECOVER) report
 
 .PHONY: release
 release: all docs $(SMF_MANIFESTS)
 	@echo "Building $(RELEASE_TARBALL)"
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray
-	@mkdir -p $(TMPDIR)/site
-	@touch $(TMPDIR)/site/.do-not-delete-me
 	@mkdir -p $(TMPDIR)/root
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/ssl
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/etc
 	cp -r   $(ROOT)/build \
 		$(ROOT)/lib \
@@ -112,7 +111,7 @@ release: all docs $(SMF_MANIFESTS)
 		$(ROOT)/smf \
 		$(TMPDIR)/root/opt/smartdc/moray/
 	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/moray/etc
-	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
+	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root)
 	@rm -rf $(TMPDIR)
 
 

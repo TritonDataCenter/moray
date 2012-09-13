@@ -1,28 +1,8 @@
-// Copyright 2012 Mark Cavage, Inc.  All rights reserved.
-//
-// Just a simple wrapper over nodeunit's exports syntax. Also exposes
-// a common logger for all tests.
-//
+// Copyright 2012 Joyent, Inc.  All rights reserved.
 
-var fs = require('fs');
-
-var Logger = require('bunyan');
-var restify = require('restify');
-
-var app = require('../lib/app');
-
-
-
-///--- Globals
-
-var CFG_FILE = process.env.TEST_CONFIG_FILE || __dirname + '/config.test.json';
-var LOG = new Logger({
-    level: (process.env.LOG_LEVEL || 'info'),
-    name: process.argv[1],
-    stream: process.stderr,
-    src: true,
-    serializers: Logger.stdSerializers
-});
+var bunyan = require('bunyan');
+var deepEqual = require('deep-equal');
+var moray = require('moray'); // client
 
 
 
@@ -30,35 +10,63 @@ var LOG = new Logger({
 
 module.exports = {
 
-    after: function after(callback) {
-        module.parent.tearDown = callback;
-    },
+        after: function after(teardown) {
+                module.parent.exports.tearDown = function _teardown(callback) {
+                        try {
+                                teardown.call(this, callback);
+                        } catch (e) {
+                                console.error('after:\n' + e.stack);
+                                process.exit(1);
+                        }
+                };
+        },
 
-    before: function before(callback) {
-        module.parent.setUp = callback;
-    },
+        before: function before(setup) {
+                module.parent.exports.setUp = function _setup(callback) {
+                        try {
+                                setup.call(this, callback);
+                        } catch (e) {
+                                console.error('before:\n' + e.stack);
+                                process.exit(1);
+                        }
+                };
+        },
 
-    test: function test(name, tester) {
-        module.parent.exports[name] = tester;
-    },
+        test: function test(name, tester) {
+                module.parent.exports[name] = function _(t) {
+                        var _done = false;
+                        t.end = function end() {
+                                if (!_done) {
+                                        _done = true;
+                                        t.done();
+                                }
+                        };
+                        t.notOk = function notOk(ok, message) {
+                                return (t.ok(!ok, message));
+                        };
 
-    createServer: function createServer(callback) {
-        app.createServer({
-            file: CFG_FILE,
-            log: LOG
-        }, callback);
-    },
+                        tester.call(this, t);
+                };
+        },
 
-    createClient: function createClient() {
-        var cfg = JSON.parse(fs.readFileSync(CFG_FILE, 'utf8'));
-        return restify.createJsonClient({
-            log: LOG,
-            socketPath: cfg.port,
-            version: '~1.0'
-        });
-    }
+        createLogger: function createLogger(name, stream) {
+                var log = bunyan.createLogger({
+                        level: (process.env.LOG_LEVEL || 'warn'),
+                        name: name || process.argv[1],
+                        stream: stream || process.stdout,
+                        src: true,
+                        serializers: bunyan.stdSerializers
+                });
+                return (log);
+        },
+
+        createClient: function createClient() {
+                var client = moray.createClient({
+                        host: (process.env.MORAY_IP || '127.0.0.1'),
+                        port: (process.env.MORAY_PORT || 2020),
+                        log: module.exports.createLogger()
+                });
+                return (client);
+        }
+
 };
-
-module.exports.__defineGetter__('log', function () {
-    return LOG;
-});

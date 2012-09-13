@@ -1,341 +1,188 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
-//
-// You can set PG_URL to connect to a database, and LOG_LEVEL to turn on
-// bunyan debug logs.
-//
+// Copyright 2012 Joyent.  All rights reserved.
 
-var assert = require('assert');
-var util = require('util');
-
-var Logger = require('bunyan');
+var clone = require('clone');
 var uuid = require('node-uuid');
 
 if (require.cache[__dirname + '/helper.js'])
-    delete require.cache[__dirname + '/helper.js'];
+        delete require.cache[__dirname + '/helper.js'];
 var helper = require('./helper.js');
 
 
 
 ///--- Globals
 
+var after = helper.after;
+var before = helper.before;
 var test = helper.test;
 
-var BUCKET = process.env.BUCKET || 'a' + uuid().replace('-', '').substr(0, 7);
-var CLIENT;
-var SERVER;
+var FULL_CFG = {
+        index: {
+                str: {
+                        type: 'string'
+                },
+                str_u: {
+                        type: 'string',
+                        unique: true
+                },
+                num: {
+                        type: 'number'
+                },
+                num_u: {
+                        type: 'number',
+                        unique: true
+                },
+                bool: {
+                        type: 'boolean'
+                },
+                bool_u: {
+                        type: 'boolean',
+                        unique: true
+                }
+        },
+        pre: [function onePre(req, cb) { cb(); }],
+        post: [function onePost(req, cb) { cb(); }]
+};
 
 
 
-///--- Common checks
+///--- Helpers
 
-function checkBucketSchema(t, obj) {
-    t.equal(obj._id.type, 'number');
-    t.equal(obj._id.unique, true);
-    t.equal(obj.email.type, 'string');
-    t.equal(obj.email.unique, true);
-    t.equal(obj.age.type, 'number');
-    t.ok(!obj.age.unique);
-    t.equal(obj.ismanager.type, 'boolean');
-    t.ok(!obj.ismanager.unique);
+function assertBucket(name, t, bucket, cfg) {
+        t.ok(bucket);
+        if (!bucket)
+                return (undefined);
+        t.equal(bucket.name, name);
+        t.ok(bucket.mtime instanceof Date);
+        t.deepEqual(bucket.index, (cfg.index || {}));
+        t.ok(Array.isArray(bucket.pre));
+        t.ok(Array.isArray(bucket.post));
+        t.equal(bucket.pre.length, (cfg.pre || []).length);
+        t.equal(bucket.post.length, (cfg.post || []).length);
+
+        if (bucket.pre.length !== (cfg.pre || []).length ||
+            bucket.post.length !== (cfg.post || []).length)
+                return (undefined);
+        var i;
+        for (i = 0; i < bucket.pre.length; i++)
+                t.equal(bucket.pre[i].toString(), cfg.pre[i].toString());
+        for (i = 0; i < bucket.post.length; i++)
+                t.equal(bucket.post[i].toString(), cfg.post[i].toString());
+
+        return (undefined);
 }
 
 
 
-///--- Tests
+///--- tests
 
-test('start server', function (t) {
-    helper.createServer(function (err, server) {
-        t.ifError(err);
-        t.ok(server);
-        SERVER = server;
-        SERVER.start(function () {
-            CLIENT = helper.createClient();
-            t.ok(CLIENT);
-            t.done();
+before(function (cb) {
+        this.bucket = 'moray_unit_test_' + uuid.v4().substr(0, 7);
+        this.assertBucket = assertBucket.bind(null, this.bucket);
+
+        this.client = helper.createClient();
+        this.client.on('connect', cb);
+
+});
+
+after(function (cb) {
+        var self = this;
+        // May or may not exist, just blindly ignore
+        this.client.delBucket(this.bucket, function () {
+                self.client.close();
+                cb();
         });
-    });
 });
 
 
-test('create invalid bucket', function (t) {
-    CLIENT.put('/' + uuid(), {}, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'InvalidArgument');
-        t.ok(err.message);
-        t.done();
-    });
-});
+test('create bucket stock config', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var self = this;
 
-
-test('create reserved bucket', function (t) {
-    CLIENT.put('/search', {}, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'InvalidArgument');
-        t.ok('search is a reserved name');
-        t.done();
-    });
-});
-
-
-test('create index bad type', function (t) {
-    var opts = {
-        schema: {
-            index: 9
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'InvalidArgument');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
-test('create index bad type (array)', function (t) {
-    var opts = {
-        schema: {
-            index: [9]
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'InvalidArgument');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
-test('create index object ok index type bad', function (t) {
-    var opts = {
-        schema: {
-            'foo': {
-                type: 'foo'
-            }
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res, obj) {
-        t.ok(err);
-        t.equal(err.code, 'InvalidArgument');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-
-test('create bucket ok string index', function (t) {
-    var opts = {
-        schema: {
-            foo: {
-                type: 'string'
-            }
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
-        t.ifError(err);
-        CLIENT.del('/' + BUCKET, function (err2) {
-            t.ifError(err2);
-            t.done();
+        c.createBucket(b, {}, function (err) {
+                t.ifError(err);
+                c.getBucket(b, function (err2, bucket) {
+                        t.ifError(err2);
+                        self.assertBucket(t, bucket, {});
+                        t.end();
+                });
         });
-    });
 });
 
 
-test('create bucket ok object string, non-unique', function (t) {
-    var opts = {
-        schema: {
-            foo: {
-                type: 'string',
-                unique: false
-            }
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
-        t.ifError(err);
-        CLIENT.del('/' + BUCKET, function (err2) {
-            t.ifError(err2);
-            t.done();
+test('create bucket loaded', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var self = this;
+
+        c.createBucket(b, FULL_CFG, function (err) {
+                t.ifError(err);
+                c.getBucket(b, function (err2, bucket) {
+                        t.ifError(err2);
+                        self.assertBucket(t, bucket, FULL_CFG);
+                        t.end();
+                });
         });
-    });
 });
 
 
-test('create bucket ok object string, unique', function (t) {
-    var opts = {
-        schema: {
-            foo: {
-                type: 'string',
-                unique: true
-            }
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
-        t.ifError(err);
-        CLIENT.del('/' + BUCKET, function (err2) {
-            t.ifError(err2);
-            t.done();
+test('update bucket', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var self = this;
+
+        c.createBucket(b, FULL_CFG, function (err) {
+                t.ifError(err);
+                var cfg = clone(FULL_CFG);
+                cfg.index.foo = {
+                        type: 'string',
+                        unique: false
+                };
+                cfg.post.push(function two(req, cb) {
+                        cb();
+                });
+                c.updateBucket(b, cfg, function (err2) {
+                        t.ifError(err2);
+                        c.getBucket(b, function (err3, bucket) {
+                                t.ifError(err3);
+                                self.assertBucket(t, bucket, cfg);
+                                t.end();
+                        });
+                });
         });
-    });
 });
 
 
-test('create bucket ok object number, unique', function (t) {
-    var opts = {
-        schema: {
-            foo: {
-                type: 'number',
-                unique: true
-            }
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
-        t.ifError(err);
-        CLIENT.del('/' + BUCKET, function (err2) {
-            t.ifError(err2);
-            t.done();
+test('create bucket bad index type', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        c.createBucket(b, {index: {foo: 'foo'}}, function (err) {
+                t.ok(err);
+                t.equal(err.name, 'InvalidBucketConfigError');
+                t.ok(err.message);
+                t.end();
         });
-    });
 });
 
 
-test('create bucket ok indexes of all types', function (t) {
-    var opts = {
-        schema: {
-            _id: {
-                type: 'number',
-                unique: true
-            },
-            email: {
-                type: 'string',
-                unique: true
-            },
-            age: {
-                type: 'number'
-            },
-            ismanager: {
-                type: 'boolean'
-            }
-        }
-    };
-    CLIENT.put('/' + BUCKET, opts, function (err, req, res) {
-        t.ifError(err);
-        t.done();
-    });
-});
-
-
-test('list buckets ok', function (t) {
-    CLIENT.get('/', function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(obj[BUCKET]);
-        t.ok(obj[BUCKET].schema);
-        checkBucketSchema(t, obj[BUCKET].schema);
-        t.done();
-    });
+test('create bucket triggers not function', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        c.createBucket(b, {pre: ['foo']}, function (err) {
+                t.ok(err);
+                t.equal(err.name, 'NotFunctionError');
+                t.ok(err.message);
+                t.end();
+        });
 });
 
 
 test('get bucket 404', function (t) {
-    CLIENT.get('/' + uuid(), function (err, req, res) {
-        t.ok(err);
-        t.equal(err.code, 'ResourceNotFound');
-        t.ok(err.message);
-        t.done();
-    });
-});
-
-test('get bucket (schema) ok', function (t) {
-    CLIENT.get('/' + BUCKET, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.schema);
-        checkBucketSchema(t, obj.schema);
-        t.done();
-    });
-});
-
-
-test('put key #1', function (t) {
-    var key = '/' + BUCKET + '/foo';
-    CLIENT.put(key, {_id: 1}, function (err, req, res, obj) {
-        t.ifError(err);
-        t.done();
-    });
-});
-
-
-test('put key #2', function (t) {
-    var key = '/' + BUCKET + '/bar';
-    CLIENT.put(key, {_id: 2}, function (err, req, res, obj) {
-        t.ifError(err);
-        t.done();
-    });
-});
-
-
-test('list bucket keys', function (t) {
-    CLIENT.get('/' + BUCKET, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.keys);
-        t.equal(Object.keys(obj.keys).length, 2);
-        t.done();
-    });
-});
-
-
-test('page bucket keys', function (t) {
-    CLIENT.get('/' + BUCKET + '?limit=1', function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.keys);
-        t.equal(Object.keys(obj.keys).length, 1);
-        t.ok(obj.keys.bar);
-        t.ok(obj.keys.bar.etag);
-        t.ok(obj.keys.bar.mtime);
-        t.ok(res.headers['link']);
-        var next = res.headers['link'].split(';')[0].substr(1);
-        next = next.substr(0, next.length - 1);
-        CLIENT.get(next, function (err2, req2, res2, obj2) {
-            t.ifError(err2);
-            t.ok(obj2.keys);
-            t.equal(Object.keys(obj2.keys).length, 1);
-            t.ok(obj2.keys.foo);
-            t.ok(obj2.keys.foo.etag);
-            t.ok(obj2.keys.foo.mtime);
-            t.equal(res2.headers['link'], undefined);
-            t.done();
+        var c = this.client;
+        c.getBucket(uuid.v4().substr(0, 7), function (err) {
+                t.ok(err);
+                t.equal(err.name, 'BucketNotFoundError');
+                t.ok(err.message);
+                t.end();
         });
-    });
-});
-
-
-test('list keys by prefix', function (t) {
-    CLIENT.get('/' + BUCKET + '?prefix=f', function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.keys);
-        t.equal(Object.keys(obj.keys).length, 1);
-        t.ok(obj.keys.foo);
-        t.ok(obj.keys.foo.etag);
-        t.ok(obj.keys.foo.mtime);
-        t.done();
-    });
-});
-
-
-test('delete bucket', function (t) {
-    CLIENT.del('/' + BUCKET, function (err) {
-        t.ifError(err);
-        t.done();
-    });
-});
-
-
-test('stop server', function (t) {
-    SERVER.stop(function () {
-        t.done();
-    });
 });
