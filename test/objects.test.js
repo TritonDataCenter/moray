@@ -431,7 +431,6 @@ test('find MANTA-156', function (t) {
         var b = this.bucket;
         var c = this.client;
         var k = uuid.v4();
-        var now = Date.now();
         var v = {
                 num: 0,
                 num_u: 1
