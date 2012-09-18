@@ -3,12 +3,14 @@
         "manatee": {
                 "path": "/manatee/sdc",
                 "pg": {
+	                "connectTimeout": 1000,
                         "maxConnections": 5,
                         "maxIdleTime": 30000,
                         "checkInterval": 10000,
                         "queryTimeout": 5000
                 },
                 "zk": {
+                        "connectTimeout": 1000,
                         "servers": [ {
                                 "host": "ZK_IP",
                                 "port": 2181
