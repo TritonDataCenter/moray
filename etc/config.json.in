@@ -3,11 +3,11 @@
         "manatee": {
                 "path": "/manatee/sdc",
                 "pg": {
-	                "connectTimeout": 1000,
+	                "connectTimeout": 3000,
                         "maxConnections": 5,
                         "maxIdleTime": 30000,
                         "checkInterval": 10000,
-                        "queryTimeout": 5000
+                        "queryTimeout": 30000
                 },
                 "zk": {
                         "connectTimeout": 1000,
