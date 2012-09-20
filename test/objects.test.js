@@ -52,7 +52,10 @@ var BUCKET_CFG = {
         }],
         post: [function (req, cb) {
                 cb();
-        }]
+        }],
+        options: {
+                trackModification: true
+        }
 };
 
 
@@ -466,6 +469,53 @@ test('find MANTA-156', function (t) {
         }, function (err) {
                 t.ifError(err);
                 t.ok(found);
+                t.end();
+        });
+});
+
+
+test('trackModification (MANTA-269)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var id1;
+        var self = this;
+
+        vasync.pipeline({
+                funcs: [ function create(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function getOne(_, cb) {
+                        c.getObject(b, k, {noCache: true}, function (err, obj) {
+                                if (err) {
+                                        cb(err);
+                                } else {
+                                        t.ok(obj);
+                                        self.assertObject(t, obj, k, v);
+                                        id1 = obj._id;
+                                        cb();
+                                }
+                        });
+                }, function update(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function getTwo(_, cb) {
+                        c.getObject(b, k, {noCache: true}, function (err, obj) {
+                                if (err) {
+                                        cb(err);
+                                } else {
+                                        t.ok(obj);
+                                        self.assertObject(t, obj, k, v);
+                                        t.notEqual(id1, obj._id);
+                                        cb();
+                                }
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+
                 t.end();
         });
 });
