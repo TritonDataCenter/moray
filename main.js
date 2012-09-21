@@ -123,7 +123,7 @@ _config = readConfig(_options);
 LOG.debug({config: _config}, 'configuration loaded');
 
 if (cluster.isMaster && _config.fork) {
-        var min_child_ram = 64 * 1024;
+        var min_child_ram = 64 * 1024 * 1024;
         var cpus = os.cpus().length;
         var slots = Math.ceil(os.totalmem() / min_child_ram);
         var max_forks = (cpus >= slots) ? slots : cpus;
