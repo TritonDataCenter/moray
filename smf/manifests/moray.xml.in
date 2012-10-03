@@ -20,7 +20,7 @@
         <exec_method
             type="method"
             name="start"
-            exec="node --no-deprecation main.js -f etc/config.json -v &amp;"
+            exec="node --no-deprecation main.js -f etc/config.json &amp;"
             timeout_seconds="30">
             <method_context working_directory="/opt/smartdc/moray">
                 <method_credential user="nobody"
