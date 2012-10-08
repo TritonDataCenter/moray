@@ -83,3 +83,48 @@ test('MANTA-117 single quotes not being escaped', function (t) {
                 });
         });
 });
+
+
+test('MANTA-328 numeric values in filters', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid();
+        var cfg = {
+                index: {
+                        num: {
+                                type: 'number'
+                        }
+                }
+        };
+        var data = {
+                num: 123
+        };
+
+        c.putBucket(b, cfg, function (err1) {
+                t.ifError(err1);
+                c.putObject(b, k, data, function (err2) {
+                        t.ifError(err2);
+                        var ok = false;
+                        var f = '(num=123)';
+                        var req = c.findObjects(b, f);
+                        req.once('error', function (err) {
+                                t.ifError(err);
+                                t.end();
+                        });
+                        req.once('end', function () {
+                                t.ok(ok);
+                                t.end();
+                        });
+                        req.once('record', function (obj) {
+                                t.ok(obj);
+                                t.equal(obj.bucket, b);
+                                t.equal(obj.key, k);
+                                t.deepEqual(obj.value, data);
+                                t.ok(obj._id);
+                                t.ok(obj._etag);
+                                t.ok(obj._mtime);
+                                ok = true;
+                        });
+                });
+        });
+});

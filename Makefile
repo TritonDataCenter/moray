@@ -42,7 +42,7 @@ CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 #
 
 NODE_PREBUILT_TAG	= zone
-NODE_PREBUILT_VERSION	:= v0.8.9
+NODE_PREBUILT_VERSION	:= v0.8.11
 
 # RELENG-341: no npm cache is making builds unreliable
 NPM_FLAGS :=
@@ -70,11 +70,11 @@ PATH	:= $(NODE_INSTALL)/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS)
-	$(NPM) install
+all: $(SMF_MANIFESTS) deps
 
-$(NODEUNIT): | $(NPM_EXEC)
-	$(NPM) install
+.PHONY: deps
+deps: | $(REPO_DEPS) $(NPM_EXEC)
+	$(NPM_ENV) $(NPM) install
 
 .PHONY: shrinkwrap
 shrinkwrap: | $(NPM_EXEC)
@@ -84,6 +84,7 @@ shrinkwrap: | $(NPM_EXEC)
 test: $(NODEUNIT)
 	$(NODEUNIT) test/buckets.test.js | $(BUNYAN)
 	$(NODEUNIT) test/objects.test.js | $(BUNYAN)
+	$(NODEUNIT) test/integ.test.js | $(BUNYAN)
 
 
 .PHONY: cover
