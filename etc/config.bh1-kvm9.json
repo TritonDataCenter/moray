@@ -5,14 +5,14 @@
                 "pg": {
                         "connectTimeout": 1000,
                         "maxConnections": 5,
-                        "maxIdleTime": 5000,
-                        "checkInterval": 10000,
+                        "maxIdleTime": 300000,
+                        "checkInterval": 600000,
                         "queryTimeout": 2000
                 },
                 "zk": {
                         "connectTimeout": 2000,
                         "servers": [ {
-                                "host": "10.2.209.224",
+                                "host": "10.2.209.62",
                                 "port": 2181
                         } ],
                         "timeout": 10000
