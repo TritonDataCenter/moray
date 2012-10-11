@@ -218,3 +218,36 @@ test('MANTA-328 numeric values in filters >=', function (t) {
                 });
         });
 });
+
+
+test('MANTA-170 bogus filter', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid();
+        var cfg = {
+                index: {
+                        num: {
+                                type: 'number'
+                        }
+                }
+        };
+        var data = {
+                num: 425
+        };
+
+        c.putBucket(b, cfg, function (err1) {
+                t.ifError(err1);
+                c.putObject(b, k, data, function (err2) {
+                        t.ifError(err2);
+                        var f = '(num>81)';
+                        var req = c.findObjects(b, f);
+                        req.once('error', function (err) {
+                                t.end();
+                        });
+                        req.once('end', function () {
+                                t.ok(false);
+                                t.end();
+                        });
+                });
+        });
+});
