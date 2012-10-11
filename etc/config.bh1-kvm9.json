@@ -12,7 +12,7 @@
                 "zk": {
                         "connectTimeout": 2000,
                         "servers": [ {
-                                "host": "10.2.209.62",
+                                "host": "10.2.209.202",
                                 "port": 2181
                         } ],
                         "timeout": 10000
