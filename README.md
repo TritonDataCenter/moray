@@ -29,6 +29,7 @@ currently `primary` in manatee):
         index text NOT NULL,
         pre text NOT NULL,
         post text NOT NULL,
+        options text,
         mtime timestamp without time zone DEFAULT now() NOT NULL
     );
 
