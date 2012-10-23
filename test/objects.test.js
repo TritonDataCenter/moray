@@ -563,3 +563,98 @@ test('non-indexed AND searches (MANTA-317)', function (t) {
                 t.end();
         });
 });
+
+
+test('_txn_snap on update', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var txn;
+        var self = this;
+
+        vasync.pipeline({
+                funcs: [ function create(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function getOne(_, cb) {
+                        c.getObject(b, k, {noCache: true}, function (err, obj) {
+                                if (err) {
+                                        cb(err);
+                                } else {
+                                        t.ok(obj);
+                                        self.assertObject(t, obj, k, v);
+                                        t.ok(obj._txn_snap);
+                                        txn = obj._txn_snap;
+                                        cb();
+                                }
+                        });
+                }, function update(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function getTwo(_, cb) {
+                        c.getObject(b, k, {noCache: true}, function (err, obj) {
+                                if (err) {
+                                        cb(err);
+                                } else {
+                                        t.ok(obj);
+                                        self.assertObject(t, obj, k, v);
+                                        t.ok(obj._txn_snap);
+                                        t.notEqual(txn, obj._txn_snap);
+                                        t.ok(obj._txn_snap > txn);
+                                        cb();
+                                }
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+
+                t.end();
+        });
+});
+
+
+test('find _txn_snap', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hello',
+                str_2: 'world'
+        };
+        var found = false;
+
+        vasync.pipeline({
+                funcs: [ function wait(_, cb) {
+                        setTimeout(cb, 500);
+                }, function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function find(_, cb) {
+                        var f = '(&(_txn_snap>=1)(_id>=1))';
+                        var req = c.findObjects(b, f);
+                        req.once('error', cb);
+                        req.once('end', cb);
+                        req.once('record', function (obj) {
+                                t.ok(obj);
+                                if (!obj)
+                                        return (undefined);
+
+                                t.equal(obj.bucket, b);
+                                t.equal(obj.key, k);
+                                t.deepEqual(obj.value, v);
+                                t.ok(obj._id);
+                                t.ok(obj._etag);
+                                t.ok(obj._mtime);
+                                t.ok(obj._txn_snap);
+                                found = true;
+                                return (undefined);
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.ok(found);
+                t.end();
+        });
+});

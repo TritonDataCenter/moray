@@ -454,6 +454,20 @@ try to read from the Postgres asynchronous slave.  So, if you want guaranteed re
 after write consistency, set `noCache`.  This can be done on a request by
 request basis.
 
+Also, another important note is regarding the magic column `_txn_snap`.  This
+field represents the postgres internal transaction *snapshot* that corresponds
+to when this record was written (specifically the `xmin` component).  To really
+get this, you probably want to go read up on how
+[MVCC is implemented in postgres](http://momjian.us/main/writings/pgsql/internalpics.pdf);
+specifically pp56-58.  The short of it is, for records in moray, it is
+possible/probable that more than one record will have the same `_txn_snap`
+value, so you cannot rely on it as a unique id.  However, you can rely on it to
+be the only thing that will increase over time, and if your query's `_txn_snap`
+is not the *latest* one, you won't see phantom reads.  This field was built into
+Moray to solve the "sliding window" problem where consumers use Moray as a queue
+(it makes sense if you want durable H/A...); what it means is that consumers
+doing this need to use both the `_id` and `_txn_snap` fields.
+
 ### API
 
     client.getObject('foo', 'mcavage', function (err, obj) {
@@ -461,10 +475,10 @@ request basis.
         console.log(util.inspect(obj));
     });
 
-Would output an object that has the attributes `bucket`, `key`, `value`,
-`_id`, `_etag`, `_mtime` (in epoch time).  If all you care about is the
-original user-set value, just use `obj.value`.  See the example CLI
-output below for a full example.
+Would output an object that has the attributes `bucket`, `key`, `value`, `_id`,
+`_etag`, `_mtime` (in epoch time) and `_txn_snap`.  If all you care about is the
+original user-set value, just use `obj.value`.  See the example CLI output below
+for a full example.
 
 ### Inputs
 
@@ -495,7 +509,8 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
        },
        "_id": 1,
        "_etag": "D4DC3CFE",
-       "_mtime": 1343724604354
+       "_mtime": 1343724604354,
+	   "_txn_snap": 8349
     }
 
 ## FindObjects
@@ -572,7 +587,8 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
       },
       "_id": 4,
       "_etag": "09D27A3F",
-      "_mtime": 1343726032177
+      "_mtime": 1343726032177,
+	  "_txn_snap": 7894
     }
     {
       "bucket": "foo",
@@ -583,7 +599,8 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
       },
       "_id": 1,
       "_etag": "D4DC3CFE",
-      "_mtime": 1343724604354
+      "_mtime": 1343724604354,
+	  "_txn_snap": 7882
     }
     {
       "bucket": "foo",
@@ -594,7 +611,8 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
       },
       "_id": 3,
       "_etag": "84C510D7",
-      "_mtime": 1343726026322
+      "_mtime": 13437260263184,
+	  "_txn_snap": 7894
     }
 
 ## DeleteObject
