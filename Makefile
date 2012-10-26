@@ -104,7 +104,8 @@ release: all docs $(SMF_MANIFESTS)
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray
 	@mkdir -p $(TMPDIR)/root
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/etc
-	cp -r   $(ROOT)/build \
+	cp -r   $(ROOT)/bin \
+		$(ROOT)/build \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \
