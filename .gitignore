@@ -12,6 +12,5 @@ cscope.files
 logfile
 .coverage_data
 cover_html
-bin
 *.tar.bz2
 smf/manifests/*.xml
