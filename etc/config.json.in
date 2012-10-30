@@ -1,5 +1,7 @@
 {
         "port": 2020,
+        "logLevel": "info",
+        "numWorkers": 2,
         "manatee": {
                 "path": "/manatee/sdc",
                 "pg": {

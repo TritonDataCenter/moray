@@ -1,8 +1,11 @@
 {
         "port": 2020,
+        "logLevel": "info",
+        "numWorkers": 2,
         "manatee": {
                 "path": "/manatee/sdc",
                 "pg": {
+	                "connectTimeout": 3000,
                         "maxConnections": 5,
                         "maxIdleTime": 30000,
                         "checkInterval": 10000,

@@ -122,15 +122,15 @@ LOG.debug({options: _options}, 'command line options parsed');
 _config = readConfig(_options);
 LOG.debug({config: _config}, 'configuration loaded');
 
+if (_config.logLevel) {
+        if (bunyan.resolveLevel(_config.logLevel) < LOG.level())
+                LOG.level(_config.logLevel);
+}
+
+
 if (cluster.isMaster && _config.fork) {
-        var min_child_ram = 64 * 1024 * 1024;
-        var cpus = os.cpus().length;
-        var slots = Math.ceil(os.totalmem() / min_child_ram);
-        var max_forks = (cpus >= slots) ? slots : cpus;
-
-        for (var i = 0; i < max_forks; i++)
+        for (var i = 0; i < (_config.numWorkers || 2); i++)
                 cluster.fork();
-
 } else {
         run(_config);
 
