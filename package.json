@@ -21,7 +21,7 @@
                 "vasync": "1.3.2",
                 "verror": "git://github.com/davepacheco/node-verror.git#1514e14",
                 "xtend": "1.0.3",
-                "zkplus": "git://github.com/mcavage/node-zkplus.git#2f0667"
+                "zkplus": "git://github.com/mcavage/node-zkplus.git#2f0667c"
         },
         "devDependencies": {
                 "cover": "0.2.8",
