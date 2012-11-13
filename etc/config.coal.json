@@ -6,13 +6,13 @@
                 "path": "/manatee/sdc",
                 "pg": {
 	                "connectTimeout": 3000,
-                        "maxConnections": 5,
+	                "firstResultTimeout": 3000,
+                        "maxConnections": 15,
                         "maxIdleTime": 30000,
                         "checkInterval": 10000,
                         "queryTimeout": 5000
                 },
                 "zk": {
-                        "connectTimeout": 1000,
                         "servers": [ {
                                 "host": "10.99.99.11",
                                 "port": 2181
