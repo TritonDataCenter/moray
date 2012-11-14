@@ -45,24 +45,15 @@ function compareNodeNames(a, b) {
 
 
 function createZkClient(opts, cb) {
-        var done = false;
-        function _cb(err) {
-                if (done)
-                        return;
-                done = true;
-                cb(err, zk);
-        }
-
         var zk = zkplus.createClient({
-                autoReconnect: false,
-                connectTimeout: 2000,
                 log: LOG,
                 servers: [opts.zk],
-                timeout: 6000
+                timeout: 30000
         });
 
-        zk.once('error', _cb);
-        zk.once('connect', _cb);
+        zk.once('connect', function () {
+                cb(null, zk);
+        });
 }
 
 
