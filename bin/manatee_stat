@@ -54,6 +54,8 @@ function createZkClient(opts, cb) {
         zk.once('connect', function () {
                 cb(null, zk);
         });
+
+        zk.connect();
 }
 
 
