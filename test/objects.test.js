@@ -371,6 +371,7 @@ test('find (like marlin)', function (t) {
                                 t.equal(obj.key, k);
                                 t.deepEqual(obj.value, v);
                                 t.ok(obj._id);
+                                t.ok(obj._count);
                                 t.ok(obj._etag);
                                 t.ok(obj._mtime);
                                 found = true;
