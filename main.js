@@ -33,7 +33,7 @@ var LOG = bunyan.createLogger({
                 }
         }
 });
-
+var LOG_LEVEL_OVERRIDE = false;
 
 
 ///--- Internal Functions
@@ -63,6 +63,7 @@ function parseOptions() {
                 case 'v':
                         // Allows us to set -vvv -> this little hackery
                         // just ensures that we're never < TRACE
+                        LOG_LEVEL_OVERRIDE = true;
                         LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
                         if (LOG.level() <= bunyan.DEBUG)
                                 LOG = LOG.child({src: true});
@@ -122,14 +123,14 @@ LOG.debug({options: _options}, 'command line options parsed');
 _config = readConfig(_options);
 LOG.debug({config: _config}, 'configuration loaded');
 
-if (_config.logLevel) {
-        if (bunyan.resolveLevel(_config.logLevel) < LOG.level())
+if (_config.logLevel && !LOG_LEVEL_OVERRIDE) {
+        if (bunyan.resolveLevel(_config.logLevel))
                 LOG.level(_config.logLevel);
 }
 
 
-if (cluster.isMaster && _config.fork) {
-        for (var i = 0; i < (_config.numWorkers || 2); i++)
+if (cluster.isMaster && _config.fork && _config.numWorkers > 0) {
+        for (var i = 0; i < _config.numWorkers; i++)
                 cluster.fork();
 } else {
         run(_config);

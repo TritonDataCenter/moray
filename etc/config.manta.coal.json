@@ -1,21 +1,20 @@
 {
         "port": 2020,
         "logLevel": "info",
-        "audit": false,
-        "numWorkers": 0,
+        "numWorkers": 2,
         "manatee": {
                 "path": "/manatee/1.moray.joyent.us",
                 "pg": {
-                        "connectTimeout": 1000,
-                        "maxConnections": 5,
-                        "maxIdleTime": 5000,
+	                "connectTimeout": 3000,
+	                "firstResultTimeout": 3000,
+                        "maxConnections": 15,
+                        "maxIdleTime": 30000,
                         "checkInterval": 10000,
-                        "queryTimeout": 2000
+                        "queryTimeout": 5000
                 },
                 "zk": {
-                        "connectTimeout": 2000,
                         "servers": [ {
-                                "host": "10.2.201.227",
+                                "host": "10.99.99.119",
                                 "port": 2181
                         } ],
                         "timeout": 10000
