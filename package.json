@@ -12,7 +12,7 @@
                 "crc": "0.2.0",
                 "deep-equal": "0.0.0",
                 "expiring-lru-cache": "2.1.0",
-                "fast": "git://github.com/mcavage/node-fast.git#119ce35",
+                "fast": "git://github.com/mcavage/node-fast.git#13f2eaa",
                 "ldapjs": "git://github.com/mcavage/node-ldapjs#51e6abf",
                 "microtime": "0.3.2",
                 "node-uuid": "1.4.0",
