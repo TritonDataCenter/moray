@@ -22,6 +22,7 @@ var NAME = 'manatee_stat';
 var LOG = bunyan.createLogger({
         name: path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'fatal'),
+        src: true,
         serializers: {
                 err: bunyan.stdSerializers.err
         }
@@ -138,6 +139,21 @@ function loadTopology(opts, callback) {
                                                 cb();
                                 });
                         });
+                },
+                function registrarStatus(arg, cb) {
+                        var count = 0;
+                        arg.shards.forEach(function (s) {
+                                var path = '/' +
+                                           s.split('.').reverse().join('/') +
+                                           '/pg';
+                                ZK.get(path, function(err, object) {
+                                        topology[s].registrar = object;
+                                        count++;
+
+                                        if (count === arg.shards.length)
+                                                cb();
+                                });
+                        });
                 }
         ];
         var topology = {}
@@ -154,7 +170,6 @@ function loadTopology(opts, callback) {
                 callback(err, topology);
         });
 }
-
 
 function parseOptions() {
         var option;
