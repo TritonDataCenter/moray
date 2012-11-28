@@ -3,10 +3,10 @@
         "logLevel": "info",
         "numWorkers": 2,
         "manatee": {
-                "path": "/manatee/sdc",
+                "path": "/manatee/sdc/election",
                 "pg": {
-	                "connectTimeout": 3000,
-			"firstResultTimeout": 10000,
+                        "connectTimeout": 3000,
+                        "firstResultTimeout": 10000,
                         "maxConnections": 15,
                         "maxIdleTime": 120000,
                         "checkInterval": 30000,
