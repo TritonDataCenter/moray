@@ -3,7 +3,7 @@
         "logLevel": "info",
         "numWorkers": 2,
         "manatee": {
-                "path": "/manatee/sdc",
+                "path": "/manatee/sdc/election",
                 "pg": {
 	                "connectTimeout": 3000,
 	                "firstResultTimeout": 3000,

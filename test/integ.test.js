@@ -251,3 +251,37 @@ test('MANTA-170 bogus filter', function (t) {
                 });
         });
 });
+
+
+test('MANTA-680 boolean searches', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid();
+        var cfg = {
+                index: {
+                        b: {
+                                type: 'boolean'
+                        }
+                }
+        };
+        var data = {
+                b: true
+        };
+
+        c.putBucket(b, cfg, function (err1) {
+                t.ifError(err1);
+                c.putObject(b, k, data, function (err2) {
+                        t.ifError(err2);
+                        var f = '(b=true)';
+                        var req = c.findObjects(b, f);
+                        var ok = false;
+                        req.once('record', function () {
+                                ok = true;
+                        });
+                        req.once('end', function () {
+                                t.ok(ok);
+                                t.end();
+                        });
+                });
+        });
+});
