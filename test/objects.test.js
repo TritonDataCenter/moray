@@ -137,7 +137,15 @@ test('CRUD object', function (t) {
 
         vasync.pipeline({
                 funcs: [ function put(_, cb) {
-                        c.putObject(b, k, v, cb);
+                        c.putObject(b, k, v, function (err, meta) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(meta);
+                                if (meta)
+                                        t.ok(meta.etag);
+                                return (cb());
+                        });
                 }, function get(_, cb) {
                         c.getObject(b, k, function (err, obj) {
                                 if (err)
