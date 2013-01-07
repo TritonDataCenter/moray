@@ -1,0 +1,26 @@
+global
+        log 127.0.0.1 local0
+        user nobody
+        group nobody
+        daemon
+        pidfile /var/run/haproxy.pid
+        stats socket /tmp/haproxy.sock
+
+defaults
+        mode    tcp
+        balance leastconn
+        maxconn 65535
+        retries 1
+        option redispatch
+        option abortonclose
+        timeout queue   0
+        timeout connect 500
+        timeout client  30000
+        timeout server  3000
+
+frontend moray
+        bind *:2020
+        default_backend servers
+
+backend servers
+@@MORAY_INSTANCES@@

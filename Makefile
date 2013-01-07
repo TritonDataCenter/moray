@@ -33,7 +33,7 @@ JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -C -f ./tools/jsstyle.conf
 SHRINKWRAP	 = npm-shrinkwrap.json
-SMF_MANIFESTS_IN = smf/manifests/moray.xml.in
+SMF_MANIFESTS_IN = smf/manifests/haproxy.xml.in
 
 CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 
@@ -113,6 +113,7 @@ release: all docs $(SMF_MANIFESTS)
 		$(ROOT)/smf \
 		$(TMPDIR)/root/opt/smartdc/moray/
 	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/moray/etc
+	cp $(ROOT)/etc/haproxy.cfg.in $(TMPDIR)/root/opt/smartdc/moray/etc
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root)
 	@rm -rf $(TMPDIR)
 

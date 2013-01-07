@@ -27,7 +27,7 @@
         <exec_method
             type="method"
             name="start"
-            exec="node main.js -f etc/config.json &amp;"
+            exec="node main.js -f etc/config.json -p %{moray/port} &amp;"
             timeout_seconds="30">
             <method_context working_directory="/opt/smartdc/moray">
                 <method_credential user="nobody"
@@ -49,7 +49,13 @@
                      timeout_seconds="30" />
 
         <property_group name="application" type="application" />
-        <instance name="default" enabled="true" />
+
+        <instance name="moray-@@MORAY_PORT@@" enabled="true">
+          <property_group name="moray" type="application">
+            <propval name="port" type="astring" value="@@MORAY_PORT@@" />
+          </property_group>
+        </instance>
+
         <stability value='Unstable' />
 
         <template>

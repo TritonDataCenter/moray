@@ -41,7 +41,7 @@ var LOG_LEVEL_OVERRIDE = false;
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('cpsvf:(file)', process.argv);
+        var parser = new getopt.BasicParser('csvf:p:', process.argv);
 
         while ((option = parser.getopt()) !== undefined) {
                 switch (option.option) {
@@ -54,6 +54,12 @@ function parseOptions() {
 
                 case 'p':
                         opts.port = parseInt(option.optarg, 10);
+                        if (isNaN(opts.port)) {
+                                LOG.fatal({
+                                        port: option.optarg
+                                }, 'Invalid port.');
+                                process.exit(1);
+                        }
                         break;
 
                 case 's':
@@ -73,6 +79,11 @@ function parseOptions() {
                         process.exit(1);
                         break;
                 }
+        }
+
+        if (!opts.file) {
+                LOG.fatal({ opts: opts }, 'No config file specified.');
+                process.exit(1);
         }
 
         return (opts);
