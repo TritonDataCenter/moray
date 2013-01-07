@@ -50,7 +50,7 @@
 
         <property_group name="application" type="application" />
 
-        <instance name="moray-@@MORAY_PORT@@" enabled="true">
+        <instance name="@@MORAY_INSTANCE_NAME@@" enabled="true">
           <property_group name="moray" type="application">
             <propval name="port" type="astring" value="@@MORAY_PORT@@" />
           </property_group>

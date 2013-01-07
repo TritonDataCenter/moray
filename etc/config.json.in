@@ -1,7 +1,7 @@
 {
         "port": 2020,
         "logLevel": "info",
-        "numWorkers": 2,
+        "numWorkers": 0,
         "manatee": {
                 "path": "/manatee/sdc/election",
                 "pg": {
