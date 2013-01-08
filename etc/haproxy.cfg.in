@@ -15,8 +15,6 @@ defaults
         option abortonclose
         timeout queue   0
         timeout connect 500
-        timeout client  30000
-        timeout server  3000
 
 frontend moray
         bind *:2020
