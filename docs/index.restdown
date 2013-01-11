@@ -444,6 +444,56 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 
     $ putobject -d '{"email": "mark.cavage@joyent.com"}' foo mcavage
 
+
+## BatchPutObject
+
+Creates or overwrites a list of objects given a set of bucket/key/values.  The
+individual objects are pretty much exactly what you would send to `putObject`,
+but in a list. The main purpose of this API is to guarantee that a set of writes
+happens in a single transaction.
+
+Note that all of the checks in putObject will be run, so you can send in `etag`
+(notably) and enforcement will be done on an individual record basis. Also,
+objects can span buckets in this API.
+
+### API
+
+    var data = [{
+	    bucket: 'foo',
+		key: 'mcavage',
+		value: {
+            email: 'mark.cavage@joyent.com',
+            ismanager: false
+        }
+    }, {
+	    bucket: 'foo',
+		key: 'mcavage2',
+		value: {
+            email: 'mcavage@gmail.com',
+            ismanager: false
+        }
+    }];
+    client.batchPutObject(data, {req_id: '123'}, function (err, meta) {
+        assert.ifError(err);
+		console.log('etags: %j', meta.etags);
+    });
+
+### Inputs
+
+||**Field**||**Type**||**Description**||
+||objects||object||bucket/key/value tuples to store||
+||options||object||any optional parameters (req_id, etag)||
+||callback||function||only argument is `err` and `meta` which will have a list of etags||
+
+### Errors
+
+* BucketNotFoundError
+* EtagConflictError
+* NoDatabaseError
+* UniqueAttributeError
+
+Plus any currently unhandled Postgres Errors (such as relation already exists).
+
 ## GetObject
 
 Retrieves an object by bucket/key.  An important option to keep in mind is the

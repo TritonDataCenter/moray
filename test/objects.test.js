@@ -178,6 +178,59 @@ test('CRUD object', function (t) {
 });
 
 
+test('batch put object', function (t) {
+        var c = this.client;
+        var self = this;
+        var requests = [
+                {
+                        bucket: self.bucket,
+                        key: uuid.v4(),
+                        value: {
+                                foo: 'bar'
+                        }
+                },
+                {
+                        bucket: self.bucket,
+                        key: uuid.v4(),
+                        value: {
+                                bar: 'baz'
+                        }
+                }
+        ];
+        c.batchPutObject(requests, function (err, meta) {
+                t.ifError(err);
+                t.ok(meta);
+                if (meta) {
+                        t.ok(meta.etags);
+                        if (meta.etags) {
+                                t.ok(Array.isArray(meta.etags));
+                                t.equal(meta.etags.length, 2);
+                                meta.etags.forEach(function (e) {
+                                        t.equal(self.bucket, e.bucket);
+                                        t.ok(e.key);
+                                        t.ok(e.etag);
+                                });
+                        }
+                }
+                c.getObject(self.bucket, requests[0].key, function (er2, obj) {
+                        t.ifError(er2);
+                        t.ok(obj);
+                        if (obj)
+                                t.deepEqual(obj.value, requests[0].value);
+
+                        var b = self.bucket;
+                        var r = requests[1];
+                        c.getObject(b, r.key, function (err3, obj2) {
+                                t.ifError(err3);
+                                t.ok(obj2);
+                                if (obj2)
+                                        t.deepEqual(obj2.value, r.value);
+                                t.end();
+                        });
+                });
+        });
+});
+
 test('CRUD objects unique indexes', function (t) {
         var b = this.bucket;
         var c = this.client;
