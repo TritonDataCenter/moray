@@ -1,7 +1,14 @@
 {
         "port": 2020,
         "logLevel": "info",
-        "numWorkers": 2,
+        "bunyan": {
+                "level": "info",
+                "syslog": {
+                        "facility": "local0",
+                        "type": "udp"
+                }
+        },
+        "numWorkers": 0,
         "manatee": {
                 "path": "/manatee/1.moray.joyent.us",
                 "pg": {

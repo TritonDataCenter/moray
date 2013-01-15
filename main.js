@@ -5,6 +5,7 @@ var fs = require('fs');
 var os = require('os');
 
 var assert = require('assert-plus');
+var bsyslog = require('bunyan-syslog');
 var bunyan = require('bunyan');
 var clone = require('clone');
 var getopt = require('posix-getopt');
@@ -22,21 +23,27 @@ var DEFAULTS = {
         port: 2020
 };
 var NAME = 'moray';
-var LOG = bunyan.createLogger({
-        name: NAME,
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: {
-                err: bunyan.stdSerializers.err,
-                pg: function (client) {
-                        return (client ? client._moray_id : undefined);
-                }
-        }
-});
+var LOG = createLogger(process.stderr, process.env.LOG_LEVEL);
 var LOG_LEVEL_OVERRIDE = false;
 
 
+
 ///--- Internal Functions
+
+function createLogger(stream, level) {
+        return bunyan.createLogger({
+                name: NAME,
+                level: (level || 'info'),
+                stream: stream,
+                serializers: {
+                        err: bunyan.stdSerializers.err,
+                        pg: function (client) {
+                                return (client ? client._moray_id : undefined);
+                        }
+                }
+        });
+}
+
 
 function parseOptions() {
         var option;
@@ -109,6 +116,35 @@ function readConfig(options) {
 }
 
 
+function setupLogger(config) {
+        var cfg_b = config.bunyan;
+        assert.object(cfg_b, 'config.bunyan');
+        assert.optionalString(cfg_b.level, 'config.bunyan.level');
+        assert.optionalObject(cfg_b.syslog, 'config.bunyan.syslog');
+
+        var level = LOG.level();
+
+        if (cfg_b.syslog && !LOG_LEVEL_OVERRIDE) {
+                assert.string(cfg_b.syslog.facility,
+                              'config.bunyan.syslog.facility');
+                assert.string(cfg_b.syslog.type, 'config.bunyan.syslog.type');
+                var sysl = bsyslog.createBunyanStream({
+                        facility: bsyslog.facility[cfg_b.syslog.facility],
+                        name: NAME,
+                        host: cfg_b.syslog.host,
+                        port: cfg_b.syslog.port,
+                        type: cfg_b.syslog.type
+                });
+                LOG = createLogger(sysl, level);
+        }
+
+        if (cfg_b.level && !LOG_LEVEL_OVERRIDE) {
+                if (bunyan.resolveLevel(cfg_b.level))
+                        LOG.level(cfg_b.level);
+        }
+}
+
+
 function run(options) {
         assert.object(options);
 
@@ -134,11 +170,7 @@ LOG.debug({options: _options}, 'command line options parsed');
 _config = readConfig(_options);
 LOG.debug({config: _config}, 'configuration loaded');
 
-if (_config.logLevel && !LOG_LEVEL_OVERRIDE) {
-        if (bunyan.resolveLevel(_config.logLevel))
-                LOG.level(_config.logLevel);
-}
-
+setupLogger(_config);
 
 if (cluster.isMaster && _config.fork && _config.numWorkers > 0) {
         for (var i = 0; i < _config.numWorkers; i++)

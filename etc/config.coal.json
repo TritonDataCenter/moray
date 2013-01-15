@@ -1,7 +1,13 @@
 {
         "port": 2020,
-        "logLevel": "info",
-        "numWorkers": 2,
+        "numWorkers": 0,
+        "bunyan": {
+                "level": "info",
+                "syslog": {
+                        "facility": "local0",
+                        "type": "udp"
+                }
+        },
         "manatee": {
                 "path": "/manatee/sdc/election",
                 "pg": {
