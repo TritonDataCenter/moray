@@ -177,7 +177,8 @@ valid:
 
 Creates a new bucket given a name and a `config` object.  The `config` object
 defines an `index` section and optionally a `pre`, `post` array of trigger
-functions.
+functions.  Also, note that buckets can be versioned, such that subsequent
+updates will fail if the version rolls backwards.
 
 ### API
 
@@ -208,7 +209,10 @@ functions.
                 req.value.userid = Math.floor(Math.random() * 100001);
                 cb();
             }
-        ]
+        ],
+		options: {
+		    version: 1
+        }
     }
 
     client.createBucket('foo', cfg, function (err) {
@@ -314,6 +318,10 @@ Updates a bucket given a name and a `config` object.  Basically, looks exactly
 like `CreateBucket`.  The only reason we have `create|update bucket` and not
 `putBucket` is so that users can selectively _not_ stomp all over a bucket if
 they don't intend to (note there is a `putBucket` API in the client).
+
+The `version` param in options is required if you are using versioned buckets,
+and an error will be thrown if the version you are sending is `<=` than the
+version in the database.
 
 Note that if you *add* new indexes via updateBucket, then any *new* data will
 be indexed accordingly, but _old_ data will not.  You would need to rewrite

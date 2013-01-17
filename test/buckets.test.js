@@ -40,7 +40,8 @@ var FULL_CFG = {
                 }
         },
         pre: [function onePre(req, cb) { cb(); }],
-        post: [function onePost(req, cb) { cb(); }]
+        post: [function onePost(req, cb) { cb(); }],
+        options: {}
 };
 
 
@@ -148,6 +149,128 @@ test('update bucket', function (t) {
                                 self.assertBucket(t, bucket, cfg);
                                 t.end();
                         });
+                });
+        });
+});
+
+
+test('update bucket (versioned ok 0->1)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var self = this;
+
+        c.createBucket(b, FULL_CFG, function (err) {
+                t.ifError(err);
+                var cfg = clone(FULL_CFG);
+                cfg.options.version = 1;
+                cfg.index.foo = {
+                        type: 'string',
+                        unique: false
+                };
+                cfg.post.push(function two(req, cb) {
+                        cb();
+                });
+                c.updateBucket(b, cfg, function (err2) {
+                        t.ifError(err2);
+                        c.getBucket(b, function (err3, bucket) {
+                                t.ifError(err3);
+                                self.assertBucket(t, bucket, cfg);
+                                t.end();
+                        });
+                });
+        });
+});
+
+
+test('update bucket (versioned ok 1->2)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var cfg = clone(FULL_CFG);
+        var self = this;
+
+        cfg.options.version = 1;
+        c.createBucket(b, FULL_CFG, function (err) {
+                t.ifError(err);
+                cfg = clone(FULL_CFG);
+                cfg.options.version = 2;
+                cfg.index.foo = {
+                        type: 'string',
+                        unique: false
+                };
+                cfg.post.push(function two(req, cb) {
+                        cb();
+                });
+                c.updateBucket(b, cfg, function (err2) {
+                        t.ifError(err2);
+                        c.getBucket(b, function (err3, bucket) {
+                                t.ifError(err3);
+                                self.assertBucket(t, bucket, cfg);
+                                t.end();
+                        });
+                });
+        });
+});
+
+
+test('update bucket (versioned not ok 1 -> 0)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var cfg = clone(FULL_CFG);
+        cfg.options.version = 1;
+
+        c.createBucket(b, cfg, function (err) {
+                t.ifError(err);
+
+                cfg = clone(FULL_CFG);
+                cfg.options.version = 0;
+
+                cfg.index.foo = {
+                        type: 'string',
+                        unique: false
+                };
+                cfg.post.push(function two(req, cb) {
+                        cb();
+                });
+
+                c.updateBucket(b, cfg, function (err2) {
+                        t.ok(err2);
+                        if (err2) {
+                                t.equal(err2.name, 'BucketVersionError');
+                                t.ok(err2.message);
+                        }
+                        t.end();
+                });
+        });
+});
+
+
+test('update bucket (versioned not ok 2 -> 1)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var cfg = clone(FULL_CFG);
+        cfg.options.version = 2;
+
+        c.createBucket(b, cfg, function (err) {
+                t.ifError(err);
+
+                cfg = clone(FULL_CFG);
+                cfg.options.version = 1;
+
+                cfg.index.foo = {
+                        type: 'string',
+                        unique: false
+                };
+                cfg.post.push(function two(req, cb) {
+                        cb();
+                });
+
+                c.updateBucket(b, cfg, function (err2) {
+                        t.ok(err2);
+                        if (err2) {
+                                t.equal(err2.name, 'BucketVersionError');
+                                t.ok(err2.message);
+                        }
+                        t.end();
                 });
         });
 });
