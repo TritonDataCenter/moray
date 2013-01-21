@@ -179,60 +179,6 @@ test('CRUD object', function (t) {
 });
 
 
-test('batch put objects', function (t) {
-        var c = this.client;
-        var self = this;
-        var requests = [
-                {
-                        bucket: self.bucket,
-                        key: uuid.v4(),
-                        value: {
-                                foo: 'bar'
-                        }
-                },
-                {
-                        bucket: self.bucket,
-                        key: uuid.v4(),
-                        value: {
-                                bar: 'baz'
-                        }
-                }
-        ];
-        c.batchPutObject(requests, function (err, meta) {
-                t.ifError(err);
-                t.ok(meta);
-                if (meta) {
-                        t.ok(meta.etags);
-                        if (meta.etags) {
-                                t.ok(Array.isArray(meta.etags));
-                                t.equal(meta.etags.length, 2);
-                                meta.etags.forEach(function (e) {
-                                        t.equal(self.bucket, e.bucket);
-                                        t.ok(e.key);
-                                        t.ok(e.etag);
-                                });
-                        }
-                }
-                c.getObject(self.bucket, requests[0].key, function (er2, obj) {
-                        t.ifError(er2);
-                        t.ok(obj);
-                        if (obj)
-                                t.deepEqual(obj.value, requests[0].value);
-
-                        var b = self.bucket;
-                        var r = requests[1];
-                        c.getObject(b, r.key, function (err3, obj2) {
-                                t.ifError(err3);
-                                t.ok(obj2);
-                                if (obj2)
-                                        t.deepEqual(obj2.value, r.value);
-                                t.end();
-                        });
-                });
-        });
-});
-
-
 test('CRUD objects unique indexes', function (t) {
         var b = this.bucket;
         var c = this.client;
@@ -726,6 +672,60 @@ test('trackModification (MANTA-269)', function (t) {
 });
 
 
+test('batch put objects', function (t) {
+        var c = this.client;
+        var self = this;
+        var requests = [
+                {
+                        bucket: self.bucket,
+                        key: uuid.v4(),
+                        value: {
+                                foo: 'bar'
+                        }
+                },
+                {
+                        bucket: self.bucket,
+                        key: uuid.v4(),
+                        value: {
+                                bar: 'baz'
+                        }
+                }
+        ];
+        c.batch(requests, function (err, meta) {
+                t.ifError(err);
+                t.ok(meta);
+                if (meta) {
+                        t.ok(meta.etags);
+                        if (meta.etags) {
+                                t.ok(Array.isArray(meta.etags));
+                                t.equal(meta.etags.length, 2);
+                                meta.etags.forEach(function (e) {
+                                        t.equal(self.bucket, e.bucket);
+                                        t.ok(e.key);
+                                        t.ok(e.etag);
+                                });
+                        }
+                }
+                c.getObject(self.bucket, requests[0].key, function (er2, obj) {
+                        t.ifError(er2);
+                        t.ok(obj);
+                        if (obj)
+                                t.deepEqual(obj.value, requests[0].value);
+
+                        var b = self.bucket;
+                        var r = requests[1];
+                        c.getObject(b, r.key, function (err3, obj2) {
+                                t.ifError(err3);
+                                t.ok(obj2);
+                                if (obj2)
+                                        t.deepEqual(obj2.value, r.value);
+                                t.end();
+                        });
+                });
+        });
+});
+
+
 test('update objects no keys', function (t) {
         var b = this.bucket;
         var c = this.client;
@@ -744,7 +744,7 @@ test('update objects no keys', function (t) {
                 });
         }
 
-        c.batchPutObject(requests, function (put_err) {
+        c.batch(requests, function (put_err) {
                 t.ifError(put_err);
                 if (put_err) {
                         t.end();
@@ -778,7 +778,7 @@ test('update objects ok', function (t) {
                 });
         }
 
-        c.batchPutObject(requests, function (put_err) {
+        c.batch(requests, function (put_err) {
                 t.ifError(put_err);
                 if (put_err) {
                         t.end();
@@ -804,6 +804,73 @@ test('update objects ok', function (t) {
                                 }
 
                                 t.end();
+                        });
+                });
+        });
+});
+
+
+test('batch put/update', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var requests = [];
+        for (var i = 0; i < 10; i++) {
+                requests.push({
+                        bucket: b,
+                        key: uuid.v4().substr(0, 7),
+                        value: {
+                                num: 20,
+                                num_u: i,
+                                str: 'foo',
+                                str_u: uuid.v4().substr(0, 7)
+                        }
+                });
+        }
+
+        c.batch(requests, function (init_err) {
+                t.ifError(init_err);
+
+                var ops = [
+                        {
+                                bucket: b,
+                                key: requests[0].key,
+                                value: {
+                                        num: 10,
+                                        str: 'baz'
+                                }
+                        },
+                        {
+                                bucket: b,
+                                operation: 'update',
+                                fields: {
+                                        str: 'bar'
+                                },
+                                filter: '(num_u>=5)'
+                        }
+                ];
+                c.batch(ops, function (err, meta) {
+                        t.ifError(err);
+                        t.ok(meta);
+                        t.ok(meta.etags);
+                        var req = c.findObjects(b, '(num_u>=0)');
+                        req.once('error', function (e) {
+                                t.ifError(e);
+                                t.end();
+                        });
+                        req.once('end', function () {
+                                t.end();
+                        });
+                        req.on('record', function (r) {
+                                t.equal(r.bucket, b);
+                                t.ok(r.key);
+                                var v = r.value;
+                                if (v.num_u >= 5) {
+                                        t.equal(v.str, 'bar');
+                                } else if (r.key === requests[0].key) {
+                                        t.equal(v.str, 'baz');
+                                } else {
+                                        t.equal(v.str, 'foo');
+                                }
                         });
                 });
         });
