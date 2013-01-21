@@ -708,6 +708,43 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 
     $ delobject foo mcavage
 
+
+## UpdateObjects
+
+Allows you to bulk update a set of objects in one transaction.  Note you can
+only update indexed fields.  You call this API with a bucket, a list of fields
+to update and a filter, that is exactly the same syntax as `findObjects`.  To
+use this API, you must set the bucket options `syncUpdates: true` at
+`putBucket` time, otherwise you'll effectively have data corruption.
+
+A few caveats:
+
+- All objects affected by the update will have the same `_etag`.
+- The `JSON value` will *not* be updated.  You will have to pay on every get
+  request to merge them (the bucket options field drives this logic).
+
+### API
+
+    var attrs = {
+	    isManager: true
+    };
+	var filter = '(email=*@joyent.com)';
+    var req = client.updateObjects('foo', attrs, filter, function (err, meta) {
+	    assert.ifError(err);
+		console.log(meta.etag); // new etag for all updated objects
+		...
+    });
+
+
+### Inputs
+
+||**Field**||**Type**||**Description**||
+||bucket||string||bucket to write this key in||
+||fields||object||key/values to update||
+||filter||string||search filter string||
+||options||object||any optional parameters (req_id, limit, offset, sort)||
+
+
 # Other
 
 ## sql

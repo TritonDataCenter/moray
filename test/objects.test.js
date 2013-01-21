@@ -55,7 +55,8 @@ var BUCKET_CFG = {
         }],
         options: {
                 trackModification: true,
-                guaranteeOrder: true
+                guaranteeOrder: true,
+                syncUpdates: true
         }
 };
 
@@ -178,7 +179,7 @@ test('CRUD object', function (t) {
 });
 
 
-test('batch put object', function (t) {
+test('batch put objects', function (t) {
         var c = this.client;
         var self = this;
         var requests = [
@@ -230,6 +231,7 @@ test('batch put object', function (t) {
                 });
         });
 });
+
 
 test('CRUD objects unique indexes', function (t) {
         var b = this.bucket;
@@ -720,5 +722,89 @@ test('trackModification (MANTA-269)', function (t) {
                 t.ifError(err);
 
                 t.end();
+        });
+});
+
+
+test('update objects no keys', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var self = this;
+        var requests = [];
+        for (var i = 0; i < 10; i++) {
+                requests.push({
+                        bucket: self.bucket,
+                        key: uuid.v4().substr(0, 7),
+                        value: {
+                                num: 20,
+                                num_u: i,
+                                str: 'foo',
+                                str_u: uuid.v4().substr(0, 7)
+                        }
+                });
+        }
+
+        c.batchPutObject(requests, function (put_err) {
+                t.ifError(put_err);
+                if (put_err) {
+                        t.end();
+                        return;
+                }
+
+                c.updateObjects(b, {}, '(num>=20)', function (err) {
+                        t.ok(err);
+                        t.equal(err.name, 'FieldUpdateError');
+                        t.end();
+                });
+        });
+});
+
+
+test('update objects ok', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var self = this;
+        var requests = [];
+        for (var i = 0; i < 10; i++) {
+                requests.push({
+                        bucket: self.bucket,
+                        key: uuid.v4().substr(0, 7),
+                        value: {
+                                num: 20,
+                                num_u: i,
+                                str: 'foo',
+                                str_u: uuid.v4().substr(0, 7)
+                        }
+                });
+        }
+
+        c.batchPutObject(requests, function (put_err) {
+                t.ifError(put_err);
+                if (put_err) {
+                        t.end();
+                        return;
+                }
+
+                var fields = {str: 'bar'};
+                c.updateObjects(b, fields, '(num>=20)', function (err, meta) {
+                        t.ifError(err);
+                        t.ok(meta);
+                        if (!meta) {
+                                t.end();
+                                return;
+                        }
+                        t.ok(meta.etag);
+
+                        c.getObject(b, requests[0].key, function (err2, obj) {
+                                t.ifError(err2);
+                                t.ok(obj);
+                                if (obj) {
+                                        t.equal(obj.value.str, 'bar');
+                                        t.equal(obj._etag, meta.etag);
+                                }
+
+                                t.end();
+                        });
+                });
         });
 });
