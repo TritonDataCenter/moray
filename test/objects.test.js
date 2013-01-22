@@ -179,6 +179,53 @@ test('CRUD object', function (t) {
 });
 
 
+test('get object (cached)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var self = this;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, function (err, meta) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(meta);
+                                if (meta)
+                                        t.ok(meta.etag);
+                                return (cb());
+                        });
+                }, function get(_, cb) {
+                        c.getObject(b, k, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v);
+                                return (cb());
+                        });
+                }, function getAgain(_, cb) {
+                        c.getObject(b, k, function (err, obj) {
+                                if (err)
+                                        return (cb(err));
+
+                                t.ok(obj);
+                                self.assertObject(t, obj, k, v);
+                                return (cb());
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
 test('CRUD objects unique indexes', function (t) {
         var b = this.bucket;
         var c = this.client;
