@@ -7,7 +7,7 @@
         "dependencies": {
                 "assert-plus": "0.1.2",
                 "backoff": "1.2.0",
-                "bunyan": "0.18.1",
+                "bunyan": "0.17.0",
                 "bunyan-syslog": "0.2.0",
                 "clone": "0.1.5",
                 "crc": "0.2.0",

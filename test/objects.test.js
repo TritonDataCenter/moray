@@ -28,9 +28,6 @@ var BUCKET_CFG = {
                 str_2: {
                         type: 'string'
                 },
-                Str_3: {
-                        type: 'string'
-                },
                 num: {
                         type: 'number'
                 },
@@ -58,7 +55,8 @@ var BUCKET_CFG = {
         }],
         options: {
                 trackModification: true,
-                guaranteeOrder: true
+                guaranteeOrder: true,
+                syncUpdates: true
         }
 };
 
@@ -821,7 +819,7 @@ test('update objects ok', function (t) {
                         value: {
                                 num: 20,
                                 num_u: i,
-                                Str_3: 'foo',
+                                str: 'foo',
                                 str_u: uuid.v4().substr(0, 7)
                         }
                 });
@@ -834,7 +832,7 @@ test('update objects ok', function (t) {
                         return;
                 }
 
-                var fields = {Str_3: 'bar'};
+                var fields = {str: 'bar'};
                 c.updateObjects(b, fields, '(num>=20)', function (err, meta) {
                         t.ifError(err);
                         t.ok(meta);
@@ -848,7 +846,7 @@ test('update objects ok', function (t) {
                                 t.ifError(err2);
                                 t.ok(obj);
                                 if (obj) {
-                                        t.equal(obj.value.Str_3, 'bar');
+                                        t.equal(obj.value.str, 'bar');
                                         t.equal(obj._etag, meta.etag);
                                 }
 
