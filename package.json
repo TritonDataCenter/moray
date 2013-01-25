@@ -14,7 +14,7 @@
                 "dtrace-provider": "0.2.7",
                 "deep-equal": "0.0.0",
                 "expiring-lru-cache": "2.1.0",
-                "fast": "git://github.com/mcavage/node-fast.git#13f2eaa",
+                "fast": "0.2.4",
                 "ldapjs": "git://github.com/mcavage/node-ldapjs#51e6abf",
                 "microtime": "0.3.3",
                 "node-uuid": "1.4.0",

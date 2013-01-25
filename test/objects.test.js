@@ -385,8 +385,17 @@ test('del object w/etag conflict', function (t) {
                 }, function drop(_, cb) {
                         c.delObject(b, k, {etag: 'foo'}, function (err) {
                                 t.ok(err);
-                                if (err)
+                                if (err) {
                                         t.equal(err.name, 'EtagConflictError');
+                                        t.ok(err.context);
+                                        if (err.context) {
+                                                var ctx = err.context;
+                                                t.equal(ctx.bucket, b);
+                                                t.equal(ctx.key, k);
+                                                t.equal(ctx.expected, 'foo');
+                                                t.ok(ctx.actual);
+                                        }
+                                }
                                 cb();
                         });
                 } ],
