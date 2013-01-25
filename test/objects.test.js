@@ -55,8 +55,7 @@ var BUCKET_CFG = {
         }],
         options: {
                 trackModification: true,
-                guaranteeOrder: true,
-                syncUpdates: true
+                guaranteeOrder: true
         }
 };
 
@@ -847,6 +846,57 @@ test('update objects ok', function (t) {
                                 t.ok(obj);
                                 if (obj) {
                                         t.equal(obj.value.str, 'bar');
+                                        t.equal(obj._etag, meta.etag);
+                                }
+
+                                t.end();
+                        });
+                });
+        });
+});
+
+
+test('update objects w/array (ufds - no effect)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var self = this;
+        var requests = [];
+        for (var i = 0; i < 10; i++) {
+                requests.push({
+                        bucket: self.bucket,
+                        key: uuid.v4().substr(0, 7),
+                        value: {
+                                str: ['foo']
+                        }
+                });
+        }
+
+        c.batch(requests, function (put_err) {
+                t.ifError(put_err);
+                if (put_err) {
+                        t.end();
+                        return;
+                }
+
+                var fields = {str: 'bar'};
+                c.updateObjects(b, fields, '(str=foo)', function (err, meta) {
+                        t.ifError(err);
+                        t.ok(meta);
+                        if (!meta) {
+                                t.end();
+                                return;
+                        }
+                        t.ok(meta.etag);
+
+                        var k = requests[0].key;
+                        var o = {noCache: true};
+                        c.getObject(b, k, o, function (err2, obj) {
+                                t.ifError(err2);
+                                t.ok(obj);
+                                if (obj) {
+                                        t.ok(Array.isArray(obj.value.str));
+                                        t.notOk(obj.value.str_u);
+                                        t.equal(obj.value.str[0], 'foo');
                                         t.equal(obj._etag, meta.etag);
                                 }
 
