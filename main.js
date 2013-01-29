@@ -1,6 +1,5 @@
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
-var cluster = require('cluster');
 var fs = require('fs');
 var os = require('os');
 
@@ -19,7 +18,6 @@ var app = require('./lib');
 
 var DEFAULTS = {
         file: process.cwd() + '/etc/config.json',
-        fork: true,
         port: 2020
 };
 var NAME = 'moray';
@@ -50,6 +48,7 @@ function setupLogger(config) {
 
         var level = LOG.level();
 
+        console.log(LOG_LEVEL_OVERRIDE)
         if (cfg_b.syslog && !LOG_LEVEL_OVERRIDE) {
                 assert.string(cfg_b.syslog.facility,
                               'config.bunyan.syslog.facility');
@@ -83,7 +82,7 @@ function setupLogger(config) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('csvf:p:', process.argv);
+        var parser = new getopt.BasicParser('cvf:p:', process.argv);
 
         while ((option = parser.getopt()) !== undefined) {
                 switch (option.option) {
@@ -102,10 +101,6 @@ function parseOptions() {
                                 }, 'Invalid port.');
                                 process.exit(1);
                         }
-                        break;
-
-                case 's':
-                        opts.fork = false;
                         break;
 
                 case 'v':
@@ -163,30 +158,24 @@ function run(options) {
 }
 
 
+
 ///--- Mainline
-//
-// Because everyone asks, the '_' here is because this is still in the global
-// namespace.
-//
 
-var _config;
-var _options = parseOptions();
+(function main() {
+        var config;
+        var options = parseOptions();
 
-LOG.debug({options: _options}, 'command line options parsed');
-_config = readConfig(_options);
-LOG.debug({config: _config}, 'configuration loaded');
+        LOG.debug({options: options}, 'command line options parsed');
+        var config = readConfig(options);
+        LOG.debug({config: config}, 'configuration loaded');
 
-setupLogger(_config);
+        setupLogger(config);
 
-if (cluster.isMaster && _config.fork && _config.numWorkers > 0) {
-        for (var i = 0; i < _config.numWorkers; i++)
-                cluster.fork();
-} else {
-        run(_config);
+        run(config);
 
-        if (_options.cover) {
+        if (options.cover) {
                 process.on('SIGUSR2', function () {
                         process.exit(0);
                 });
         }
-}
+})();

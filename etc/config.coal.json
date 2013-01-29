@@ -1,6 +1,5 @@
 {
         "port": 2020,
-        "numWorkers": 0,
         "bunyan": {
                 "level": "info",
                 "syslog": {
