@@ -417,8 +417,23 @@ section are indexed, and available for searching later.
 
 As far as options, besides the usual `req_id`, notably you can set the flag
 `etag`, which will make moray _atomically_ test/set your new value (this is
-useful if you're implementing something like a lock semantic).  Obviously that
-works on existing records only.
+useful if you're implementing something like a lock semantic).  To ensure that
+you're "creating" a record that never existed, set etag to `null`, otherwise set
+it to the value of the last known version of `etag` you have.  If the etag differs
+you'll receive an `EtagConflictError` which, in addition to your being able to
+switch on the name, is decorated with the info you need; a sample `.toString()`
+looks like:
+
+    {
+        name: 'EtagConflictError',
+        message: '...',
+        context: {
+            bucket: 'moray_unit_test_2423db7',
+            key: '4ddb630b-cc3d-4ff7-bbb4-168cd005cbc0',
+            expected: 'ABCDEFGH',
+            actual: 'B21548FF'
+        }
+    }
 
 ### API
 

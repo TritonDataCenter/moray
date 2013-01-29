@@ -48,7 +48,6 @@ function setupLogger(config) {
 
         var level = LOG.level();
 
-        console.log(LOG_LEVEL_OVERRIDE)
         if (cfg_b.syslog && !LOG_LEVEL_OVERRIDE) {
                 assert.string(cfg_b.syslog.facility,
                               'config.bunyan.syslog.facility');
@@ -162,15 +161,15 @@ function run(options) {
 ///--- Mainline
 
 (function main() {
-        var config;
         var options = parseOptions();
-
-        LOG.debug({options: options}, 'command line options parsed');
         var config = readConfig(options);
-        LOG.debug({config: config}, 'configuration loaded');
+
+        LOG.debug({
+                config: config,
+                options: options
+        }, 'main: options and config parsed');
 
         setupLogger(config);
-
         run(config);
 
         if (options.cover) {

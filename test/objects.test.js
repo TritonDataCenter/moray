@@ -408,6 +408,72 @@ test('del object w/etag conflict', function (t) {
 });
 
 
+test('MANTA-980 - null etag support', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hi'
+        };
+        var v2 = {
+                str: 'hello world'
+        };
+        var etag;
+        var value;
+        var self = this;
+
+        function get_cb(cb) {
+                function _cb(err, obj) {
+                        if (err) {
+                                cb(err);
+                                return;
+                        }
+
+
+                        t.ok(obj);
+                        if (obj) {
+                                self.assertObject(t, obj, k, value);
+                                etag = obj._etag;
+                        }
+                        cb();
+                }
+                return (_cb);
+        }
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        value = v;
+                        c.putObject(b, k, value, {etag: null}, cb);
+                }, function get(_, cb) {
+                        c.getObject(b, k, get_cb(cb));
+                }, function overwrite(_, cb) {
+                        value = v2;
+                        c.putObject(b, k, value, {etag: etag}, cb);
+                }, function getAgain(_, cb) {
+                        c.getObject(b, k, {noCache: true}, get_cb(cb));
+                }, function putFail(_, cb) {
+                        c.putObject(b, k, v, {etag: null}, function (err) {
+                                t.ok(err);
+                                t.equal(err.name, 'EtagConflictError');
+                                t.ok(err.context);
+                                t.equal(err.context.bucket, b);
+                                t.equal(err.context.key, k);
+                                t.equal(err.context.expected, 'null');
+                                t.equal(err.context.actual, etag);
+
+                                cb();
+                        });
+                }, function del(_, cb) {
+                        c.delObject(b, k, {etag: etag}, cb);
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
+
+
 test('find (like marlin)', function (t) {
         var b = this.bucket;
         var c = this.client;
