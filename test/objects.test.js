@@ -454,13 +454,14 @@ test('MANTA-980 - null etag support', function (t) {
                 }, function putFail(_, cb) {
                         c.putObject(b, k, v, {etag: null}, function (err) {
                                 t.ok(err);
-                                t.equal(err.name, 'EtagConflictError');
-                                t.ok(err.context);
-                                t.equal(err.context.bucket, b);
-                                t.equal(err.context.key, k);
-                                t.equal(err.context.expected, 'null');
-                                t.equal(err.context.actual, etag);
-
+                                if (err) {
+                                        t.equal(err.name, 'EtagConflictError');
+                                        t.ok(err.context);
+                                        t.equal(err.context.bucket, b);
+                                        t.equal(err.context.key, k);
+                                        t.equal(err.context.expected, 'null');
+                                        t.equal(err.context.actual, etag);
+                                }
                                 cb();
                         });
                 }, function del(_, cb) {
