@@ -15,7 +15,7 @@
                 "deep-equal": "0.0.0",
                 "expiring-lru-cache": "2.1.0",
                 "fast": "0.2.4",
-                "ldapjs": "0.6.0",
+                "ldapjs": "0.6.1",
                 "microtime": "0.3.3",
                 "node-uuid": "1.4.0",
                 "once": "1.1.1",
