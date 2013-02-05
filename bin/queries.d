@@ -6,6 +6,12 @@
 postgresql*:::query-start
 {
 	self->start = timestamp;
+	this->t = walltimestamp % 1000000000;
+
+	printf("[%Y.%09d] Query (%d) > %s\n",
+	       walltimestamp, this->t, timestamp, copyinstr(arg0));
+
+	this->t = 0;
 }
 
 
@@ -13,11 +19,10 @@ postgresql*:::query-done
 /self->start/
 {
 	this->l = (timestamp - self->start) / 100000;
-	this->q = copyinstr(arg0);
 	this->t = walltimestamp % 1000000000;
 
-        printf("[%Y.%09d] Query (%dus) > %s\n",
-	       walltimestamp, this->t, this->l, this->q);
+        printf("[%Y.%09d] Query (%d) done < (%dus)\n",
+	       walltimestamp, this->t, timestamp, this->l);
 
 	self->start = 0;
 	this->l = 0;

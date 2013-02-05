@@ -4,8 +4,8 @@
 moray*:::findobjects-start
 {
 	latency[arg0] = timestamp;
-	bucket[arg0] = copyinstr(arg1);
-	filter[arg0] = copyinstr(arg2);
+	bucket[arg0] = copyinstr(arg3);
+	filter[arg0] = copyinstr(arg3);
 }
 
 moray*:::findobjects-done

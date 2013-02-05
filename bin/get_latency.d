@@ -4,8 +4,8 @@
 moray*:::getobject-start
 {
 	latency[arg0] = timestamp;
-	bucket[arg0] = copyinstr(arg1);
-	key[arg0] = copyinstr(arg2);
+	bucket[arg0] = copyinstr(arg3);
+	key[arg0] = copyinstr(arg3);
 }
 
 moray*:::getobject-done

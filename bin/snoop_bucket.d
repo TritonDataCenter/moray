@@ -5,29 +5,29 @@ moray*:::putobject-start
 /copyinstr(arg1) == $1/
 {
 	req[arg0] = timestamp;
-	key[arg0] = copyinstr(arg2);
-	val[arg0] = copyinstr(arg3);
+	key[arg0] = copyinstr(arg3);
+	val[arg0] = copyinstr(arg4);
 }
 
 moray*:::getobject-start
 /copyinstr(arg1) == $1/
 {
 	req[arg0] = timestamp;
-	key[arg0] = copyinstr(arg2);
+	key[arg0] = copyinstr(arg3);
 }
 
 moray*:::delobject-start
 /copyinstr(arg1) == $1/
 {
 	req[arg0] = timestamp;
-	key[arg0] = copyinstr(arg2);
+	key[arg0] = copyinstr(arg3);
 }
 
 moray*:::findobjects-start
 /copyinstr(arg1) == $1/
 {
 	req[arg0] = timestamp;
-	filter[arg0] = copyinstr(arg2);
+	filter[arg0] = copyinstr(arg3);
 }
 
 fast*:::rpc-msg
