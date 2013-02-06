@@ -11,11 +11,10 @@
                 "path": "/manatee/sdc/election",
                 "pg": {
                         "connectTimeout": 3000,
-                        "firstResultTimeout": 10000,
                         "maxConnections": 15,
                         "maxIdleTime": 120000,
                         "checkInterval": 30000,
-                        "queryTimeout": 60000
+                        "queryTimeout": 30000
                 },
                 "zk": {
                         "servers": [ {
