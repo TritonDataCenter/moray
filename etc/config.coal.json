@@ -1,21 +1,17 @@
 {
         "port": 2020,
+        "audit": false,
         "bunyan": {
-                "level": "info",
-                "syslog": {
-                        "facility": "local0",
-                        "type": "udp"
-                }
+                "level": "info"
         },
         "manatee": {
                 "path": "/manatee/sdc/election",
                 "pg": {
 	                "connectTimeout": 3000,
-	                "firstResultTimeout": 3000,
                         "maxConnections": 15,
-                        "maxIdleTime": 30000,
-                        "checkInterval": 10000,
-                        "queryTimeout": 5000
+                        "maxIdleTime": 3000,
+                        "checkInterval": 9000,
+                        "queryTimeout": 3000
                 },
                 "zk": {
                         "servers": [ {

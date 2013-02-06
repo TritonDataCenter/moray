@@ -9,6 +9,7 @@ var bunyan = require('bunyan');
 var clone = require('clone');
 var getopt = require('posix-getopt');
 var extend = require('xtend');
+var panic = require('panic');
 
 var app = require('./lib');
 
@@ -177,4 +178,9 @@ function run(options) {
                         process.exit(0);
                 });
         }
+
+        panic.enablePanicOnCrash({
+                'skipDump': true,
+                'abortOnPanic': true
+        });
 })();

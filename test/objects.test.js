@@ -86,7 +86,12 @@ before(function (cb) {
         this.client = helper.createClient();
         this.client.on('connect', function () {
                 var b = self.bucket;
-                self.client.createBucket(b, BUCKET_CFG, cb);
+                self.client.createBucket(b, BUCKET_CFG, function (err) {
+                        if (err) {
+                                console.error(err.stack);
+                        }
+                        cb(err);
+                });
         });
 });
 
@@ -94,6 +99,9 @@ before(function (cb) {
 after(function (cb) {
         var self = this;
         this.client.delBucket(this.bucket, function (err) {
+                if (err) {
+                        console.error(err.stack);
+                }
                 self.client.close();
                 cb(err);
         });
