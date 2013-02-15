@@ -12,7 +12,7 @@ if (cluster.isMaster) {
                 cluster.fork();
         }
 
-        cluster.on('exit', function(worker, code, signal) {
+        cluster.on('exit', function (worker, code, signal) {
                 console.log('worker ' + worker.process.pid + ' died');
         });
 } else {
@@ -27,8 +27,8 @@ if (cluster.isMaster) {
         });
 
         client.once('connect', function () {
-                function put(i) {
-                        client.putObject('manta', '1027-' + i, {}, function (err) {
+                function put() {
+                        client.putObject('manta', '1027', {}, function (err) {
                                 if (err) {
                                         console.error(err.stack);
                                 }
@@ -38,7 +38,7 @@ if (cluster.isMaster) {
 
                 var max = parseInt(process.env.MANTA1027_CONCURRENCY || 20, 10);
                 console.log('running...');
-                for (var i = 0; i < max; i++) {
+                for (var ii = 0; ii < max; ii++) {
                         put();
                 }
         });
