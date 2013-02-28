@@ -712,7 +712,7 @@ A few caveats:
 
 ## Batch
 
-Allows you to transactionally write a list of put or update operations.
+Allows you to transactionally write a list of put, update or delete operations.
 
 If the type is `put`, each request creates or overwrites a list of
 objects given a set of bucket/key/values.  The individual objects are
@@ -720,6 +720,9 @@ pretty much exactly what you would send to `putObject`, but in a list.
 Note that all of the checks in putObject will be run, so you can send
 in `etag` (notably) and enforcement will be done on an individual
 record basis. Also, objects can span buckets in this API.
+
+If the operation is `delete`, along with the object bucket/key, you can also
+pass the same `opts` argument you do for `deleteObject`.
 
 If the operation is `update`, you pass in what you would have to
 `updateObjects`.
@@ -742,6 +745,10 @@ The default operation is `put`.
 		    email: 'mcavage@gmail.com'
         },
 		filter: '(ismanager=false)'
+    }, {
+	    bucket: 'bar',
+		operation: 'delete'
+		key: 'uniquething'
     }];
     client.batch(data, {req_id: '123'}, function (err, meta) {
         assert.ifError(err);
