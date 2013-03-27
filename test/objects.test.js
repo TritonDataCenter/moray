@@ -74,6 +74,11 @@ function assertObject(b, t, obj, k, v) {
         t.ok(obj._id);
         t.ok(obj._etag);
         t.ok(obj._mtime);
+        if (v.vnode) {
+            console.log(v);
+            console.log(obj);
+            t.ok(obj.value.vnode);
+        }
         return (undefined);
 }
 
@@ -135,7 +140,8 @@ test('CRUD object', function (t) {
         var c = this.client;
         var k = uuid.v4();
         var v = {
-                str: 'hi'
+                str: 'hi',
+                vnode: 2
         };
         var v2 = {
                 str: 'hello world',
