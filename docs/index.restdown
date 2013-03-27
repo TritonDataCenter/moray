@@ -38,11 +38,11 @@ so you are practically limited to how much data you can maintain.  The basic
 operations on objects in a bucket are `put`, `get`, and `delete`.
 
 Upon creating a bucket you are allowed to define the bucket to have indexes,
-which allow you to later `search` for multiple records that match those indexes.
-If indexes are defined on a bucket, when you write a key/value pair, the value
-is automatically indexed server-side in Moray for you.  Indexes can be defined
-to be of type `number`, `boolean` or `string`.  They can optionally be defined to
-enforce uniquness of a value.
+which allow you to later `search` for multiple records that match those
+indexes.  If indexes are defined on a bucket, when you write a key/value pair,
+the value is automatically indexed server-side in Moray for you.  Indexes can
+be defined to be of type `number`, `boolean` or `string`.  They can optionally
+be defined to enforce uniquness of a value.
 
 ## Triggers
 
