@@ -8,7 +8,7 @@
                 "assert-plus": "0.1.2",
                 "backoff": "2.0.0",
                 "bunyan": "0.18.2",
-                "bunyan-syslog": "0.2.0",
+                "bunyan-syslog": "0.2.1",
                 "clone": "0.1.5",
                 "crc": "0.2.0",
                 "dtrace-provider": "0.2.8",
