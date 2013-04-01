@@ -1060,3 +1060,36 @@ test('batch put/update', function (t) {
                 });
         });
 });
+
+
+test('delete many objects ok', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var self = this;
+        var requests = [];
+        for (var i = 0; i < 10; i++) {
+                requests.push({
+                        bucket: self.bucket,
+                        key: uuid.v4().substr(0, 7),
+                        value: {
+                                num: 20,
+                                num_u: i,
+                                str: 'foo',
+                                str_u: uuid.v4().substr(0, 7)
+                        }
+                });
+        }
+
+        c.batch(requests, function (put_err) {
+                t.ifError(put_err);
+                if (put_err) {
+                        t.end();
+                        return;
+                }
+
+                c.deleteMany(b, '(num>=20)', function (err) {
+                        t.ifError(err);
+                        t.end();
+                });
+        });
+});
