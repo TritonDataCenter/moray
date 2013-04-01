@@ -710,6 +710,29 @@ A few caveats:
 ||options||object||any optional parameters (req_id, limit, offset, sort)||
 
 
+## DeleteMany
+
+Allows you to bulk delete a set of objects in one transaction.  You call this
+API with a bucket and a filter, that is exactly the same syntax as
+`findObjects`.
+
+### API
+
+	var filter = '(email=*@joyent.com)';
+    var req = client.deleteMany('foo', filter, function (err) {
+	    assert.ifError(err);
+		...
+    });
+
+
+### Inputs
+
+||**Field**||**Type**||**Description**||
+||bucket||string||bucket to delete from||
+||filter||string||search filter string||
+||options||object||any optional parameters (req_id, limit, offset, sort)||
+
+
 ## Batch
 
 Allows you to transactionally write a list of put, update or delete operations.
