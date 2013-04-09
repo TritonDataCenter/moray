@@ -1093,3 +1093,11 @@ test('delete many objects ok', function (t) {
                 });
         });
 });
+
+test('get tokens unsupported', function (t) {
+        this.client.getTokens(function(err, res) {
+                t.notOk(res);
+                t.ok(err);
+                t.end();
+        });
+});
