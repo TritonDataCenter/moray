@@ -40,11 +40,11 @@ before starting the server.
 Once the above is done, edit `./etc/config.laptop.json` file to have the correct
 ZooKeeper endpoint(s) and domain name (note the domain name is the DNS name of
 the manatee to back this Moray instance - that DNS name is "mapped" into
-ZooKeeper). Then, source in ./dev_env.sh (this ensures you have the moray node
+ZooKeeper). Then, source in ./dev\_env.sh (this ensures you have the moray node
 et al) and run:
 
-    . ./dev_env.sh
-    moray
+    . ./env.sh
+    server
 
 Which will open up Moray on port 2020.  You can now use the CLI in
 `node-moray.git` or whatever other means you want of talking to the server.

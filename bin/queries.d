@@ -18,7 +18,7 @@ postgresql*:::query-start
 postgresql*:::query-done
 /self->start/
 {
-	this->l = (timestamp - self->start) / 100000;
+	this->l = (timestamp - self->start) / 1000;
 	this->t = walltimestamp % 1000000000;
 
         printf("[%Y.%09d] Query (%d) done < (%dus)\n",
