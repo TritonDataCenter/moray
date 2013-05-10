@@ -10,7 +10,7 @@
         "audit": false,
         "numWorkers": 0,
         "manatee": {
-                "path": "/manatee/2.moray.bh1.joyent.us/election",
+                "path": "/manatee/sdc/election",
                 "pg": {
                         "connectTimeout": 2000,
                         "maxConnections": 5,
@@ -21,7 +21,7 @@
                 "zk": {
                         "connectTimeout": 2000,
                         "servers": [ {
-                                "host": "10.2.201.33",
+                                "host": "10.2.201.7",
                                 "port": 2181
                         } ],
                         "timeout": 10000
