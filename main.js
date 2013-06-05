@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
 var os = require('os');
@@ -7,9 +7,11 @@ var assert = require('assert-plus');
 var bsyslog = require('bunyan-syslog');
 var bunyan = require('bunyan');
 var clone = require('clone');
-var getopt = require('posix-getopt');
 var extend = require('xtend');
+var getopt = require('posix-getopt');
 var panic = require('panic');
+var VError = require('verror').VError;
+
 
 var app = require('./lib');
 
@@ -99,7 +101,8 @@ function parseOptions() {
                                 LOG.fatal({
                                         port: option.optarg
                                 }, 'Invalid port.');
-                                process.exit(1);
+                                throw new Error('Invalid port: ' +
+                                                option.optarg);
                         }
                         break;
 
@@ -113,14 +116,13 @@ function parseOptions() {
                         break;
 
                 default:
-                        process.exit(1);
-                        break;
+                        throw new Error('Invalid option: ' + option.option);
                 }
         }
 
         if (!opts.file) {
                 LOG.fatal({ opts: opts }, 'No config file specified.');
-                process.exit(1);
+                throw new Error('No config file specified');
         }
 
         return (opts);
@@ -139,7 +141,9 @@ function readConfig(options) {
                         err: e,
                         file: options.file
                 }, 'Unable to read/parse configuration file');
-                process.exit(1);
+                throw new VError(e,
+                                 'Unable to parse configuration file %s',
+                                 options.file);
         }
 
         return (extend({}, clone(DEFAULTS), cfg, options));
