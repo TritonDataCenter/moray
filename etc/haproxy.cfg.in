@@ -10,9 +10,10 @@ global
 defaults
         mode    tcp
         balance leastconn
-        retries 1
+        maxconn 65535
         option redispatch
         option abortonclose
+        retries 1
         timeout queue   0
         timeout connect 500
 
