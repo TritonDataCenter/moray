@@ -3,13 +3,13 @@ global
         user nobody
         group nobody
         daemon
+        maxconn 65535
         pidfile /var/run/haproxy.pid
         stats socket /tmp/haproxy.sock
 
 defaults
         mode    tcp
         balance leastconn
-        maxconn 65535
         retries 1
         option redispatch
         option abortonclose
