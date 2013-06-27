@@ -155,6 +155,12 @@ HERE
 
 # Mainline
 
+# XXX See MANTA-1615.  These manifests are shipped for SDC but aren't relevant
+# for the manta image, so remove them until the situation with SDC/manta
+# manifests is resolved.
+rm -rf $SVC_ROOT/sdc/sapi_manifests
+
+
 echo "Running common setup scripts"
 manta_common_presetup
 
