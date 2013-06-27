@@ -7,3 +7,6 @@
 [submodule "deps/restdown"]
 	path = deps/restdown
 	url = git://github.com/trentm/restdown.git
+[submodule "deps/manta-scripts"]
+	path = deps/manta-scripts
+	url = git@git.joyent.com:manta-scripts.git

@@ -70,7 +70,7 @@ PATH	:= $(NODE_INSTALL)/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) deps
+all: $(SMF_MANIFESTS) deps scripts
 
 .PHONY: deps
 deps: | $(REPO_DEPS) $(NPM_EXEC)
@@ -102,9 +102,10 @@ cover: $(NODECOVER)
 release: all docs $(SMF_MANIFESTS)
 	@echo "Building $(RELEASE_TARBALL)"
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray
-	@mkdir -p $(TMPDIR)/root
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/boot
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/etc
 	cp -r   $(ROOT)/bin \
+		$(ROOT)/boot\
 		$(ROOT)/build \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
@@ -116,6 +117,11 @@ release: all docs $(SMF_MANIFESTS)
 		$(TMPDIR)/root/opt/smartdc/moray/
 	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/moray/etc
 	cp $(ROOT)/etc/haproxy.cfg.in $(TMPDIR)/root/opt/smartdc/moray/etc
+	mv $(TMPDIR)/root/opt/smartdc/moray/build/scripts \
+	    $(TMPDIR)/root/opt/smartdc/moray/boot
+	ln -s /opt/smartdc/moray/boot/configure.sh \
+	    $(TMPDIR)/root/opt/smartdc/boot/configure.sh
+	chmod 755 $(TMPDIR)/root/opt/smartdc/moray/boot/configure.sh
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root)
 	@rm -rf $(TMPDIR)
 
