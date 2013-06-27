@@ -111,6 +111,7 @@ release: all docs $(SMF_MANIFESTS)
 		$(ROOT)/node_modules \
 		$(ROOT)/package.json \
 		$(ROOT)/sapi_manifests \
+		$(ROOT)/sdc \
 		$(ROOT)/smf \
 		$(TMPDIR)/root/opt/smartdc/moray/
 	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/moray/etc
