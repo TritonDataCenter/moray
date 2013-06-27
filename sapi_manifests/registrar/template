@@ -1,0 +1,28 @@
+{
+  "registration": {
+    "domain": "{{{SERVICE_DOMAIN}}}",
+    "type": "moray_host",
+    "service": {
+      "type": "service",
+      "service": {
+        "srvce": "_moray",
+        "proto": "_tcp",
+        "port": 2020
+      },
+      "ttl": 60
+    },
+    "ttl": 30
+  },
+
+  "zookeeper": {
+    "servers": [
+      {{#ZK_SERVERS}}
+        {
+          "host": "{{host}}",
+          "port": {{port}}
+        }{{^last}}, {{/last}}
+      {{/ZK_SERVERS}}
+    ],
+    "timeout": 60000
+  }
+}
