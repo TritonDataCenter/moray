@@ -1132,3 +1132,35 @@ test('MORAY-147 (sqli)', function (t) {
                 t.end();
         });
 });
+
+
+
+test('MORAY-148 (foo=bar=*)', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hello=world',
+                str_2: 'world=hello'
+        };
+        var found = false;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        c.putObject(b, k, v, cb);
+                }, function find(_, cb) {
+                        var f = '(|(str=hello=*)(str_2=world=*))';
+                        var req = c.findObjects(b, f);
+                        req.once('error', cb);
+                        req.once('end', cb);
+                        req.once('record', function (obj) {
+                                found = true;
+                        });
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
+                t.ok(found);
+                t.end();
+        });
+});
