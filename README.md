@@ -51,4 +51,15 @@ Which will open up Moray on port 2020.  You can now use the CLI in
 
 # Testing
 
-    make prepush
+Before run tests, you should consider point config file to a different DB
+than `moray`. There is a script at `tools/coal-test-env.sh` which will create
+a `moray_test` DB for you and run an additional `moray-test` instance listening
+at port `2222`. Just scping into GZ and executing it should work.
+
+Then, make sure your test file points to the right port:
+
+    MORAY_PORT=2222 make test
+
+To run tests on default `2020` port just do:
+
+    make test
