@@ -9,9 +9,9 @@
                 "pg": {
 	                "connectTimeout": 3000,
                         "maxConnections": 15,
-                        "maxIdleTime": 3000,
-                        "checkInterval": 9000,
-                        "queryTimeout": 3000
+                        "maxIdleTime": 30000,
+                        "checkInterval": 90000,
+                        "queryTimeout": 0
                 },
                 "zk": {
                         "servers": [ {

@@ -1,6 +1,7 @@
 // Copyright 2012 Joyent.  All rights reserved.
 
 var clone = require('clone');
+var once = require('once');
 var uuid = require('node-uuid');
 var vasync = require('vasync');
 
@@ -1161,6 +1162,69 @@ test('MORAY-148 (foo=bar=*)', function (t) {
         }, function (err) {
                 t.ifError(err);
                 t.ok(found);
+                t.end();
+        });
+});
+
+
+test('MORAY-166: deleteMany with LIMIT', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+        var v = {
+                str: 'hello=world'
+        };
+        var N = 350;
+
+        vasync.pipeline({
+                funcs: [ function put(_, cb) {
+                        cb = once(cb);
+
+                        var done = 0;
+                        function _cb(err) {
+                                if (err) {
+                                        cb(err);
+                                } else if (++done === N) {
+                                        cb();
+                                }
+                        }
+
+                        for (var i = 0; i < N; i++)
+                                c.putObject(b, k + '' + i, v, _cb);
+
+                }, function delMany(_, cb) {
+                        cb = once(cb);
+
+                        var _opts = {
+                                limit: Math.floor(N / 4)
+                        };
+
+                        (function drop() {
+                                function _cb(err, meta) {
+                                        if (err) {
+                                                cb(err);
+                                                return;
+                                        }
+
+                                        t.ok(meta);
+                                        if (!meta) {
+                                                cb(new Error('boom'));
+                                                return;
+                                        }
+                                        t.ok(meta.count <= _opts.limit);
+                                        if (meta.count > 0) {
+                                                drop();
+                                        } else {
+                                                cb();
+                                        }
+                                }
+
+                                c.deleteMany(b, '(str=*)', _opts, _cb);
+                        })();
+                } ],
+                arg: {}
+        }, function (err) {
+                t.ifError(err);
                 t.end();
         });
 });
