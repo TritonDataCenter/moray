@@ -48,6 +48,11 @@
                      exec=":kill"
                      timeout_seconds="30" />
 
+        <exec_method type="method"
+                     name="refresh"
+                     exec=":kill -HUP"
+                     timeout_seconds="30" />
+
         <property_group name="application" type="application" />
 
         <instance name="@@MORAY_INSTANCE_NAME@@" enabled="true">
