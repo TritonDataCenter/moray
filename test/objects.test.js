@@ -1287,3 +1287,60 @@ test('MORAY-166: update with LIMIT', function (t) {
                 t.end();
         });
 });
+
+
+test('MORAY-166: delete w/LIMIT in batch', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var k = uuid.v4();
+
+        vasync.pipeline({
+                funcs: [
+                        function putObjects(_, cb) {
+                                cb = once(cb);
+                                var barrier = vasync.barrier();
+                                var vals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+                                vals.forEach(function (i) {
+                                        barrier.start(i);
+                                        var _k = k + i;
+                                        var v = {
+                                                num: i
+                                        };
+
+                                        c.putObject(b, _k, v, function (err) {
+                                                if (err)
+                                                        cb(err);
+
+                                                barrier.done(i);
+                                        });
+                                });
+
+                                barrier.on('drain', cb);
+                        },
+                        function deleteObjects(_, cb) {
+                                cb = once(cb);
+                                c.batch([
+                                        {
+                                                operation: 'deleteMany',
+                                                bucket: b,
+                                                filter: 'num=*',
+                                                options: {
+                                                        limit: 5
+                                                }
+                                        }
+                                ], function (err, meta) {
+                                        if (err) {
+                                                cb(err);
+                                                return;
+                                        }
+                                        t.ok(meta);
+                                        t.equal(meta.etags[0].count, 5);
+                                        cb();
+                                });
+                        }
+                ]
+        }, function (err) {
+                t.ifError(err);
+                t.end();
+        });
+});
