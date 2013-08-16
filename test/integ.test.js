@@ -1,6 +1,8 @@
-// Copyright 2012 Joyent.  All rights reserved.
+// Copyright 2013 Joyent.  All rights reserved.
 
+var once = require('once');
 var uuid = require('node-uuid');
+var vasync = require('vasync');
 
 if (require.cache[__dirname + '/helper.js'])
         delete require.cache[__dirname + '/helper.js'];
@@ -283,5 +285,73 @@ test('MANTA-680 boolean searches', function (t) {
                                 t.end();
                         });
                 });
+        });
+});
+
+
+test('some marlin query', function (t) {
+        var b = this.bucket;
+        var c = this.client;
+        var cfg = {
+                index: {
+                        foo: {
+                                type: 'string'
+                        },
+                        bar: {
+                                type: 'string'
+                        },
+                        baz: {
+                                type: 'string'
+                        }
+                }
+        };
+        var found = false;
+
+        vasync.pipeline({
+                funcs: [
+                        function bucket(_, cb) {
+                                c.putBucket(b, cfg, cb);
+                        },
+                        function objects(_, cb) {
+                                cb = once(cb);
+
+                                var done = 0;
+                                function _cb(err) {
+                                        if (err) {
+                                                cb(err);
+                                                return;
+                                        }
+                                        if (++done === 10)
+                                                cb();
+                                }
+                                for (var i = 0; i < 10; i++) {
+                                        var data = {
+                                                foo: '' + i,
+                                                bar: '' + i,
+                                                baz: '' + i
+                                        };
+                                        c.putObject(b, uuid(), data, _cb);
+                                }
+                        },
+                        function find(_, cb) {
+                                cb = once(cb);
+                                var f = '(&(!(|(foo=0)(foo=1)))(bar=8)(baz=8))';
+                                var req = c.findObjects(b, f);
+                                req.once('error', cb);
+                                req.once('record', function (obj) {
+                                        t.ok(obj);
+                                        t.equal(obj.value.foo, 8);
+                                        t.equal(obj.value.bar, 8);
+                                        t.equal(obj.value.baz, 8);
+                                        found = true;
+                                });
+                                req.once('end', cb);
+                        }
+                ],
+                arg: null
+        }, function (err) {
+                t.ifError(err);
+                t.ok(found);
+                t.end();
         });
 });
