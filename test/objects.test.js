@@ -1344,3 +1344,42 @@ test('MORAY-166: delete w/LIMIT in batch', function (t) {
         t.end();
     });
 });
+
+
+test('MORAY-175: overwrite with \' in name', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var k = uuid.v4() + '\'foo';
+    var v = {
+        str: 'hi',
+        vnode: 2
+    };
+    var v2 = {
+        str: 'hello world',
+        pre: 'hi'
+    };
+    var self = this;
+
+    vasync.pipeline({
+        funcs: [ function create(_, cb) {
+            c.putObject(b, k, v, cb);
+        }, function overwrite(_, cb) {
+            c.putObject(b, k, v2, cb);
+        }, function getAgain(_, cb) {
+            c.getObject(b, k, function (err, obj) {
+                if (err) {
+                    cb(err);
+                } else {
+                    t.ok(obj);
+                    v2.pre = 'pre_overwrite';
+                    self.assertObject(t, obj, k, v2);
+                    cb();
+                }
+            });
+        } ],
+        arg: {}
+    }, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+});
