@@ -70,7 +70,7 @@ PATH	:= $(NODE_INSTALL)/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) deps scripts
+all: $(SMF_MANIFESTS) deps scripts sdc-scripts
 
 .PHONY: deps
 deps: | $(REPO_DEPS) $(NPM_EXEC)
@@ -119,6 +119,11 @@ release: all docs $(SMF_MANIFESTS)
 	cp $(ROOT)/etc/haproxy.cfg.in $(TMPDIR)/root/opt/smartdc/moray/etc
 	mv $(TMPDIR)/root/opt/smartdc/moray/build/scripts \
 	    $(TMPDIR)/root/opt/smartdc/moray/boot
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/sdc-boot
+	cp $(ROOT)/sdc-boot/*.sh \
+	    $(TMPDIR)/root/opt/smartdc/sdc-boot/
+	mv $(TMPDIR)/root/opt/smartdc/moray/build/sdc-scripts \
+	    $(TMPDIR)/root/opt/smartdc/sdc-boot/scripts
 	ln -s /opt/smartdc/moray/boot/configure.sh \
 	    $(TMPDIR)/root/opt/smartdc/boot/configure.sh
 	chmod 755 $(TMPDIR)/root/opt/smartdc/moray/boot/configure.sh
