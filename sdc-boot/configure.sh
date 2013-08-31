@@ -9,7 +9,7 @@ set -o xtrace
 PATH=/opt/smartdc/moray/build/node/bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
 
 # Source this to include the fatal() function
-source /opt/smartdc/sdc-boot/scripts/util.sh
+source /opt/smartdc/sdc-boot/lib/util.sh
 
 role=moray
 

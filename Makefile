@@ -119,11 +119,9 @@ release: all docs $(SMF_MANIFESTS)
 	cp $(ROOT)/etc/haproxy.cfg.in $(TMPDIR)/root/opt/smartdc/moray/etc
 	mv $(TMPDIR)/root/opt/smartdc/moray/build/scripts \
 	    $(TMPDIR)/root/opt/smartdc/moray/boot
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/sdc-boot
-	cp $(ROOT)/sdc-boot/*.sh \
-	    $(TMPDIR)/root/opt/smartdc/sdc-boot/
-	mv $(TMPDIR)/root/opt/smartdc/moray/build/sdc-scripts \
-	    $(TMPDIR)/root/opt/smartdc/sdc-boot/scripts
+	mkdir -p $(TMPDIR)/root/opt/smartdc/sdc-boot
+	cp -R $(ROOT)/sdc-boot/* $(TMPDIR)/root/opt/smartdc/sdc-boot/
+	cp -R $(ROOT)/deps/sdc-scripts/* $(TMPDIR)/root/opt/smartdc/sdc-boot/
 	ln -s /opt/smartdc/moray/boot/configure.sh \
 	    $(TMPDIR)/root/opt/smartdc/boot/configure.sh
 	chmod 755 $(TMPDIR)/root/opt/smartdc/moray/boot/configure.sh
@@ -145,3 +143,5 @@ include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.node_prebuilt.targ
 include ./tools/mk/Makefile.smf.targ
 include ./tools/mk/Makefile.targ
+
+sdc-scripts: deps/%/.git
