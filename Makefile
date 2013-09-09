@@ -105,7 +105,6 @@ release: all docs $(SMF_MANIFESTS)
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/boot
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/etc
 	cp -r   $(ROOT)/bin \
-		$(ROOT)/boot\
 		$(ROOT)/build \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
@@ -117,14 +116,11 @@ release: all docs $(SMF_MANIFESTS)
 		$(TMPDIR)/root/opt/smartdc/moray/
 	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/moray/etc
 	cp $(ROOT)/etc/haproxy.cfg.in $(TMPDIR)/root/opt/smartdc/moray/etc
-	mv $(TMPDIR)/root/opt/smartdc/moray/build/scripts \
-	    $(TMPDIR)/root/opt/smartdc/moray/boot
-	mkdir -p $(TMPDIR)/root/opt/smartdc/sdc-boot
-	cp -R $(ROOT)/sdc-boot/* $(TMPDIR)/root/opt/smartdc/sdc-boot/
-	cp -R $(ROOT)/deps/sdc-scripts/* $(TMPDIR)/root/opt/smartdc/sdc-boot/
-	ln -s /opt/smartdc/moray/boot/configure.sh \
-	    $(TMPDIR)/root/opt/smartdc/boot/configure.sh
-	chmod 755 $(TMPDIR)/root/opt/smartdc/moray/boot/configure.sh
+	mkdir -p $(TMPDIR)/root/opt/smartdc/boot/scripts
+	cp -R $(TMPDIR)/root/opt/smartdc/moray/build/scripts/* \
+	    $(TMPDIR)/root/opt/smartdc/boot/scripts/
+	cp -R $(ROOT)/deps/sdc-scripts/* $(TMPDIR)/root/opt/smartdc/boot/
+	cp -R $(ROOT)/boot/* $(TMPDIR)/root/opt/smartdc/boot/
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root)
 	@rm -rf $(TMPDIR)
 
