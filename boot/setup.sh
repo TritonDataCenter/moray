@@ -175,6 +175,27 @@ function sdc_moray_setup {
 
 }
 
+function manta_setup_moray_config {
+    #.bashrc
+    echo 'function req() { grep "$@" `svcs -L moray` | bunyan ;}' >> $PROFILE
+    echo 'export PATH=/opt/smartdc/moray/bin:$PATH' >> $PROFILE
+
+    local moray_cfg=$SVC_ROOT/etc/config.json
+    local svc_name=$(json -f ${METADATA} SERVICE_NAME)
+    [[ $? -eq 0 ]] || fatal "Unable to retrieve service name"
+
+    # Postgres sucks at return codes, so we basically have no choice but to
+    # ignore the error code here since we can't conditionally create the DB
+    createdb -h pg.$svc_name -p 5432 -U postgres moray
+    psql -U postgres -h pg.$svc_name -p 5432 \
+        -c 'CREATE TABLE IF NOT EXISTS buckets_config (name text PRIMARY KEY, index text NOT NULL, pre text NOT NULL, post text NOT NULL, options text, mtime timestamp without time zone DEFAULT now() NOT NULL);' \
+        moray
+    [[ $? -eq 0 ]] || fatal "Unable to create moray database"
+
+    echo "alias manatee_stat='manatee_stat -s $svc_name -p $zk'" >> $PROFILE
+    echo "alias psql='/opt/local/bin/psql -h pg.$svc_name -U postgres moray'" >> $PROFILE
+}
+
 function sdc_moray_createdb {
     MANATEE_MAIN_ADMIN_IP=$(json -f /var/tmp/metadata.json manatee_admin_ips)
 
