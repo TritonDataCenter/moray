@@ -2,7 +2,7 @@
 
 var clone = require('clone');
 var once = require('once');
-var uuid = require('node-uuid');
+var libuuid = require('libuuid');
 var vasync = require('vasync');
 
 if (require.cache[__dirname + '/helper.js'])
@@ -12,6 +12,11 @@ var helper = require('./helper.js');
 
 
 ///--- Globals
+
+var uuid = {
+    v1: libuuid.create,
+    v4: libuuid.create
+};
 
 var after = helper.after;
 var before = helper.before;

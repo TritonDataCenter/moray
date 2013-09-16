@@ -2,8 +2,8 @@
 
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
+var libuuid = require('libuuid');
 var moray = require('moray');
-var uuid = require('node-uuid');
 
 
 
@@ -35,10 +35,10 @@ var SCHEMA = {
 ///--- Runners
 
 function put(i, cb) {
-        var k = uuid.v4().substr(0, 7);
+        var k = libuuid.create().substr(0, 7);
         var v = {
-                foo: uuid.v1(),
-                bar: uuid.v1()
+                foo: libuuid.create(),
+                bar: libuuid.create()
         };
         CLIENT.putObject(BNAME, k, v, function (put_err, meta) {
                 if (put_err) {

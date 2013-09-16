@@ -1,7 +1,7 @@
 // Copyright 2013 Joyent.  All rights reserved.
 
 var once = require('once');
-var uuid = require('node-uuid');
+var libuuid = require('libuuid');
 var vasync = require('vasync');
 
 if (require.cache[__dirname + '/helper.js'])
@@ -15,6 +15,10 @@ var helper = require('./helper.js');
 var after = helper.after;
 var before = helper.before;
 var test = helper.test;
+var uuid = {
+    v1: libuuid.create,
+    v4: libuuid.create
+};
 
 
 
