@@ -421,3 +421,73 @@ test('MANTA-1726 batch+deleteMany+limit', function (t) {
         t.end();
     });
 });
+
+
+
+test('MANTA-1726 batch+update+limit', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+
+    vasync.pipeline({
+        funcs: [
+            function bucket(_, cb) {
+                var cfg = {
+                    index: {
+                        n: {
+                            type: 'number'
+                        }
+                    }
+                };
+                c.putBucket(b, cfg, once(cb));
+            },
+            function writeObjects(_, cb) {
+                cb = once(cb);
+
+                var done = 0;
+                for (var i = 0; i < 100; i++) {
+                    c.putObject(b, libuuid.create(), {n: i}, function (err) {
+                        if (err) {
+                            cb(err);
+                        } else if (++done === 100) {
+                            cb();
+                        }
+                    });
+                }
+            },
+            function batchUpdateMany(_, cb) {
+                cb = once(cb);
+
+                c.batch([
+                    {
+                        operation: 'update',
+                        bucket: b,
+                        filter: 'n>=0',
+                        options: {
+                            limit: 50
+                        },
+                        fields: {
+                            n: 10000
+                        }
+                    }
+                ], function (err, meta) {
+                    if (err) {
+                        cb(err);
+                    } else {
+                        t.ok(meta);
+                        meta = meta || {};
+                        t.ok((meta || {}).etags);
+                        meta.etags = meta.etags || [];
+                        t.ok(meta.etags.length);
+                        if (meta.etags.length)
+                            t.equal(meta.etags[0].count, 50);
+                        cb();
+                    }
+                });
+            }
+        ],
+        arg: null
+    }, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+});
