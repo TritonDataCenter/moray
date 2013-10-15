@@ -183,11 +183,12 @@ function manta_setup_moray_config {
     local svc_name=$(json -f ${METADATA} SERVICE_NAME)
     [[ $? -eq 0 ]] || fatal "Unable to retrieve service name"
 
-    # create the moray user. Creating the user will fail if the user alredy
+    # create the moray user which isn't a super user but can create tables and
+    # can't create rolse. Creating the user will fail if the user alredy
     # exists, so we don't check error, subsequent pg requests will fail with
     # this user if it dne.
-    psql -U postgres -h pg.$svc_name -p 5432 -c "createuser -d $PG_USER"
-    [[ $? -eq 0 ]] || fatal "Unable to create moray postgres user"
+    createuser -U postgres -h pg.$svc_name -p 5432 -d -S -R $PG_USER
+
     # Postgres sucks at return codes, so we basically have no choice but to
     # ignore the error code here since we can't conditionally create the DB
     createdb -h pg.$svc_name -p 5432 -U $PG_USER moray
