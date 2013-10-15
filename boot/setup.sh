@@ -14,6 +14,7 @@ if [[ -h $SOURCE ]]; then
 fi
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 PROFILE=/root/.bashrc
+PG_USER=moray
 SVC_ROOT=/opt/smartdc/moray
 ZONE_UUID=`/usr/bin/zonename`
 
@@ -182,16 +183,21 @@ function manta_setup_moray_config {
     local svc_name=$(json -f ${METADATA} SERVICE_NAME)
     [[ $? -eq 0 ]] || fatal "Unable to retrieve service name"
 
+    # create the moray user. Creating the user will fail if the user alredy
+    # exists, so we don't check error, subsequent pg requests will fail with
+    # this user if it dne.
+    psql -U postgres -c "createuser -d $PG_USER"
+    [[ $? -eq 0 ]] || fatal "Unable to create moray postgres user"
     # Postgres sucks at return codes, so we basically have no choice but to
     # ignore the error code here since we can't conditionally create the DB
-    createdb -h pg.$svc_name -p 5432 -U postgres moray
-    psql -U postgres -h pg.$svc_name -p 5432 \
+    createdb -h pg.$svc_name -p 5432 -U $PG_USER moray
+    psql -U $PG_USER -h pg.$svc_name -p 5432 \
         -c 'CREATE TABLE IF NOT EXISTS buckets_config (name text PRIMARY KEY, index text NOT NULL, pre text NOT NULL, post text NOT NULL, options text, mtime timestamp without time zone DEFAULT now() NOT NULL);' \
         moray
     [[ $? -eq 0 ]] || fatal "Unable to create moray database"
 
     echo "alias manatee_stat='manatee_stat -s $svc_name -p $zk'" >> $PROFILE
-    echo "alias psql='/opt/local/bin/psql -h pg.$svc_name -U postgres moray'" >> $PROFILE
+    echo "alias psql='/opt/local/bin/psql -h pg.$svc_name -U $PG_USER moray'" >> $PROFILE
 }
 
 function sdc_moray_createdb {
