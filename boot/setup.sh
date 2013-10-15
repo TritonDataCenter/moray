@@ -169,7 +169,6 @@ function sdc_moray_setup {
     sdc_log_rotation_add amon-agent /var/svc/log/*amon-agent*.log 1g
     sdc_log_rotation_add config-agent /var/svc/log/*config-agent*.log 1g
     sdc_log_rotation_add registrar /var/svc/log/*registrar*.log 1g
-    sdc_log_rotation_add $role /var/svc/log/*$role*.log 1g
     sdc_log_rotation_setup_end
 
 }
