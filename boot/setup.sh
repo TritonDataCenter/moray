@@ -165,8 +165,12 @@ function sdc_moray_setup {
     echo "export PATH=\$PATH:/opt/smartdc/$role/build/node/bin:/opt/smartdc/$role/node_modules/.bin:/opt/smartdc/$role/node_modules/$role/bin" >>/root/.profile
 
     # Log Rotation FTW
-    logadm -w moray -C 48 -c -p 1h \
-        /var/svc/log/smartdc-application-moray:default.log
+    # What about manta/haproxy?
+    sdc_log_rotation_add amon-agent /var/svc/log/*amon-agent*.log 1g
+    sdc_log_rotation_add config-agent /var/svc/log/*config-agent*.log 1g
+    sdc_log_rotation_add registrar /var/svc/log/*registrar*.log 1g
+    sdc_log_rotation_add $role /var/svc/log/*$role*.log 1g
+    sdc_log_rotation_setup_end
 
 }
 
