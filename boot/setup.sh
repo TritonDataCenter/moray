@@ -186,7 +186,7 @@ function manta_setup_moray_config {
     # create the moray user. Creating the user will fail if the user alredy
     # exists, so we don't check error, subsequent pg requests will fail with
     # this user if it dne.
-    psql -U postgres -c "createuser -d $PG_USER"
+    psql -U postgres -h pg.$svc_name -p 5432 -c "createuser -d $PG_USER"
     [[ $? -eq 0 ]] || fatal "Unable to create moray postgres user"
     # Postgres sucks at return codes, so we basically have no choice but to
     # ignore the error code here since we can't conditionally create the DB
