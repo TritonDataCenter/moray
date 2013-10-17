@@ -253,33 +253,32 @@ function sdc_moray_createdb {
               break
           fi
         fi
-        # MORAY-156: Create "moray" user and grant all privileges into "moray"
-        # database. This way we can upgrade existing setups and switch to
-        # "moray" user instead of "postgres"
-        if [[ -z $(PGPASSWORD=PgresPass123 /opt/local/bin/psql \
-          -U postgres \
-          -h ${POSTGRES_HOST} ${role} -c "\du"|grep ${role}) ]]; then
-          echo "User ${role} does not exist. Creating it"
-          /opt/local/bin/createuser -U postgres -h ${POSTGRES_HOST} -d -S -R $PG_USER
-        else
-          echo "User ${role} already exists."
-        fi
-
-        # We can safely execute this as many times as we want to:
-        PGPASSWORD=PgresPass123 /opt/local/bin/psql \
-          -U postgres \
-          -h ${POSTGRES_HOST} ${role} \
-          -c "GRANT ALL PRIVILEGES ON DATABASE $role to $role;">/dev/null
-        PGPASSWORD=PgresPass123 /opt/local/bin/psql \
-          -U postgres \
-          -h ${POSTGRES_HOST} ${role} \
-          -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $role;">/dev/null
-        PGPASSWORD=PgresPass123 /opt/local/bin/psql \
-          -U postgres \
-          -h ${POSTGRES_HOST} ${role} \
-          -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $role;">/dev/null
-
     done
+    # MORAY-156: Create "moray" user and grant all privileges into "moray"
+    # database. This way we can upgrade existing setups and switch to
+    # "moray" user instead of "postgres"
+    if [[ -z $(PGPASSWORD=PgresPass123 /opt/local/bin/psql \
+      -U postgres \
+      -h ${POSTGRES_HOST} ${role} -c "\du"|grep ${role}) ]]; then
+      echo "User ${role} does not exist. Creating it"
+      /opt/local/bin/createuser -U postgres -h ${POSTGRES_HOST} -d -S -R $PG_USER
+    else
+      echo "User ${role} already exists."
+    fi
+
+    # We can safely execute this as many times as we want to:
+    PGPASSWORD=PgresPass123 /opt/local/bin/psql \
+      -U postgres \
+      -h ${POSTGRES_HOST} ${role} \
+      -c "GRANT ALL PRIVILEGES ON DATABASE $role to $role;">/dev/null
+    PGPASSWORD=PgresPass123 /opt/local/bin/psql \
+      -U postgres \
+      -h ${POSTGRES_HOST} ${role} \
+      -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $role;">/dev/null
+    PGPASSWORD=PgresPass123 /opt/local/bin/psql \
+      -U postgres \
+      -h ${POSTGRES_HOST} ${role} \
+      -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $role;">/dev/null
 }
 
 
