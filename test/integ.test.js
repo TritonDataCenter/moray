@@ -28,6 +28,7 @@ before(function (cb) {
 
 });
 
+
 after(function (cb) {
     var self = this;
     // May or may not exist, just blindly ignore
@@ -489,5 +490,73 @@ test('MANTA-1726 batch+update+limit', function (t) {
     }, function (err) {
         t.ifError(err);
         t.end();
+    });
+});
+
+
+test('MORAY-131 case insensitive match', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var k = libuuid.create();
+    var cfg = {
+        index: {
+            str: {
+                type: 'string'
+            }
+        }
+    };
+    var data = {
+        str: 'MaRk'
+    };
+
+    c.putBucket(b, cfg, function (err1) {
+        t.ifError(err1);
+        c.putObject(b, k, data, function (err2) {
+            t.ifError(err2);
+            var f = '(str:caseIgnoreMatch:=mark)';
+            var req = c.findObjects(b, f);
+            var ok = false;
+            req.once('record', function () {
+                ok = true;
+            });
+            req.once('end', function () {
+                t.ok(ok);
+                t.end();
+            });
+        });
+    });
+});
+
+
+test('MORAY-131 case insensitive substrings match', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var k = libuuid.create();
+    var cfg = {
+        index: {
+            str: {
+                type: 'string'
+            }
+        }
+    };
+    var data = {
+        str: 'MaRk'
+    };
+
+    c.putBucket(b, cfg, function (err1) {
+        t.ifError(err1);
+        c.putObject(b, k, data, function (err2) {
+            t.ifError(err2);
+            var f = '(str:caseIgnoreSubstringsMatch:=m*r*)';
+            var req = c.findObjects(b, f);
+            var ok = false;
+            req.once('record', function () {
+                ok = true;
+            });
+            req.once('end', function () {
+                t.ok(ok);
+                t.end();
+            });
+        });
     });
 });
