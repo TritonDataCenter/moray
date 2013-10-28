@@ -279,6 +279,26 @@ function sdc_moray_createdb {
       -U postgres \
       -h ${POSTGRES_HOST} ${role} \
       -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $role;">/dev/null
+    # The following is needed in order to be able to update buckets:
+    PGPASSWORD=PgresPass123 /opt/local/bin/psql \
+      -U postgres \
+      -h ${POSTGRES_HOST} \
+      -c 'alter database moray owner to moray;' moray
+
+    for tbl in `PGPASSWORD=PgresPass123 /opt/local/bin/psql -h ${POSTGRES_HOST} -U postgres -qAt -c "select tablename from pg_tables where schemaname = 'public';" moray`; do
+      PGPASSWORD=PgresPass123 /opt/local/bin/psql \
+        -h ${POSTGRES_HOST} \
+        -U postgres \
+        -c "alter table $tbl owner to moray" moray;>/dev/null
+    done
+
+    for tbl in `PGPASSWORD=PgresPass123 /opt/local/bin/psql -h ${POSTGRES_HOST} -U postgres -qAt -c "select sequence_name from information_schema.sequences where sequence_schema = 'public';" moray`; do
+      PGPASSWORD=PgresPass123 /opt/local/bin/psql \
+        -U postgres \
+        -h ${POSTGRES_HOST} \
+        -c "alter table $tbl owner to moray" moray;>/dev/null
+    done
+
 }
 
 
