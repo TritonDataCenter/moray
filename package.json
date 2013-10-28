@@ -13,7 +13,7 @@
         "crc": "0.2.1",
         "dtrace-provider": "0.2.8",
         "deep-equal": "0.0.0",
-        "fast": "0.3.3",
+        "fast": "0.3.4",
         "ldapjs": "0.6.3",
         "libuuid": "0.1.2",
         "lru-cache": "2.3.1",

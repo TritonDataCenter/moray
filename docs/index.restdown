@@ -354,6 +354,65 @@ besides the name of the bucket you want to fetch (and of course request_id).
 Note the `\n's` inside the `pre` functions were inserted for readability in this
 document; they were not actually returned, and are not legal JSON.
 
+## ListBuckets
+
+Returns the configuration for all buckets.
+
+### API
+
+     client.listBuckets(function (err, buckets) {
+        assert.ifError(err);
+        console.log(util.inspect(buckets));
+    });
+
+### Inputs
+
+||**Field**||**Type**||**Description**||
+||options||object||any optional parameters (req_id)||
+||callback||function||only argument is `err`||
+
+### Errors
+
+* NoDatabaseError
+
+### CLI
+
+    $ listbuckets
+
+    [{
+      "name": foo",
+      "index": {
+        "email": {
+          "type": "string",
+          "unique": true
+        },
+        "userid": {
+          "type": "number",
+          "unique": true
+        },
+        "ismanager": {
+          "type": "boolean"
+        }
+      },
+      "pre": [
+        "function enforceEmail(req, cb) {
+           if (!req.value.email) {
+             return (cb(new Error('email is required')));
+           }
+           return (cb());
+         }",
+        "function setUID(req, cb) {
+          req.value.userid = Math.floor(Math.random() * 100001);
+          cb();
+        }"
+      ],
+      "post": [],
+      "mtime": "2012-07-31T19:43:32.268Z"
+    }]
+
+Note the `\n's` inside the `pre` functions were inserted for readability in this
+document; they were not actually returned, and are not legal JSON.
+
 ## UpdateBucket
 
 Updates a bucket given a name and a `config` object.  Basically, looks exactly

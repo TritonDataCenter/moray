@@ -82,11 +82,12 @@ before(function (cb) {
 
     this.client = helper.createClient();
     this.client.on('connect', cb);
-
 });
+
 
 after(function (cb) {
     var self = this;
+
     // May or may not exist, just blindly ignore
     this.client.delBucket(this.bucket, function () {
         self.client.close();
@@ -105,7 +106,12 @@ test('create bucket stock config', function (t) {
         c.getBucket(b, function (err2, bucket) {
             t.ifError(err2);
             self.assertBucket(t, bucket, {});
-            t.end();
+            c.listBuckets(function (err3, buckets) {
+                t.ifError(err3);
+                t.ok(buckets);
+                t.ok(buckets.length);
+                t.end();
+            });
         });
     });
 });

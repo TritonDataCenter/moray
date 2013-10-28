@@ -1,8 +1,10 @@
 // Copyright 2012 Joyent, Inc.  All rights reserved.
 
+var domain = require('domain');
 var bunyan = require('bunyan');
 var deepEqual = require('deep-equal');
 var moray = require('moray'); // client
+var once = require('once');
 
 
 
@@ -12,23 +14,29 @@ module.exports = {
 
     after: function after(teardown) {
         module.parent.exports.tearDown = function _teardown(callback) {
-            try {
-                teardown.call(this, callback);
-            } catch (e) {
-                console.error('after:\n' + e.stack);
+            var d = domain.create();
+            var self = this;
+            d.on('error', function (err) {
+                console.error('after: uncaught error: %s', err.stack);
                 process.exit(1);
-            }
+            });
+            d.run(function () {
+                teardown.call(self, once(callback));
+            });
         };
     },
 
     before: function before(setup) {
         module.parent.exports.setUp = function _setup(callback) {
-            try {
-                setup.call(this, callback);
-            } catch (e) {
-                console.error('before:\n' + e.stack);
+            var d = domain.create();
+            var self = this;
+            d.on('error', function (err) {
+                console.error('before: uncaught error: %s', err.stack);
                 process.exit(1);
-            }
+            });
+            d.run(function () {
+                setup.call(self, once(callback));
+            });
         };
     },
 
