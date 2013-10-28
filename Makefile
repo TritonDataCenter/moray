@@ -42,7 +42,7 @@ CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 #
 
 NODE_PREBUILT_TAG	= zone
-NODE_PREBUILT_VERSION	:= v0.10.18
+NODE_PREBUILT_VERSION	:= v0.10.21
 
 # RELENG-341: no npm cache is making builds unreliable
 NPM_FLAGS :=
@@ -86,6 +86,10 @@ test: $(NODEUNIT)
 	$(NODEUNIT) test/objects.test.js | $(BUNYAN)
 	$(NODEUNIT) test/integ.test.js | $(BUNYAN)
 
+.PHONY: scripts
+scripts: deps/manta-scripts/.git
+	mkdir -p $(BUILD)/scripts
+	cp deps/manta-scripts/*.sh $(BUILD)/scripts
 
 .PHONY: cover
 cover: $(NODECOVER)
