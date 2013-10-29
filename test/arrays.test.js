@@ -45,7 +45,7 @@ after(function (cb) {
 test('schema array, array value (string)', function (t) {
     var b = this.bucket;
     var c = this.client;
-    var k = uuid();
+    var k = uuid.v4();
     var cfg = {
         index: {
             name: {
@@ -102,7 +102,7 @@ test('schema array, array value (string)', function (t) {
 test('schema array, scalar value (string)', function (t) {
     var b = this.bucket;
     var c = this.client;
-    var k = uuid();
+    var k = uuid.v4();
     var cfg = {
         index: {
             name: {
@@ -162,7 +162,7 @@ test('schema array, scalar value (string)', function (t) {
 test('schema array, array value (number)', function (t) {
     var b = this.bucket;
     var c = this.client;
-    var k = uuid();
+    var k = uuid.v4();
     var cfg = {
         index: {
             id: {
@@ -270,7 +270,7 @@ test('schema array, array value (number)', function (t) {
 test('schema array string, substring filter throws', function (t) {
     var b = this.bucket;
     var c = this.client;
-    var k = uuid();
+    var k = uuid.v4();
     var cfg = {
         index: {
             name: {
@@ -309,6 +309,81 @@ test('schema array string, substring filter throws', function (t) {
         arg: null
     }, function (err, results) {
         t.ok(err);
+        t.end();
+    });
+});
+
+test('schema array, array value (number), updates', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var k = uuid.v4();
+    var cfg = {
+        index: {
+            id: {
+                type: '[number]',
+                unique: false
+            }
+        }
+    };
+    var data = {
+        id: [5, 6, 7],
+        ignoreme: 'foo'
+    };
+    var found = 0;
+
+    var objects = [];
+
+    objects.push({
+        bucket: b,
+        key: k,
+        value: data
+    });
+
+    objects.push({
+        bucket: b,
+        key: k,
+        value: {
+            id: [1, 2, 3]
+        }
+    });
+
+    function checkObject(obj) {
+        t.ok(obj);
+        if (obj) {
+            t.equal(obj.bucket, b);
+            t.equal(obj.key, k);
+            t.deepEqual(obj.value, data);
+            t.ok(obj._id);
+            t.ok(obj._etag);
+            t.ok(obj._mtime);
+            found++;
+        }
+    }
+
+    vasync.pipeline({
+        funcs: [
+            function setup(_, cb) {
+                c.putBucket(b, cfg, function (err) {
+                    if (err) {
+                        cb(err);
+                    } else {
+                        c.batch(objects, cb);
+                    }
+                });
+            },
+            function eq(_, cb) {
+                cb = once(cb);
+
+                var req = c.findObjects(b, '(id=1)');
+                req.once('error', cb);
+                req.once('record', checkObject);
+                req.once('end', cb);
+            }
+        ],
+        arg: null
+    }, function (err, results) {
+        t.ifError(err);
+        t.equal(found, results.operations.length - 1);
         t.end();
     });
 });
