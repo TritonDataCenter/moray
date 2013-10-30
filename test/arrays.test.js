@@ -547,3 +547,56 @@ test('schema array, array value (boolean), updates', function (t) {
         t.end();
     });
 });
+
+
+test('schema array, value (string) includes commas or curly braces', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var k = libuuid.create();
+    var cfg = {
+        index: {
+            name: {
+                type: '[string]',
+                unique: false
+            }
+        }
+    };
+    var data = {
+        name: ['{"foo": {"bar": "baz"}}'],
+        ignoreme: 'foo'
+    };
+
+    var objects = [];
+
+    objects.push({
+        bucket: b,
+        key: k,
+        value: data
+    });
+
+    objects.push({
+        bucket: b,
+        key: k,
+        value: {
+            name: ['{"foo": {"baz": "bar", "with": "commas"}}']
+        }
+    });
+
+    vasync.pipeline({
+        funcs: [
+            function setup(_, cb) {
+                c.putBucket(b, cfg, function (err) {
+                    if (err) {
+                        cb(err);
+                    } else {
+                        c.batch(objects, cb);
+                    }
+                });
+            }
+        ],
+        arg: null
+    }, function (err, results) {
+        t.ifError(err);
+        t.end();
+    });
+});
