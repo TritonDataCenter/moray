@@ -11,7 +11,7 @@ set -o xtrace
 
 MANATEE=$(/opt/smartdc/bin/sdc-vmname manatee)
 
-zlogin $MANATEE "/opt/local/bin/createdb -U postgres moray_test"
+zlogin $MANATEE "/opt/local/bin/createdb -U postgres -O moray moray_test"
 
 zlogin $MANATEE "/opt/local/bin/psql -U postgres moray_test --command='
     CREATE TABLE buckets_config (
@@ -22,6 +22,8 @@ zlogin $MANATEE "/opt/local/bin/psql -U postgres moray_test --command='
         options text,
         mtime timestamp without time zone DEFAULT now() NOT NULL
     );'"
+
+zlogin $MANATEE "/opt/local/bin/psql -U postgres -c 'alter table buckets_config owner to moray' moray_test > /dev/null"
 
 MORAY=$(/opt/smartdc/bin/sdc-vmname moray)
 
