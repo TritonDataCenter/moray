@@ -325,7 +325,7 @@ function sdc_ensure_manatee {
             zkok=$(echo "ruok" | nc -w 1 $ip 2181)
             if [[ $? -eq 0 ]] && [[ "$zkok" == "imok" ]]
             then
-                pgok=$(manatee_stat -s $svc_name $ip | json registrar.database.primary)
+                pgok=$(/opt/smartdc/moray/bin/manatee_stat -s $svc_name $ip 2>/dev/null | json sdc.registrar.database.primary)
                 if [[ $? -eq 0 ]] && [[ $pgok == tcp* ]]
                 then
                     isok=1
