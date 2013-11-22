@@ -302,6 +302,86 @@ function sdc_moray_createdb {
 }
 
 
+# Will likely move these into sdc util.sh once I can test them:
+function sdc_ensure_manatee {
+    local attempt=0
+    local isok=0
+    local pgok
+    local zkok
+
+    local zonename=$(zonename)
+
+    local svc_name=$(json -f ${METADATA} SERVICE_NAME)
+    local zk_ips=$(json -f ${METADATA} ZK_SERVERS | json -a host)
+
+    if [[ $? -ne 0 ]] ; then
+        zk_ips=127.0.0.1
+    fi
+
+    while [[ $attempt -lt 90 ]]
+    do
+        for ip in $zk_ips
+        do
+            zkok=$(echo "ruok" | nc -w 1 $ip 2181)
+            if [[ $? -eq 0 ]] && [[ "$zkok" == "imok" ]]
+            then
+                pgok=$(manatee_stat -s $svc_name $ip | json registrar.database.primary)
+                if [[ $? -eq 0 ]] && [[ $pgok == tcp* ]]
+                then
+                    isok=1
+                    break
+                fi
+            fi
+        done
+
+        if [[ $isok -eq 1 ]]
+        then
+            break
+        fi
+
+        let attempt=attempt+1
+        sleep 1
+    done
+    [[ $isok -eq 1 ]] || fatal "manatee is not up"
+}
+
+
+function sdc_ensure_zk {
+    local attempt=0
+    local isok=0
+    local zkok
+
+    local zonename=$(zonename)
+
+    local zk_ips=$(json -f ${METADATA} ZK_SERVERS | json -a host)
+    if [[ $? -ne 0 ]] ; then
+        zk_ips=127.0.0.1
+    fi
+
+    while [[ $attempt -lt 60 ]]
+    do
+        for ip in $zk_ips
+        do
+            zkok=$(echo "ruok" | nc -w 1 $ip 2181)
+            if [[ $? -eq 0 ]] && [[ "$zkok" == "imok" ]]
+            then
+                isok=1
+                break
+            fi
+        done
+
+        if [[ $isok -eq 1 ]]
+        then
+            break
+        fi
+
+        let attempt=attempt+1
+        sleep 1
+    done
+    [[ $isok -eq 1 ]] || fatal "ZooKeeper is not running"
+}
+
+
 if [[ ${FLAVOR} == "manta" ]]; then
 
     source ${DIR}/scripts/util.sh
@@ -347,6 +427,9 @@ else # ${FLAVOR} == "sdc"
 
     # SDC-specific moray setup
     sdc_moray_setup
+
+    sdc_ensure_zk
+    sdc_ensure_manatee
 
     # Create the DB for moray
     sdc_moray_createdb
