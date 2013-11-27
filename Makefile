@@ -58,7 +58,7 @@ include ./tools/mk/Makefile.smf.defs
 
 RELEASE_TARBALL         := moray-pkg-$(STAMP).tar.bz2
 ROOT                    := $(shell pwd)
-TMPDIR                  := /tmp/$(STAMP)
+RELSTAGEDIR                  := /tmp/$(STAMP)
 
 
 #
@@ -105,9 +105,9 @@ cover: $(NODECOVER)
 .PHONY: release
 release: all docs $(SMF_MANIFESTS)
 	@echo "Building $(RELEASE_TARBALL)"
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/boot
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/moray/etc
+	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/moray
+	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/boot
+	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/moray/etc
 	cp -r   $(ROOT)/bin \
 		$(ROOT)/build \
 		$(ROOT)/lib \
@@ -117,16 +117,16 @@ release: all docs $(SMF_MANIFESTS)
 		$(ROOT)/sapi_manifests \
 		$(ROOT)/sdc \
 		$(ROOT)/smf \
-		$(TMPDIR)/root/opt/smartdc/moray/
-	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/moray/etc
-	cp $(ROOT)/etc/haproxy.cfg.in $(TMPDIR)/root/opt/smartdc/moray/etc
-	mkdir -p $(TMPDIR)/root/opt/smartdc/boot/scripts
-	cp -R $(TMPDIR)/root/opt/smartdc/moray/build/scripts/* \
-	    $(TMPDIR)/root/opt/smartdc/boot/scripts/
-	cp -R $(ROOT)/deps/sdc-scripts/* $(TMPDIR)/root/opt/smartdc/boot/
-	cp -R $(ROOT)/boot/* $(TMPDIR)/root/opt/smartdc/boot/
-	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root)
-	@rm -rf $(TMPDIR)
+		$(RELSTAGEDIR)/root/opt/smartdc/moray/
+	cp $(ROOT)/etc/config.json.in $(RELSTAGEDIR)/root/opt/smartdc/moray/etc
+	cp $(ROOT)/etc/haproxy.cfg.in $(RELSTAGEDIR)/root/opt/smartdc/moray/etc
+	mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/boot/scripts
+	cp -R $(RELSTAGEDIR)/root/opt/smartdc/moray/build/scripts/* \
+	    $(RELSTAGEDIR)/root/opt/smartdc/boot/scripts/
+	cp -R $(ROOT)/deps/sdc-scripts/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
+	cp -R $(ROOT)/boot/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
+	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root)
+	@rm -rf $(RELSTAGEDIR)
 
 
 .PHONY: publish
