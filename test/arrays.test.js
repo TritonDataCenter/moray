@@ -549,7 +549,7 @@ test('schema array, array value (boolean), updates', function (t) {
 });
 
 
-test('schema array, value (string) includes commas or curly braces', function (t) {
+test('schema array, value (string) includes commas/curly braces', function (t) {
     var b = this.bucket;
     var c = this.client;
     var k = libuuid.create();
