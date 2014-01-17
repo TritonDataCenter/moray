@@ -29,7 +29,8 @@ var app = require('./lib');
 
 var DEFAULTS = {
     file: process.cwd() + '/etc/config.json',
-    port: 2020
+    port: 2020,
+    bindip: '0.0.0.0'
 };
 var NAME = 'moray';
 var LOG_SERIALIZERS = {
@@ -163,7 +164,11 @@ function run(options) {
 
     var opts = clone(options);
     opts.log = LOG;
-    opts.manatee.log = LOG;
+    if (opts.standalone) {
+        opts.standalone.log = LOG;
+    } else {
+        opts.manatee.log = LOG;
+    }
     opts.name = NAME;
 
     app.createServer(opts);
