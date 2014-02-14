@@ -6,7 +6,7 @@
         },
         "manatee": {
                 "manatee": {
-                        "path": "/manatee/2ba97f45-8883-417d-82f9-1352a9cf8783/election",
+                        "path": "/manatee/8dbdcef3-a82b-4403-bab0-a5c4053bb40f/election",
                         "zk": {
                                 "servers": [ {
                                         "host": "127.0.0.1",
