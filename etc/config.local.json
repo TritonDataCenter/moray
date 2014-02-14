@@ -6,7 +6,7 @@
         },
         "manatee": {
                 "manatee": {
-                        "path": "/manatee/50fcdd2f-b73e-44d7-b61a-aa5e1df84021/election",
+                        "path": "/manatee/2ba97f45-8883-417d-82f9-1352a9cf8783/election",
                         "zk": {
                                 "servers": [ {
                                         "host": "127.0.0.1",
@@ -20,7 +20,8 @@
                         "maxConnections": 15,
                         "maxIdleTime": 30000,
                         "checkInterval": 90000,
-                        "queryTimeout": 0
+                        "queryTimeout": 0,
+                        "user": "postgres"
                 }
         },
         "cache": {
