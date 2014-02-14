@@ -1,0 +1,30 @@
+{
+        "port": 2020,
+        "audit": false,
+        "bunyan": {
+                "level": "info"
+        },
+        "manatee": {
+                "manatee": {
+                        "path": "/manatee/50fcdd2f-b73e-44d7-b61a-aa5e1df84021/election",
+                        "zk": {
+                                "servers": [ {
+                                        "host": "127.0.0.1",
+                                        "port": 2181
+                                } ],
+                                "timeout": 10000
+                        }
+                },
+                "pg": {
+                        "connectTimeout": 3000,
+                        "maxConnections": 15,
+                        "maxIdleTime": 30000,
+                        "checkInterval": 90000,
+                        "queryTimeout": 0
+                }
+        },
+        "cache": {
+                "size": 1000,
+                "expiry": 60
+        }
+}
