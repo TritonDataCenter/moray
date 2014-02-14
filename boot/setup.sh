@@ -198,7 +198,7 @@ function manta_setup_moray_config {
         moray
     [[ $? -eq 0 ]] || fatal "Unable to create moray database"
 
-    echo "alias manatee_stat='manatee_stat -s $svc_name -p $zk'" >> $PROFILE
+    echo "alias manatee-stat='/opt/smartdc/moray/node_modules/.bin/manatee-stat -s $svc_name -p $zk'" >> $PROFILE
     echo "alias psql='/opt/local/bin/psql -h pg.$svc_name -U $PG_USER moray'" >> $PROFILE
 }
 
@@ -325,7 +325,7 @@ function sdc_ensure_manatee {
             zkok=$(echo "ruok" | nc -w 1 $ip 2181)
             if [[ $? -eq 0 ]] && [[ "$zkok" == "imok" ]]
             then
-                pgok=$(/opt/smartdc/moray/bin/manatee_stat -s $svc_name $ip 2>/dev/null | json sdc.registrar.database.primary)
+                pgok=$(/opt/smartdc/moray/node_modules/.bin/manatee-stat -s $svc_name $ip 2>/dev/null | json sdc.registrar.database.primary)
                 if [[ $? -eq 0 ]] && [[ $pgok == tcp* ]]
                 then
                     isok=1
