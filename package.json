@@ -17,6 +17,7 @@
         "ldapjs": "0.7.0",
         "libuuid": "0.1.2",
         "lru-cache": "2.5.0",
+        "manatee": "git+ssh://git@git.joyent.com:manatee.git#b93c8c2",
         "microtime": "0.5.1",
         "once": "1.3.0",
         "panic": "0.2.1",
@@ -26,8 +27,7 @@
         "posix-getopt": "1.0.0",
         "vasync": "1.4.2",
         "verror": "1.3.7",
-        "xtend": "2.1.2",
-        "zkplus": "0.3.2-smartos-only"
+        "xtend": "2.1.2"
     },
     "devDependencies": {
         "moray": "git+ssh://git@git.joyent.com:node-moray.git#master",
