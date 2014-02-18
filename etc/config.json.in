@@ -1,31 +1,33 @@
 {
-        "port": 2020,
-        "bunyan": {
-                "level": "info",
-                "syslog": {
-                        "facility": "local0",
-                        "type": "udp"
-                }
-        },
-        "manatee": {
-                "path": "/manatee/sdc/election",
-                "pg": {
-                        "connectTimeout": 3000,
-                        "maxConnections": 15,
-                        "maxIdleTime": 120000,
-                        "checkInterval": 30000,
-                        "queryTimeout": 30000
-                },
-                "zk": {
-                        "servers": [ {
-                                "host": "ZK_IP",
-                                "port": 2181
-                        } ],
-                        "timeout": 60000
-                }
-        },
-        "cache": {
-                "size": 1000,
-                "expiry": 60
+    "port": 2020,
+    "bunyan": {
+        "level": "info",
+        "syslog": {
+            "facility": "local0",
+            "type": "udp"
         }
+    },
+    "manatee": {
+        "manatee": {
+            "path": "/manatee/sdc/election",
+            "zk": {
+                "servers": [ {
+                    "host": "ZK_IP",
+                    "port": 2181
+                } ],
+                "timeout": 60000
+            }
+        },
+        "pg": {
+            "connectTimeout": 3000,
+            "maxConnections": 15,
+            "maxIdleTime": 120000,
+            "checkInterval": 30000,
+            "queryTimeout": 30000
+        }
+    },
+    "cache": {
+        "size": 1000,
+        "expiry": 60
+    }
 }
