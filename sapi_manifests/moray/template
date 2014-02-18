@@ -30,8 +30,8 @@
         "maxIdleTime": 270000,
         "queryTimeout": 30000,
         "user": "moray"
-      },
-    },
+      }
+    }
   },
   "cache": {
     "size": 5000,
