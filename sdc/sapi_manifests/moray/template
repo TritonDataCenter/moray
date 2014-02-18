@@ -1,46 +1,48 @@
 {
   "bunyan": {
     "level": "info",
-    "syslog": {
-      "facility": "local0",
-      "type": "udp"
-    }
+      "syslog": {
+        "facility": "local0",
+        "type": "udp"
+      }
   },
-  "numWorkers": 0,
-  "audit": false,
-  "manatee": {
-    "path": "/manatee/{{manatee_shard}}/election",
-    "pg": {
-      "connectTimeout": 4000,
-      "checkInterval": 90000,
-      "maxConnections": {{MORAY_MAX_PG_CONNS}},
-      "maxIdleTime": 270000,
-      "queryTimeout": 30000,
-      "user": "moray"
+    "numWorkers": 0,
+    "audit": false,
+    "manatee": {
+      "manatee":{
+        "path": "/manatee/{{manatee_shard}}/election",
+        "zk": {
+          "connectTimeout": 2000,
+          "servers": [
+          {{#ZK_HA_SERVERS}}
+          {
+            "host": "{{host}}",
+              "port": {{port}}
+          }{{^last}}, {{/last}}
+          {{/ZK_HA_SERVERS}}
+          {{^ZK_HA_SERVERS}}
+          {{#ZK_SERVERS}}
+          {
+            "host": "{{host}}",
+              "port": {{port}}
+          }{{^last}}, {{/last}}
+          {{/ZK_SERVERS}}
+          {{/ZK_HA_SERVERS}}
+          ],
+            "timeout": 6000
+        }
+      },
+      "pg": {
+        "connectTimeout": 4000,
+        "checkInterval": 90000,
+        "maxConnections": {{MORAY_MAX_PG_CONNS}},
+        "maxIdleTime": 270000,
+        "queryTimeout": 30000,
+        "user": "moray"
+      }
     },
-    "zk": {
-      "connectTimeout": 2000,
-      "servers": [
-        {{#ZK_HA_SERVERS}}
-          {
-            "host": "{{host}}",
-            "port": {{port}}
-          }{{^last}}, {{/last}}
-        {{/ZK_HA_SERVERS}}
-        {{^ZK_HA_SERVERS}}
-        {{#ZK_SERVERS}}
-          {
-            "host": "{{host}}",
-            "port": {{port}}
-          }{{^last}}, {{/last}}
-        {{/ZK_SERVERS}}
-        {{/ZK_HA_SERVERS}}
-      ],
-      "timeout": 6000
+    "cache": {
+      "size": 5000,
+      "expiry": 60
     }
-  },
-  "cache": {
-    "size": 5000,
-    "expiry": 60
-  }
 }
