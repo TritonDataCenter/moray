@@ -22,15 +22,15 @@
         {{/ZK_SERVERS}}
         ],
           "timeout": 6000
-      },
-      "pg": {
-        "connectTimeout": 4000,
-        "checkInterval": 90000,
-        "maxConnections": {{MORAY_MAX_PG_CONNS}},
-        "maxIdleTime": 270000,
-        "queryTimeout": 30000,
-        "user": "moray"
       }
+    },
+    "pg": {
+      "connectTimeout": 4000,
+      "checkInterval": 90000,
+      "maxConnections": {{MORAY_MAX_PG_CONNS}},
+      "maxIdleTime": 270000,
+      "queryTimeout": 30000,
+      "user": "moray"
     }
   },
   "cache": {
