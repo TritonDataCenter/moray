@@ -21,7 +21,7 @@
         }{{^last}}, {{/last}}
         {{/ZK_SERVERS}}
         ],
-          "timeout": 6000
+          "timeout": 20000
       }
     },
     "pg": {

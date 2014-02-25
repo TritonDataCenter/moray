@@ -29,7 +29,7 @@
           {{/ZK_SERVERS}}
           {{/ZK_HA_SERVERS}}
           ],
-            "timeout": 6000
+            "timeout": 20000
         }
       },
       "pg": {
