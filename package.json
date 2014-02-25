@@ -17,7 +17,7 @@
         "ldapjs": "0.7.0",
         "libuuid": "0.1.2",
         "lru-cache": "2.5.0",
-        "manatee": "git+ssh://git@git.joyent.com:manatee.git#1d33c07",
+        "manatee": "git+ssh://git@git.joyent.com:manatee.git#844e63d",
         "microtime": "0.5.1",
         "once": "1.3.0",
         "panic": "0.2.1",
