@@ -1,0 +1,38 @@
+{
+  "bunyan": {
+    "level": "info",
+    "syslog": {
+      "facility": "local0",
+      "type": "udp"
+    }
+  },
+  "numWorkers": 0,
+  "audit": false,
+  "manatee": {
+    "manatee": {
+      "path": "/manatee/1.moray.coal.joyent.us/election",
+      "zk": {
+        "connectTimeout": 2000,
+        "servers": [
+        {
+          "host": "10.77.77.6",
+            "port": 2181
+        }
+        ],
+          "timeout": 20000
+      }
+    },
+    "pg": {
+      "connectTimeout": 4000,
+      "checkInterval": 90000,
+      "maxConnections": 16,
+      "maxIdleTime": 270000,
+      "queryTimeout": 30000,
+      "user": "moray"
+    }
+  },
+  "cache": {
+    "size": 5000,
+    "expiry": 60
+  }
+}
