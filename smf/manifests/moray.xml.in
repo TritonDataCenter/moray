@@ -17,12 +17,19 @@
             <service_fmri value="svc:/system/filesystem/local" />
         </dependency>
 
-	<dependency name="mdata"
-		    grouping="require_all"
-		    restart_on="none"
-		    type="service">
-	    <service_fmri value="svc:/smartdc/mdata:execute" />
-	</dependency>
+        <dependency name="mdata"
+                    grouping="require_all"
+                    restart_on="none"
+                    type="service">
+            <service_fmri value="svc:/smartdc/mdata:execute" />
+        </dependency>
+
+        <dependency name="config-agent"
+                    grouping="optional_all"
+                    restart_on="none"
+                    type="service">
+            <service_fmri value="svc:/smartdc/application/config-agent" />
+        </dependency>
 
         <exec_method
             type="method"
