@@ -312,7 +312,11 @@ function sdc_ensure_manatee {
     local zonename=$(zonename)
 
     local svc_name=$(json -f ${METADATA} SERVICE_NAME)
-    local zk_ips=$(json -f ${METADATA} ZK_SERVERS | json -a host)
+    local zk_ips=$(json -f ${METADATA} ZK_HA_SERVERS | json -a host)
+
+    if [[ -z ${zk_ips} ]]; then
+        zk_ips=$(json -f ${METADATA} ZK_SERVERS | json -a host)
+    fi
 
     if [[ $? -ne 0 ]] ; then
         zk_ips=127.0.0.1
