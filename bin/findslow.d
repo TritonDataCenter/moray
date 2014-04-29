@@ -1,9 +1,9 @@
 #!/usr/sbin/dtrace -s
 
-#
-# findslow.d MILLISECONDS: report "findobjects" queries taking longer than
-# MILLISECONDS milliseconds to complete.
-#
+/*
+ * findslow.d MILLISECONDS: report "findobjects" queries taking longer than
+ * MILLISECONDS milliseconds to complete.
+ */
 
 #pragma D option quiet
 
