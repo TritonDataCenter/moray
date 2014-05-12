@@ -10,7 +10,7 @@
     "audit": false,
     "manatee": {
       "manatee":{
-        "path": "/manatee/{{manatee_shard}}/election",
+        "path": "/manatee/{{manatee_shard}}",
         "zk": {
           "connectTimeout": 2000,
           "servers": [
