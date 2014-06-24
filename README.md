@@ -21,7 +21,7 @@ standup.  Once you have that, you'll need to create a database and the minimal
 schema necessary to bootstrap moray (issue these against whatever DB is
 currently `primary` in manatee):
 
-    createdb -U postgres moray
+    createdb -U postgres -O moray moray
     psql -U postgres moray
 
     moray=# CREATE TABLE buckets_config (
@@ -33,15 +33,19 @@ currently `primary` in manatee):
         mtime timestamp without time zone DEFAULT now() NOT NULL
     );
 
+    moray=# alter table buckets_config owner to moray
+
 Note if you want to use a different database name than `moray`, you can, you
 just need to set the environment variable `MORAY_DB_NAME` to whatever you want
 before starting the server.
 
-Once the above is done, edit `./etc/config.laptop.json` file to have the correct
+Once the above is done, edit one of the JSON files in `./etc/` (based on whether
+you're using an SDC or Manatee, and whether COAL or lab) to have the correct
 ZooKeeper endpoint(s) and domain name (note the domain name is the DNS name of
 the manatee to back this Moray instance - that DNS name is "mapped" into
-ZooKeeper). Then, source in ./dev\_env.sh (this ensures you have the moray node
-et al) and run:
+ZooKeeper). If in doubt, compare against the configuration for the Moray zone
+deployed atop the Manatee you're deploying against. Then, source in ./env.sh
+(this ensures you have the moray node et al) and run:
 
     . ./env.sh
     server
