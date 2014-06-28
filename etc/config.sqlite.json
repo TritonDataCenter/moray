@@ -1,0 +1,22 @@
+{
+        "port": 2020,
+        "bindip": "127.0.0.1",
+        "bunyan": {
+                "level": "info"
+        },
+        "audit": false,
+        "sqlite": {
+                "pg": {
+                        "connectTimeout": 3000,
+                        "maxConnections": 15,
+                        "maxIdleTime": 120000,
+                        "checkInterval": 30000,
+                        "queryTimeout": 30000
+                },
+                "filename": "DATABASE_FILE"
+        },
+        "cache": {
+                "size": 1000,
+                "expiry": 60
+        }
+}

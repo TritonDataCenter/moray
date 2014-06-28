@@ -156,8 +156,8 @@ function run(options) {
 
     var opts = clone(options);
     opts.log = LOG;
-    if (opts.local) {
-        opts.local.log = LOG;
+    if (opts.sqlite) {
+        opts.sqlite.log = LOG;
     } else if (opts.standalone) {
         opts.standalone.log = LOG;
     } else {

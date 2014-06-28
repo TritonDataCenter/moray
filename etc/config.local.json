@@ -1,19 +1,28 @@
 {
         "port": 2020,
-        "bindip": "127.0.0.1",
+        "audit": false,
         "bunyan": {
                 "level": "info"
         },
-        "audit": false,
-        "local": {
+        "manatee": {
+                "manatee": {
+                        "path": "/manatee/8dbdcef3-a82b-4403-bab0-a5c4053bb40f/election",
+                        "zk": {
+                                "servers": [ {
+                                        "host": "127.0.0.1",
+                                        "port": 2181
+                                } ],
+                                "timeout": 10000
+                        }
+                },
                 "pg": {
                         "connectTimeout": 3000,
                         "maxConnections": 15,
-                        "maxIdleTime": 120000,
-                        "checkInterval": 30000,
-                        "queryTimeout": 30000
-                },
-                "filename": "DATABASE_FILE"
+                        "maxIdleTime": 30000,
+                        "checkInterval": 90000,
+                        "queryTimeout": 0,
+                        "user": "postgres"
+                }
         },
         "cache": {
                 "size": 1000,
