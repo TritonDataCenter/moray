@@ -156,7 +156,9 @@ function run(options) {
 
     var opts = clone(options);
     opts.log = LOG;
-    if (opts.standalone) {
+    if (opts.local) {
+        opts.local.log = LOG;
+    } else if (opts.standalone) {
         opts.standalone.log = LOG;
     } else {
         opts.manatee.log = LOG;

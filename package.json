@@ -26,6 +26,7 @@
         "pg-parse-float": "0.0.1",
         "pooling": "0.4.5",
         "posix-getopt": "1.0.0",
+        "sqlite3": "2.2.3",
         "vasync": "1.4.2",
         "verror": "1.3.7",
         "xtend": "2.1.2"
