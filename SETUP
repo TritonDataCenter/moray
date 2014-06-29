@@ -1,0 +1,14 @@
+#!/bin/ksh
+
+sqlite3 /var/tmp/MORAY_SQLITE/DATABASE <<'EOF'
+PRAGMA journal_mode = WAL;
+
+CREATE TABLE buckets_config (
+	"name" text PRIMARY KEY,
+	"index" text NOT NULL,
+	"pre" text NOT NULL,
+	"post" text NOT NULL,
+	"options" text,
+	"mtime" integer NOT NULL
+);
+EOF
