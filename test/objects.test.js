@@ -582,6 +582,50 @@ test('find _mtime', function (t) {
 });
 
 
+test('find _key', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var k = uuid.v4();
+    var v = {
+        str: 'hello',
+        str_2: 'world'
+    };
+    var found = false;
+
+    vasync.pipeline({
+        funcs: [ function wait(_, cb) {
+            setTimeout(cb, 500);
+        }, function put(_, cb) {
+            c.putObject(b, k, v, cb);
+        }, function find(_, cb) {
+            var f = '(_key=' + k + ')';
+            var req = c.findObjects(b, f);
+            req.once('error', cb);
+            req.once('end', cb);
+            req.once('record', function (obj) {
+                t.ok(obj);
+                if (!obj)
+                    return (undefined);
+
+                t.equal(obj.bucket, b);
+                t.equal(obj.key, k);
+                t.deepEqual(obj.value, v);
+                t.ok(obj._id);
+                t.ok(obj._etag);
+                t.ok(obj._mtime);
+                found = true;
+                return (undefined);
+            });
+        } ],
+        arg: {}
+    }, function (err) {
+        t.ifError(err);
+        t.ok(found);
+        t.end();
+    });
+});
+
+
 test('find MANTA-156', function (t) {
     var b = this.bucket;
     var c = this.client;
