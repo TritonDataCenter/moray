@@ -1,6 +1,5 @@
 {
     "name": "moray",
     "path": "/opt/smartdc/moray/etc/config.json",
-    "post_cmd": "/usr/sbin/svcadm refresh moray",
-	"master": true
+    "master": true
 }
