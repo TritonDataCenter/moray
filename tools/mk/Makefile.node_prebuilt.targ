@@ -25,7 +25,7 @@ $(NODE_EXEC) $(NPM_EXEC) $(NODE_WAF_EXEC):
 	mkdir -p $(shell dirname $(NODE_INSTALL))
 	if [[ $(shell echo $(NODE_PREBUILT_TARBALL) | cut -c 1-4) == "http" ]]; then \
 		echo "Downloading '$(NODE_PREBUILT_BASE)'."; \
-		curl -ksS --fail --connect-timeout 5 -o $(shell dirname $(NODE_INSTALL))/$(NODE_PREBUILT_BASE) $(NODE_PREBUILT_TARBALL); \
+		curl -ksS --fail --connect-timeout 30 -o $(shell dirname $(NODE_INSTALL))/$(NODE_PREBUILT_BASE) $(NODE_PREBUILT_TARBALL); \
 		(cd $(shell dirname $(NODE_INSTALL)) && $(TAR) xf $(NODE_PREBUILT_BASE)); \
 	else \
 		(cd $(shell dirname $(NODE_INSTALL)) && $(TAR) xf $(NODE_PREBUILT_TARBALL)); \
