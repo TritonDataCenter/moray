@@ -315,3 +315,14 @@ test('get bucket 404', function (t) {
         t.end();
     });
 });
+
+
+test('delete missing bucket', function (t) {
+    var c = this.client;
+    c.delBucket(uuid().substr(0, 7), function (err) {
+        t.ok(err);
+        t.equal(err.name, 'BucketNotFoundError');
+        t.ok(err.message);
+        t.end();
+    });
+});
