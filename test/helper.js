@@ -71,7 +71,7 @@ module.exports = {
     createClient: function createClient() {
         var client = moray.createClient({
             host: (process.env.MORAY_IP || '127.0.0.1'),
-            port: (process.env.MORAY_PORT || 2020),
+            port: (parseInt(process.env.MORAY_PORT, 10) || 2020),
             log: module.exports.createLogger()
         });
         return (client);
