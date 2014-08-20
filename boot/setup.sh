@@ -192,7 +192,7 @@ function manta_setup_moray_config {
 
     # Postgres sucks at return codes, so we basically have no choice but to
     # ignore the error code here since we can't conditionally create the DB
-    createdb -h pg.$svc_name -p 5432 -U $PG_USER moray
+    createdb -h pg.$svc_name -p 5432 -U $PG_USER -T template0 --locale=C moray
     psql -U $PG_USER -h pg.$svc_name -p 5432 \
         -c 'CREATE TABLE IF NOT EXISTS buckets_config (name text PRIMARY KEY, index text NOT NULL, pre text NOT NULL, post text NOT NULL, options text, mtime timestamp without time zone DEFAULT now() NOT NULL);' \
         moray
@@ -229,8 +229,9 @@ function sdc_moray_createdb {
               -h ${POSTGRES_HOST} -c "\l"|grep $role) ]]; then
                 echo "Creating $role database"
                 PGPASSWORD=PgresPass123 /opt/local/bin/createdb \
-                -U postgres \
-                -h ${POSTGRES_HOST} $role
+                    -U postgres \
+                    -T template0 --locale=C \
+                    -h ${POSTGRES_HOST} $role
               if [[ -z $(PGPASSWORD=PgresPass123 /opt/local/bin/psql \
                     -U postgres \
                     -h ${POSTGRES_HOST} ${role} -c "\dt"|grep buckets_config) ]]; then
