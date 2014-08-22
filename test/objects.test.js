@@ -113,8 +113,8 @@ after(function (cb) {
         if (err) {
             console.error(err.stack);
         }
+        self.client.once('close', cb.bind(null, err));
         self.client.close();
-        cb(err);
     });
 });
 
