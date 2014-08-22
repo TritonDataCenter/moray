@@ -1482,17 +1482,17 @@ test('reindex objects', function (t) {
                 var pageSize = 10;
                 var total = 0;
                 function runReindex() {
-                    c.reindexObjects(b, pageSize, function (err, processed) {
+                    c.reindexObjects(b, pageSize, function (err, res) {
                         if (err) {
                             t.ifError(err, 'reindex objects');
                             cb(err);
                             return;
                         }
-                        if (processed === 0) {
+                        if (res.processed === 0) {
                             t.equal(COUNT, total);
                             cb();
                         } else {
-                            total += processed;
+                            total += res.processed;
                             process.nextTick(runReindex);
                         }
                     });
