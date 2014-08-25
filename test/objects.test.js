@@ -1443,7 +1443,8 @@ test('reindex objects', function (t) {
     var c = this.client;
 
     var field = 'unindexed';
-    var COUNT = 100;
+    var COUNT = 1000;
+    var PAGESIZE = 100;
     var records = [];
     for (var i = 0; i < COUNT; i++) {
         records.push(i);
@@ -1465,7 +1466,8 @@ test('reindex objects', function (t) {
                     },
                     inputs: records
                 }, function (err) {
-                    t.ifError(err, 'insert records');
+                    t.ifError(err);
+                    t.ok(true, 'insert records');
                     cb(err);
                 });
             },
@@ -1474,17 +1476,17 @@ test('reindex objects', function (t) {
                 config.index[field] =  {type: 'number'};
                 config.options.version++;
                 c.updateBucket(b, config, function (err) {
-                    t.ifError(err, 'update bucket');
+                    t.ifError(err);
+                    t.ok(true, 'update bucket');
                     cb(err);
                 });
             },
             function reindexObjects(_, cb) {
-                var pageSize = 10;
                 var total = 0;
                 function runReindex() {
-                    c.reindexObjects(b, pageSize, function (err, res) {
+                    c.reindexObjects(b, PAGESIZE, function (err, res) {
                         if (err) {
-                            t.ifError(err, 'reindex objects');
+                            t.ifError(err);
                             cb(err);
                             return;
                         }
