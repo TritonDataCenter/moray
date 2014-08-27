@@ -822,13 +822,23 @@ parameter to set the max rows per iteration, `reindexObjects` must be called
 repeatedly until it reports 0 rows processed.  Only then will the added indexes
 be made available for use.
 
+The selected `count` value should be chosen with the expected bucket object
+size in mind.  Too large a value may cause Moray to consume excessive amounts
+of memory since it's unable to exert backpressure on PostgreSQL when fetching
+rows.
+
+It is safe to make multiple simultaneous calls to `reindexObjects` acting on
+the same bucket but it's likely to race on rows and incur rollbacks/slowdowns.
+
 ### API
 
     var rowsPerCall = 100;
     client.reindexObjects('foo', rowsPerCall, function (err, res) {
         assert.ifError(err);
-        console.log(res.processed); // rows processed in this call (0 if indexes are complete)
-        console.log(res.remaining); // rows remaining to reindex (absent of no_count option set)
+        // rows processed in this call (0 if indexes are complete)
+        console.log(res.processed);
+        // rows remaining to reindex (absent of no_count option set)
+        console.log(res.remaining);
     });
 
 
