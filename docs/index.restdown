@@ -252,8 +252,8 @@ updates will fail if the version rolls backwards.
                 cb();
             }
         ],
-		options: {
-		    version: 1
+        options: {
+            version: 1
         }
     }
 
@@ -266,7 +266,7 @@ updates will fail if the version rolls backwards.
 ||**Field**||**Type**||**Description**||
 ||name||string||globally unique name for the bucket||
 ||config||object||configuration (indexes/pre/post) for the bucket||
-||options||object||any optional parameters (req_id)||
+||options||object||any optional parameters (req\_id)||
 ||callback||function||only argument is `err`||
 
 ### Errors
@@ -295,7 +295,7 @@ Note there is no `createbucket` command; `putbucket` wraps up `CreateBucket` and
 ## GetBucket
 
 Returns the configuration for the bucket only.  There really are no options here
-besides the name of the bucket you want to fetch (and of course request_id).
+besides the name of the bucket you want to fetch (and of course request\_id).
 
 ### API
 
@@ -308,7 +308,7 @@ besides the name of the bucket you want to fetch (and of course request_id).
 
 ||**Field**||**Type**||**Description**||
 ||name||string||globally unique name for the bucket||
-||options||object||any optional parameters (req_id)||
+||options||object||any optional parameters (req\_id)||
 ||callback||function||only argument is `err`||
 
 ### Errors
@@ -368,7 +368,7 @@ Returns the configuration for all buckets.
 ### Inputs
 
 ||**Field**||**Type**||**Description**||
-||options||object||any optional parameters (req_id)||
+||options||object||any optional parameters (req\_id)||
 ||callback||function||only argument is `err`||
 
 ### Errors
@@ -424,13 +424,15 @@ The `version` param in options is required if you are using versioned buckets,
 and an error will be thrown if the version you are sending is `<=` than the
 version in the database.
 
-Note that if you *add* new indexes via updateBucket, then any *new* data will
-be indexed accordingly, but _old_ data will not.  You would need to rewrite
-all data for that to work.
+Note that if you *add* new indexes via `updateBucket`, then any *new* data will
+be indexed accordingly, but _old_ data will not.  See the ReindexObjects
+function for a method to update old rows. (A bucket version _must_ be specified
+for `reindexObjects` to operation properly.)
 
 Also, note that all operations involving the bucket configuration in Moray will
 use a cached copy of the bucket configuration, so it may take a few minutes for
-your update to take effect.
+your update to take effect.  This caching can be overridden during subsequent
+operations by setting the `noBucketCache` option to true.
 
 ### API
 
@@ -464,7 +466,7 @@ Or alternatively:
 ||**Field**||**Type**||**Description**||
 ||name||string||globally unique name for the bucket||
 ||config||object||configuration (indexes/pre/post) for the bucket||
-||options||object||any optional parameters (req_id)||
+||options||object||any optional parameters (req\_id)||
 ||callback||function||only argument is `err`||
 
 ### Errors
@@ -494,7 +496,7 @@ Deletes a bucket, *and all data in that bucket!* No real options to speak of.
 
 ||**Field**||**Type**||**Description**||
 ||name||string||globally unique name for the bucket||
-||options||object||any optional parameters (req_id)||
+||options||object||any optional parameters (req\_id)||
 ||callback||function||only argument is `err`||
 
 ### Errors
@@ -552,7 +554,7 @@ looks like:
 ||bucket||string||bucket to write this key in||
 ||key||string||bucket to write this key in||
 ||value||object||free-form JS object||
-||options||object||any optional parameters (req_id, etag)||
+||options||object||any optional parameters (req\_id, etag)||
 ||callback||function||only argument is `err`||
 
 ### Errors
@@ -609,7 +611,7 @@ for a full example.
 ||**Field**||**Type**||**Description**||
 ||bucket||string||bucket to write this key in||
 ||key||string||bucket to write this key in||
-||options||object||any optional parameters (req_id, noCache)||
+||options||object||any optional parameters (req\_id, noCache)||
 ||callback||function||arguments of `err` and `obj`||
 
 ### Errors
@@ -634,7 +636,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
        "_id": 1,
        "_etag": "D4DC3CFE",
        "_mtime": 1343724604354,
-	   "_txn_snap": 8349
+       "_txn_snap": 8349
     }
 
 ## FindObjects
@@ -688,7 +690,7 @@ expect to receive back up to N records from this call.
 ||**Field**||**Type**||**Description**||
 ||bucket||string||bucket to write this key in||
 ||filter||string||search filter string||
-||options||object||any optional parameters (req_id, limit, offset, sort)||
+||options||object||any optional parameters (req\_id, limit, offset, sort)||
 
 ### Errors
 
@@ -712,7 +714,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
       "_id": 4,
       "_etag": "09D27A3F",
       "_mtime": 1343726032177,
-	  "_txn_snap": 7894
+      "_txn_snap": 7894
     }
     {
       "bucket": "foo",
@@ -724,7 +726,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
       "_id": 1,
       "_etag": "D4DC3CFE",
       "_mtime": 1343724604354,
-	  "_txn_snap": 7882
+      "_txn_snap": 7882
     }
     {
       "bucket": "foo",
@@ -736,7 +738,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
       "_id": 3,
       "_etag": "84C510D7",
       "_mtime": 13437260263184,
-	  "_txn_snap": 7894
+      "_txn_snap": 7894
     }
 
 ## DeleteObject
@@ -758,7 +760,7 @@ options to get `test/set` semantics.
 ||**Field**||**Type**||**Description**||
 ||bucket||string||bucket to write this key in||
 ||key||string||bucket to write this key in||
-||options||object||any optional parameters (req_id, etag)||
+||options||object||any optional parameters (req\_id, etag)||
 ||callback||function||only argument is `err`||
 
 ### Errors
@@ -792,13 +794,13 @@ A few caveats:
 ### API
 
     var attrs = {
-	    isManager: true
+        isManager: true
     };
-	var filter = '(email=*@joyent.com)';
+    var filter = '(email=*@joyent.com)';
     var req = client.updateObjects('foo', attrs, filter, function (err, meta) {
-	    assert.ifError(err);
-		console.log(meta.etag); // new etag for all updated objects
-		...
+        assert.ifError(err);
+        console.log(meta.etag); // new etag for all updated objects
+        ...
     });
 
 
@@ -808,8 +810,51 @@ A few caveats:
 ||bucket||string||bucket to write this key in||
 ||fields||object||key/values to update||
 ||filter||string||search filter string||
-||options||object||any optional parameters (req_id, limit, offset, sort)||
+||options||object||any optional parameters (req\_id, limit, offset, sort)||
 
+## ReindexObjects
+
+After performing an `updateBucket` which added index fields, `reindexObjects`
+can be used to automatically re-write objects so that all index fields are
+properly populated.  This operation does _not_ update the `mtime` or `etag`
+fields on stale objects when they are re-indexed.  Since it requires a `count`
+parameter to set the max rows per iteration, `reindexObjects` must be called
+repeatedly until it reports 0 rows processed.  Only then will the added indexes
+be made available for use.
+
+The selected `count` value should be chosen with the expected bucket object
+size in mind.  Too large a value may cause Moray to consume excessive amounts
+of memory since it's unable to exert backpressure on PostgreSQL when fetching
+rows.
+
+It is safe to make multiple simultaneous calls to `reindexObjects` acting on
+the same bucket but it's likely to race on rows and incur rollbacks/slowdowns.
+
+### API
+
+    var rowsPerCall = 100;
+    client.reindexObjects('foo', rowsPerCall, function (err, res) {
+        assert.ifError(err);
+        // rows processed in this call (0 if indexes are complete)
+        console.log(res.processed);
+        // rows remaining to reindex (absent of no_count option set)
+        console.log(res.remaining);
+    });
+
+
+### Inputs
+
+||**Field**||**Type**||**Description**||
+||bucket||string||bucket to reindex||
+||count||object||max rows to reindex||
+||options||object||any optional parameters (req\_id, no\_count)||
+
+### Errors
+
+* BucketNotFoundError
+* NoDatabaseError
+
+Plus any currently unhandled Postgres Errors (such as relation already exists).
 
 ## DeleteMany
 
@@ -819,10 +864,10 @@ API with a bucket and a filter, that is exactly the same syntax as
 
 ### API
 
-	var filter = '(email=*@joyent.com)';
+    var filter = '(email=*@joyent.com)';
     var req = client.deleteMany('foo', filter, function (err) {
-	    assert.ifError(err);
-		...
+        assert.ifError(err);
+        ...
     });
 
 
@@ -831,7 +876,7 @@ API with a bucket and a filter, that is exactly the same syntax as
 ||**Field**||**Type**||**Description**||
 ||bucket||string||bucket to delete from||
 ||filter||string||search filter string||
-||options||object||any optional parameters (req_id, limit, offset, sort)||
+||options||object||any optional parameters (req\_id, limit, offset, sort)||
 
 
 ## Batch
@@ -856,34 +901,34 @@ The default operation is `put`.
 ### API
 
     var data = [{
-	    bucket: 'foo',
-		key: 'mcavage',
-		value: {
+        bucket: 'foo',
+        key: 'mcavage',
+        value: {
             email: 'mark.cavage@joyent.com',
             ismanager: false
         }
     }, {
-	    bucket: 'foo',
-		operation: 'update'
-		fields: {
-		    email: 'mcavage@gmail.com'
+        bucket: 'foo',
+        operation: 'update'
+        fields: {
+            email: 'mcavage@gmail.com'
         },
-		filter: '(ismanager=false)'
+        filter: '(ismanager=false)'
     }, {
-	    bucket: 'bar',
-		operation: 'delete'
-		key: 'uniquething'
+        bucket: 'bar',
+        operation: 'delete'
+        key: 'uniquething'
     }];
     client.batch(data, {req_id: '123'}, function (err, meta) {
         assert.ifError(err);
-		console.log('etags: %j', meta.etags);
+        console.log('etags: %j', meta.etags);
     });
 
 ### Inputs
 
 ||**Field**||**Type**||**Description**||
 ||objects||object||bucket/key/value tuples to store||
-||options||object||any optional parameters (req_id, etag)||
+||options||object||any optional parameters (req\_id, etag)||
 ||callback||function||only argument is `err` and `meta` which will have a list of etags||
 
 ### Errors
@@ -921,7 +966,7 @@ extra tables et al in Moray for `post` triggers.
 ||**Field**||**Type**||**Description**||
 ||statement||string||SQL statement to run||
 ||values||Array||values to insert (see node-postgres)||
-||options||object||any optional parameters (req_id)||
+||options||object||any optional parameters (req\_id)||
 
 ### CLI
 

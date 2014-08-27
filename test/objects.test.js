@@ -4,6 +4,7 @@ var clone = require('clone');
 var once = require('once');
 var libuuid = require('libuuid');
 var vasync = require('vasync');
+var util = require('util');
 
 if (require.cache[__dirname + '/helper.js'])
     delete require.cache[__dirname + '/helper.js'];
@@ -60,6 +61,7 @@ var BUCKET_CFG = {
         cb();
     }],
     options: {
+        version: 1,
         trackModification: true,
         guaranteeOrder: true
     }
@@ -111,8 +113,8 @@ after(function (cb) {
         if (err) {
             console.error(err.stack);
         }
+        self.client.once('close', cb.bind(null, err));
         self.client.close();
-        cb(err);
     });
 });
 
@@ -550,7 +552,8 @@ test('find _mtime', function (t) {
 
     vasync.pipeline({
         funcs: [ function wait(_, cb) {
-            setTimeout(cb, 500);
+            /* this is sensitive to clock skew between hosts */
+            setTimeout(cb, 1000);
         }, function put(_, cb) {
             c.putObject(b, k, v, cb);
         }, function find(_, cb) {
@@ -1428,6 +1431,96 @@ test('MORAY-175: overwrite with \' in name', function (t) {
             });
         } ],
         arg: {}
+    }, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+});
+
+
+test('reindex objects', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+
+    var field = 'unindexed';
+    var COUNT = 1000;
+    var PAGESIZE = 100;
+    var records = [];
+    for (var i = 0; i < COUNT; i++) {
+        records.push(i);
+    }
+
+    vasync.pipeline({
+        funcs: [
+            function insertRecords(_, cb) {
+                vasync.forEachPipeline({
+                    func: function (id, callback) {
+                        var k = uuid.v4();
+                        var obj = {
+                            str: 'test'
+                        };
+                        obj[field] = id;
+                        c.putObject(b, k, obj, function (err, meta) {
+                            callback(err);
+                        });
+                    },
+                    inputs: records
+                }, function (err) {
+                    t.ifError(err);
+                    t.ok(true, 'insert records');
+                    cb(err);
+                });
+            },
+            function updateBucket(_, cb) {
+                var config = clone(BUCKET_CFG);
+                config.index[field] =  {type: 'number'};
+                config.options.version++;
+                c.updateBucket(b, config, function (err) {
+                    t.ifError(err);
+                    t.ok(true, 'update bucket');
+                    cb(err);
+                });
+            },
+            function reindexObjects(_, cb) {
+                var total = 0;
+                function runReindex() {
+                    c.reindexObjects(b, PAGESIZE, function (err, res) {
+                        if (err) {
+                            t.ifError(err);
+                            cb(err);
+                            return;
+                        }
+                        if (res.processed === 0) {
+                            t.equal(COUNT, total);
+                            cb();
+                        } else {
+                            total += res.processed;
+                            process.nextTick(runReindex);
+                        }
+                    });
+                }
+                runReindex();
+            },
+            function queryNewIndex(_, cb) {
+                var limit = COUNT / 2;
+                var filter = util.format('(%s<=%d)', field, limit);
+
+                var found = 0;
+                var opts = {
+                    noBucketCache: true
+                };
+                var res = c.findObjects(b, filter, opts);
+                res.on('error', cb);
+                res.on('record', function () {
+                    found++;
+                });
+                res.on('end', function () {
+                    // <= means limit+1
+                    t.equal(limit+1, found);
+                    cb();
+                });
+            }
+        ]
     }, function (err) {
         t.ifError(err);
         t.end();

@@ -90,8 +90,8 @@ after(function (cb) {
 
     // May or may not exist, just blindly ignore
     this.client.delBucket(this.bucket, function () {
+        self.client.once('close', cb.bind(null, null));
         self.client.close();
-        cb();
     });
 });
 
@@ -211,6 +211,66 @@ test('update bucket (versioned ok 1->2)', function (t) {
             c.getBucket(b, function (err3, bucket) {
                 t.ifError(err3);
                 self.assertBucket(t, bucket, cfg);
+                t.end();
+            });
+        });
+    });
+});
+
+
+test('update bucket (reindex tracked)', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var cfg = clone(FULL_CFG);
+    var self = this;
+
+    cfg.options.version = 1;
+    c.createBucket(b, FULL_CFG, function (err) {
+        t.ifError(err);
+        cfg = clone(FULL_CFG);
+        cfg.options.version = 2;
+        cfg.index.foo = {
+            type: 'string',
+            unique: false
+        };
+        c.updateBucket(b, cfg, function (err2) {
+            t.ifError(err2);
+            c.getBucket(b, function (err3, bucket) {
+                t.ifError(err3);
+                self.assertBucket(t, bucket, cfg);
+                t.ok(bucket.reindex_active);
+                t.ok(bucket.reindex_active['2']);
+                t.end();
+            });
+        });
+    });
+});
+
+
+test('update bucket (reindex disabled)', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var cfg = clone(FULL_CFG);
+    var self = this;
+
+    cfg.options.version = 1;
+    c.createBucket(b, FULL_CFG, function (err) {
+        t.ifError(err);
+        cfg = clone(FULL_CFG);
+        cfg.options.version = 2;
+        cfg.index.foo = {
+            type: 'string',
+            unique: false
+        };
+        var opts = {
+            no_reindex: true
+        };
+        c.updateBucket(b, cfg, opts, function (err2) {
+            t.ifError(err2);
+            c.getBucket(b, function (err3, bucket) {
+                t.ifError(err3);
+                self.assertBucket(t, bucket, cfg);
+                t.notOk(bucket.reindex_active);
                 t.end();
             });
         });
