@@ -9,7 +9,7 @@
 	url = git://github.com/trentm/restdown.git
 [submodule "deps/manta-scripts"]
 	path = deps/manta-scripts
-	url = git@git.joyent.com:manta-scripts.git
+	url = git@github.com:joyent/manta-scripts.git
 [submodule "deps/sdc-scripts"]
 	path = deps/sdc-scripts
 	url = git@git.joyent.com:sdc-scripts.git
