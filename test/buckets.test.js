@@ -278,6 +278,34 @@ test('update bucket (reindex disabled)', function (t) {
 });
 
 
+test('update bucket (null version, reindex disabled)', function (t) {
+    var b = this.bucket;
+    var c = this.client;
+    var cfg = clone(FULL_CFG);
+    var self = this;
+
+    cfg.options.version = 0;
+    c.createBucket(b, FULL_CFG, function (err) {
+        t.ifError(err);
+        cfg = clone(FULL_CFG);
+        cfg.options.version = 0;
+        cfg.index.foo = {
+            type: 'string',
+            unique: false
+        };
+        c.updateBucket(b, cfg, function (err2) {
+            t.ifError(err2);
+            c.getBucket(b, function (err3, bucket) {
+                t.ifError(err3);
+                self.assertBucket(t, bucket, cfg);
+                t.notOk(bucket.reindex_active);
+                t.end();
+            });
+        });
+    });
+});
+
+
 test('update bucket (versioned not ok 1 -> 0)', function (t) {
     var b = this.bucket;
     var c = this.client;
