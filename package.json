@@ -31,7 +31,7 @@
         "xtend": "2.1.2"
     },
     "devDependencies": {
-        "moray": "git+ssh://git@git.joyent.com:node-moray.git#master",
+        "moray": "git+ssh://git@github.com:joyent/node-moray.git#master",
         "nodeunit": "0.8.2"
     },
     "directories": {
