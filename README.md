@@ -1,19 +1,15 @@
 # Moray, the highly-available key/value store
 
-Repository: <git@git.joyent.com:moray.git>
-Browsing: <https://mo.joyent.com/moray>
-Who: Mark Cavage
-Docs: <https://mo.joyent.com/docs/moray>
-Tickets/bugs: <https://devhub.joyent.com/jira/browse/MANTA>
-
-
-# Overview
-
 This repo contains Moray, the highly-available key/value store from Joyent.
 Moray offers a simple put/get/del (as well as search) protocol on top of
 Postgres 9.x, over plain TCP see <https://github.com/mcavage/node-fast>.
 
-# Development
+This repository is part of the Joyent SmartDataCenter project (SDC), and the
+Joyent Manta project.  For contribution guidelines, issues, and general
+documentation, visit the main [SDC](http://github.com/joyent/sdc) and
+[Manta](http://github.com/joyent/manta) project pages.
+
+## Development
 
 You'll want a Manatee instance up and running first (which itself requires
 ZooKeeper),  so the easiest way is to point at an existing COAL or Manta
@@ -53,7 +49,7 @@ deployed atop the Manatee you're deploying against. Then, source in ./env.sh
 Which will open up Moray on port 2020.  You can now use the CLI in
 `node-moray.git` or whatever other means you want of talking to the server.
 
-# Testing
+## Testing
 
 Before run tests, you should consider point config file to a different DB
 than `moray`. There is a script at `tools/coal-test-env.sh` which will create
@@ -67,3 +63,8 @@ Then, make sure your test file points to the right port:
 To run tests on default `2020` port just do:
 
     make test
+
+## License
+
+This Source Code Form is subject to the terms of the Mozilla Public License, v.
+2.0.  For the full license text see LICENSE, or http://mozilla.org/MPL/2.0/.

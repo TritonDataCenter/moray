@@ -8,7 +8,7 @@
         "assert-plus": "0.1.5",
         "backoff": "2.3.0",
         "bunyan": "0.22.1",
-        "bunyan-syslog":  "0.2.2",
+        "bunyan-syslog": "0.2.2",
         "clone": "0.1.11",
         "crc": "0.2.1",
         "dtrace-provider": "0.2.8",
@@ -40,5 +40,10 @@
     },
     "scripts": {
         "test": "make test"
+    },
+    "license": "MPL-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:joyent/moray.git"
     }
 }
