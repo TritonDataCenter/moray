@@ -55,11 +55,20 @@ moray*:::reindex*-start
 
 BEGIN
 {
+        lines = 0;
+}
+
+profile:::tick-1sec
+/lines < 1/
+{
+        /* print the header every 5 seconds */
+        lines = 5;
         printf("         ------PG------  --------------MORAY---------------\n");
         printf("PID      CONN QLEN  OPS  GETS FIND PUTS UPDS DELS BTCH RIDX\n");
 }
 profile:::tick-1sec
 {
+        lines -= 1;
 #ifndef MORAY_LEGACY
         printa("%-8d %@4u %@4u %@4u  %@4u %@4u %@4u %@4u %@4u %@4d %@4d\n",
                         @nconn, @qlen, @query,
