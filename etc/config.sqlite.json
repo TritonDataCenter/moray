@@ -13,7 +13,7 @@
                         "checkInterval": 30000,
                         "queryTimeout": 30000
                 },
-                "filename": "DATABASE_FILE"
+                "filename": "/var/tmp/MORAY/DATABASE"
         },
         "cache": {
                 "size": 1000,
