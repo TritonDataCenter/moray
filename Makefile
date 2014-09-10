@@ -55,7 +55,11 @@ NODE_PREBUILT_VERSION	:= v0.10.24
 NPM_FLAGS :=
 
 include ./tools/mk/Makefile.defs
-include ./tools/mk/Makefile.node_prebuilt.defs
+ifeq ($(shell uname -s),SunOS)
+    include ./tools/mk/Makefile.node_prebuilt.defs
+else
+    include ./tools/mk/Makefile.node.defs
+endif
 include ./tools/mk/Makefile.node_deps.defs
 include ./tools/mk/Makefile.smf.defs
 
@@ -89,10 +93,10 @@ shrinkwrap: | $(NPM_EXEC)
 
 .PHONY: test
 test: $(FAUCET)
-	node test/buckets.test.js | $(FAUCET)
-	node test/objects.test.js | $(FAUCET)
-	node test/integ.test.js | $(FAUCET)
-	node test/arrays.test.js | $(FAUCET)
+	$(NODE) test/buckets.test.js | $(FAUCET)
+	$(NODE) test/objects.test.js | $(FAUCET)
+	$(NODE) test/integ.test.js | $(FAUCET)
+	$(NODE) test/arrays.test.js | $(FAUCET)
 
 .PHONY: scripts
 scripts: deps/manta-scripts/.git
@@ -138,7 +142,11 @@ publish: release
 
 
 include ./tools/mk/Makefile.deps
-include ./tools/mk/Makefile.node_prebuilt.targ
+ifeq ($(shell uname -s),SunOS)
+	include ./tools/mk/Makefile.node_prebuilt.targ
+else
+	include ./tools/mk/Makefile.node.targ
+endif
 include ./tools/mk/Makefile.smf.targ
 include ./tools/mk/Makefile.targ
 
