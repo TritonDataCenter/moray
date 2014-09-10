@@ -26,9 +26,8 @@
 # Tools
 #
 NODE		:= ./build/node/bin/node
-NODEUNIT	:= ./node_modules/.bin/nodeunit
-NODECOVER	:= ./node_modules/.bin/cover
 BUNYAN		:= ./node_modules/.bin/bunyan
+FAUCET		:= ./node_modules/.bin/faucet
 JSONTOOL	:= ./node_modules/.bin/json
 
 #
@@ -89,26 +88,16 @@ shrinkwrap: | $(NPM_EXEC)
 	$(NPM) shrinkwrap
 
 .PHONY: test
-test: $(NODEUNIT)
-	$(NODEUNIT) test/buckets.test.js | $(BUNYAN)
-	$(NODEUNIT) test/objects.test.js | $(BUNYAN)
-	$(NODEUNIT) test/integ.test.js | $(BUNYAN)
+test: $(FAUCET)
+	node test/buckets.test.js | $(FAUCET)
+	node test/objects.test.js | $(FAUCET)
+	node test/integ.test.js | $(FAUCET)
 
 .PHONY: scripts
 scripts: deps/manta-scripts/.git
 	mkdir -p $(BUILD)/scripts
 	cp deps/manta-scripts/*.sh $(BUILD)/scripts
 
-.PHONY: cover
-cover: $(NODECOVER)
-	@rm -fr ./.coverage_data
-	LOG_LEVEL=error $(NODECOVER) run main.js -- -f ./etc/config.laptop.json -c -s &
-	@sleep 3
-	$(NODEUNIT) test/buckets.test.js
-	$(NODEUNIT) test/objects.test.js
-	@pkill -17 node
-	@sleep 3
-	$(NODECOVER) report
 
 .PHONY: release
 release: all docs $(SMF_MANIFESTS)

@@ -9,19 +9,14 @@
  */
 
 var clone = require('clone');
+var tape = require('tape');
 var uuid = require('libuuid').create;
 
-if (require.cache[__dirname + '/helper.js'])
-    delete require.cache[__dirname + '/helper.js'];
 var helper = require('./helper.js');
 
 
 
 ///--- Globals
-
-var after = helper.after;
-var before = helper.before;
-var test = helper.test;
 
 var FULL_CFG = {
     index: {
@@ -52,15 +47,37 @@ var FULL_CFG = {
     options: {}
 };
 
+var c; // client
+var b; // bucket
+
+function test(name, setup) {
+    tape.test(name + ' - setup', function (t) {
+        b = 'moray_unit_test_' + uuid().substr(0, 7);
+        c = helper.createClient();
+        c.on('connect', t.end.bind(t));
+    });
+
+    tape.test(name + ' - main', function (t) {
+        setup(t);
+    });
+
+    tape.test(name + ' - teardown', function (t) {
+        // May or may not exist, just blindly ignore
+        c.delBucket(b, function () {
+            c.once('close', t.end.bind(t));
+            c.close();
+        });
+    });
+}
 
 
 ///--- Helpers
 
-function assertBucket(name, t, bucket, cfg) {
+function assertBucket(t, bucket, cfg) {
     t.ok(bucket);
     if (!bucket)
         return (undefined);
-    t.equal(bucket.name, name);
+    t.equal(bucket.name, b);
     t.ok(bucket.mtime instanceof Date);
     t.deepEqual(bucket.index, (cfg.index || {}));
     t.ok(Array.isArray(bucket.pre));
@@ -81,39 +98,15 @@ function assertBucket(name, t, bucket, cfg) {
 }
 
 
-
 ///--- tests
-
-before(function (cb) {
-    this.bucket = 'moray_unit_test_' + uuid().substr(0, 7);
-    this.assertBucket = assertBucket.bind(null, this.bucket);
-
-    this.client = helper.createClient();
-    this.client.on('connect', cb);
-});
-
-
-after(function (cb) {
-    var self = this;
-
-    // May or may not exist, just blindly ignore
-    this.client.delBucket(this.bucket, function () {
-        self.client.once('close', cb.bind(null, null));
-        self.client.close();
-    });
-});
 
 
 test('create bucket stock config', function (t) {
-    var b = this.bucket;
-    var c = this.client;
-    var self = this;
-
     c.createBucket(b, {}, function (err) {
         t.ifError(err);
         c.getBucket(b, function (err2, bucket) {
             t.ifError(err2);
-            self.assertBucket(t, bucket, {});
+            assertBucket(t, bucket, {});
             c.listBuckets(function (err3, buckets) {
                 t.ifError(err3);
                 t.ok(buckets);
@@ -126,15 +119,11 @@ test('create bucket stock config', function (t) {
 
 
 test('create bucket loaded', function (t) {
-    var b = this.bucket;
-    var c = this.client;
-    var self = this;
-
     c.createBucket(b, FULL_CFG, function (err) {
         t.ifError(err);
         c.getBucket(b, function (err2, bucket) {
             t.ifError(err2);
-            self.assertBucket(t, bucket, FULL_CFG);
+            assertBucket(t, bucket, FULL_CFG);
             t.end();
         });
     });
@@ -142,10 +131,6 @@ test('create bucket loaded', function (t) {
 
 
 test('update bucket', function (t) {
-    var b = this.bucket;
-    var c = this.client;
-    var self = this;
-
     c.createBucket(b, FULL_CFG, function (err) {
         t.ifError(err);
         var cfg = clone(FULL_CFG);
@@ -160,7 +145,7 @@ test('update bucket', function (t) {
             t.ifError(err2);
             c.getBucket(b, function (err3, bucket) {
                 t.ifError(err3);
-                self.assertBucket(t, bucket, cfg);
+                assertBucket(t, bucket, cfg);
                 t.end();
             });
         });
@@ -169,10 +154,6 @@ test('update bucket', function (t) {
 
 
 test('update bucket (versioned ok 0->1)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
-    var self = this;
-
     c.createBucket(b, FULL_CFG, function (err) {
         t.ifError(err);
         var cfg = clone(FULL_CFG);
@@ -188,7 +169,7 @@ test('update bucket (versioned ok 0->1)', function (t) {
             t.ifError(err2);
             c.getBucket(b, function (err3, bucket) {
                 t.ifError(err3);
-                self.assertBucket(t, bucket, cfg);
+                assertBucket(t, bucket, cfg);
                 t.end();
             });
         });
@@ -197,10 +178,7 @@ test('update bucket (versioned ok 0->1)', function (t) {
 
 
 test('update bucket (versioned ok 1->2)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var cfg = clone(FULL_CFG);
-    var self = this;
 
     cfg.options.version = 1;
     c.createBucket(b, FULL_CFG, function (err) {
@@ -218,7 +196,7 @@ test('update bucket (versioned ok 1->2)', function (t) {
             t.ifError(err2);
             c.getBucket(b, function (err3, bucket) {
                 t.ifError(err3);
-                self.assertBucket(t, bucket, cfg);
+                assertBucket(t, bucket, cfg);
                 t.end();
             });
         });
@@ -227,10 +205,7 @@ test('update bucket (versioned ok 1->2)', function (t) {
 
 
 test('update bucket (reindex tracked)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var cfg = clone(FULL_CFG);
-    var self = this;
 
     cfg.options.version = 1;
     c.createBucket(b, FULL_CFG, function (err) {
@@ -245,7 +220,7 @@ test('update bucket (reindex tracked)', function (t) {
             t.ifError(err2);
             c.getBucket(b, function (err3, bucket) {
                 t.ifError(err3);
-                self.assertBucket(t, bucket, cfg);
+                assertBucket(t, bucket, cfg);
                 t.ok(bucket.reindex_active);
                 t.ok(bucket.reindex_active['2']);
                 t.end();
@@ -256,10 +231,7 @@ test('update bucket (reindex tracked)', function (t) {
 
 
 test('update bucket (reindex disabled)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var cfg = clone(FULL_CFG);
-    var self = this;
 
     cfg.options.version = 1;
     c.createBucket(b, FULL_CFG, function (err) {
@@ -277,7 +249,7 @@ test('update bucket (reindex disabled)', function (t) {
             t.ifError(err2);
             c.getBucket(b, function (err3, bucket) {
                 t.ifError(err3);
-                self.assertBucket(t, bucket, cfg);
+                assertBucket(t, bucket, cfg);
                 t.notOk(bucket.reindex_active);
                 t.end();
             });
@@ -287,10 +259,7 @@ test('update bucket (reindex disabled)', function (t) {
 
 
 test('update bucket (null version, reindex disabled)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var cfg = clone(FULL_CFG);
-    var self = this;
 
     cfg.options.version = 0;
     c.createBucket(b, FULL_CFG, function (err) {
@@ -305,7 +274,7 @@ test('update bucket (null version, reindex disabled)', function (t) {
             t.ifError(err2);
             c.getBucket(b, function (err3, bucket) {
                 t.ifError(err3);
-                self.assertBucket(t, bucket, cfg);
+                assertBucket(t, bucket, cfg);
                 t.notOk(bucket.reindex_active);
                 t.end();
             });
@@ -315,8 +284,6 @@ test('update bucket (null version, reindex disabled)', function (t) {
 
 
 test('update bucket (versioned not ok 1 -> 0)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var cfg = clone(FULL_CFG);
     cfg.options.version = 1;
 
@@ -347,8 +314,6 @@ test('update bucket (versioned not ok 1 -> 0)', function (t) {
 
 
 test('update bucket (versioned not ok 2 -> 1)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var cfg = clone(FULL_CFG);
     cfg.options.version = 2;
 
@@ -379,8 +344,6 @@ test('update bucket (versioned not ok 2 -> 1)', function (t) {
 
 
 test('create bucket bad index type', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     c.createBucket(b, {index: {foo: 'foo'}}, function (err) {
         t.ok(err);
         t.equal(err.name, 'InvalidBucketConfigError');
@@ -391,8 +354,6 @@ test('create bucket bad index type', function (t) {
 
 
 test('create bucket triggers not function', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     c.createBucket(b, {pre: ['foo']}, function (err) {
         t.ok(err);
         t.equal(err.name, 'NotFunctionError');
@@ -403,7 +364,6 @@ test('create bucket triggers not function', function (t) {
 
 
 test('get bucket 404', function (t) {
-    var c = this.client;
     c.getBucket(uuid().substr(0, 7), function (err) {
         t.ok(err);
         t.equal(err.name, 'BucketNotFoundError');
@@ -414,7 +374,6 @@ test('get bucket 404', function (t) {
 
 
 test('delete missing bucket', function (t) {
-    var c = this.client;
     c.delBucket(uuid().substr(0, 7), function (err) {
         t.ok(err);
         t.equal(err.name, 'BucketNotFoundError');

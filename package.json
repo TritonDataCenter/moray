@@ -32,7 +32,8 @@
     },
     "devDependencies": {
         "moray": "git+ssh://git@github.com:joyent/node-moray.git#master",
-        "nodeunit": "0.8.2"
+        "tape": "2.14.0",
+        "faucet": "0.0.1"
     },
     "directories": {
         "bin": "./bin",

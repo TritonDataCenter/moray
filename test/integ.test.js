@@ -9,47 +9,45 @@
  */
 
 var libuuid = require('libuuid');
+var tape = require('tape');
 var once = require('once');
 var vasync = require('vasync');
 
-if (require.cache[__dirname + '/helper.js'])
-    delete require.cache[__dirname + '/helper.js'];
 var helper = require('./helper.js');
 
 
 
 ///--- Globals
 
-var after = helper.after;
-var before = helper.before;
-var test = helper.test;
+var c; // client
+var b; // bucket
 
+function test(name, setup) {
+    tape.test(name + ' - setup', function (t) {
+        b = 'moray_unit_test_' + libuuid.create().substr(0, 7);
+        c = helper.createClient();
+
+        c.on('connect', t.end.bind(t));
+    });
+
+    tape.test(name + ' - main', function (t) {
+        setup(t);
+    });
+
+    tape.test(name + ' - teardown', function (t) {
+        // May or may not exist, just blindly ignore
+        c.delBucket(b, function () {
+            c.on('close', t.end.bind(t));
+            c.close();
+        });
+    });
+}
 
 
 ///--- Tests
 
-before(function (cb) {
-    this.bucket = 'moray_unit_test_' + libuuid.create().substr(0, 7);
-
-    this.client = helper.createClient();
-    this.client.on('connect', cb);
-
-});
-
-
-after(function (cb) {
-    var self = this;
-    // May or may not exist, just blindly ignore
-    this.client.delBucket(this.bucket, function () {
-        self.client.close();
-        cb();
-    });
-});
-
 
 test('MANTA-117 single quotes not being escaped', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = libuuid.create();
     var cfg = {
         index: {
@@ -97,8 +95,6 @@ test('MANTA-117 single quotes not being escaped', function (t) {
 
 
 test('MANTA-328 numeric values in filters', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = libuuid.create();
     var cfg = {
         index: {
@@ -142,8 +138,6 @@ test('MANTA-328 numeric values in filters', function (t) {
 
 
 test('MANTA-328 numeric values in filters <=', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = libuuid.create();
     var cfg = {
         index: {
@@ -187,8 +181,6 @@ test('MANTA-328 numeric values in filters <=', function (t) {
 
 
 test('MANTA-328 numeric values in filters >=', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = libuuid.create();
     var cfg = {
         index: {
@@ -232,8 +224,6 @@ test('MANTA-328 numeric values in filters >=', function (t) {
 
 
 test('MANTA-170 bogus filter', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = libuuid.create();
     var cfg = {
         index: {
@@ -265,8 +255,6 @@ test('MANTA-170 bogus filter', function (t) {
 
 
 test('MANTA-680 boolean searches', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = libuuid.create();
     var cfg = {
         index: {
@@ -299,8 +287,6 @@ test('MANTA-680 boolean searches', function (t) {
 
 
 test('some marlin query', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var cfg = {
         index: {
             foo: {
@@ -349,9 +335,9 @@ test('some marlin query', function (t) {
                 req.once('error', cb);
                 req.once('record', function (obj) {
                     t.ok(obj);
-                    t.equal(obj.value.foo, 8);
-                    t.equal(obj.value.bar, 8);
-                    t.equal(obj.value.baz, 8);
+                    t.equal(obj.value.foo, '8');
+                    t.equal(obj.value.bar, '8');
+                    t.equal(obj.value.baz, '8');
                     found = true;
                 });
                 req.once('end', cb);
@@ -367,8 +353,6 @@ test('some marlin query', function (t) {
 
 
 test('MANTA-1726 batch+deleteMany+limit', function (t) {
-    var b = this.bucket;
-    var c = this.client;
 
     vasync.pipeline({
         funcs: [
@@ -432,10 +416,7 @@ test('MANTA-1726 batch+deleteMany+limit', function (t) {
 });
 
 
-
 test('MANTA-1726 batch+update+limit', function (t) {
-    var b = this.bucket;
-    var c = this.client;
 
     vasync.pipeline({
         funcs: [
@@ -503,8 +484,6 @@ test('MANTA-1726 batch+update+limit', function (t) {
 
 
 test('MORAY-131 case insensitive match', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = libuuid.create();
     var cfg = {
         index: {
@@ -537,8 +516,6 @@ test('MORAY-131 case insensitive match', function (t) {
 
 
 test('MORAY-131 case insensitive substrings match', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = libuuid.create();
     var cfg = {
         index: {

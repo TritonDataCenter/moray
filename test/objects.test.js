@@ -9,13 +9,12 @@
  */
 
 var clone = require('clone');
+var tape = require('tape');
 var once = require('once');
 var libuuid = require('libuuid');
 var vasync = require('vasync');
 var util = require('util');
 
-if (require.cache[__dirname + '/helper.js'])
-    delete require.cache[__dirname + '/helper.js'];
 var helper = require('./helper.js');
 
 
@@ -26,10 +25,6 @@ var uuid = {
     v1: libuuid.create,
     v4: libuuid.create
 };
-
-var after = helper.after;
-var before = helper.before;
-var test = helper.test;
 
 var BUCKET_CFG = {
     index: {
@@ -75,11 +70,39 @@ var BUCKET_CFG = {
     }
 };
 
+var c; // client
+var b; // bucket
+
+function test(name, setup) {
+    tape.test(name + ' - setup', function (t) {
+        b = 'moray_unit_test_' + uuid.v4().substr(0, 7);
+        c = helper.createClient();
+
+        c.on('connect', function () {
+            c.createBucket(b, BUCKET_CFG, function (err) {
+                t.ifError(err);
+                t.end();
+            });
+        });
+    });
+
+    tape.test(name + ' - main', function (t) {
+        setup(t);
+    });
+
+    tape.test(name + ' - teardown', function (t) {
+        c.delBucket(b, function (err) {
+            t.ifError(err);
+            c.once('close', t.end.bind(t));
+            c.close();
+        });
+    });
+}
 
 
 ///--- Helpers
 
-function assertObject(b, t, obj, k, v) {
+function assertObject(t, obj, k, v) {
     t.ok(obj);
     if (!obj)
         return (undefined);
@@ -98,38 +121,8 @@ function assertObject(b, t, obj, k, v) {
 
 ///--- Tests
 
-before(function (cb) {
-    var self = this;
-    this.bucket = 'moray_unit_test_' + uuid.v4().substr(0, 7);
-    this.assertObject = assertObject.bind(this, this.bucket);
-    this.client = helper.createClient();
-    this.client.on('connect', function () {
-        var b = self.bucket;
-        self.client.createBucket(b, BUCKET_CFG, function (err) {
-            if (err) {
-                console.error(err.stack);
-            }
-            cb(err);
-        });
-    });
-});
-
-
-after(function (cb) {
-    var self = this;
-    this.client.delBucket(this.bucket, function (err) {
-        if (err) {
-            console.error(err.stack);
-        }
-        self.client.once('close', cb.bind(null, err));
-        self.client.close();
-    });
-});
-
-
 test('get object 404', function (t) {
-    var c = this.client;
-    c.getObject(this.bucket, uuid.v4().substr(0, 7), function (err) {
+    c.getObject(b, uuid.v4().substr(0, 7), function (err) {
         t.ok(err);
         t.equal(err.name, 'ObjectNotFoundError');
         t.ok(err.message);
@@ -139,8 +132,7 @@ test('get object 404', function (t) {
 
 
 test('del object 404', function (t) {
-    var c = this.client;
-    c.delObject(this.bucket, uuid.v4().substr(0, 7), function (err) {
+    c.delObject(b, uuid.v4().substr(0, 7), function (err) {
         t.ok(err);
         t.equal(err.name, 'ObjectNotFoundError');
         t.ok(err.message);
@@ -150,8 +142,6 @@ test('del object 404', function (t) {
 
 
 test('CRUD object', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi',
@@ -161,7 +151,6 @@ test('CRUD object', function (t) {
         str: 'hello world',
         pre: 'hi'
     };
-    var self = this;
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
@@ -180,7 +169,7 @@ test('CRUD object', function (t) {
                     return (cb(err));
 
                 t.ok(obj);
-                self.assertObject(t, obj, k, v);
+                assertObject(t, obj, k, v);
                 return (cb());
             });
         }, function overwrite(_, cb) {
@@ -192,7 +181,7 @@ test('CRUD object', function (t) {
 
                 t.ok(obj);
                 v2.pre = 'pre_overwrite';
-                self.assertObject(t, obj, k, v2);
+                assertObject(t, obj, k, v2);
                 return (cb());
             });
         }, function del(_, cb) {
@@ -207,13 +196,10 @@ test('CRUD object', function (t) {
 
 
 test('get object (cached)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi'
     };
-    var self = this;
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
@@ -232,7 +218,7 @@ test('get object (cached)', function (t) {
                     return (cb(err));
 
                 t.ok(obj);
-                self.assertObject(t, obj, k, v);
+                assertObject(t, obj, k, v);
                 return (cb());
             });
         }, function getAgain(_, cb) {
@@ -241,7 +227,7 @@ test('get object (cached)', function (t) {
                     return (cb(err));
 
                 t.ok(obj);
-                self.assertObject(t, obj, k, v);
+                assertObject(t, obj, k, v);
                 return (cb());
             });
         } ],
@@ -254,8 +240,6 @@ test('get object (cached)', function (t) {
 
 
 test('CRUD objects unique indexes', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var k2 = uuid.v4();
     var v = {
@@ -290,8 +274,6 @@ test('CRUD objects unique indexes', function (t) {
 
 
 test('put object w/etag ok', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi'
@@ -300,7 +282,6 @@ test('put object w/etag ok', function (t) {
         str: 'hello world'
     };
     var etag;
-    var self = this;
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
@@ -311,7 +292,7 @@ test('put object w/etag ok', function (t) {
                     return (cb(err));
 
                 t.ok(obj);
-                self.assertObject(t, obj, k, v);
+                assertObject(t, obj, k, v);
                 etag = obj._etag;
                 return (cb());
             });
@@ -323,7 +304,7 @@ test('put object w/etag ok', function (t) {
                     return (cb(err));
 
                 t.ok(obj);
-                self.assertObject(t, obj, k, v2);
+                assertObject(t, obj, k, v2);
                 return (cb());
             });
         }, function del(_, cb) {
@@ -338,14 +319,11 @@ test('put object w/etag ok', function (t) {
 
 
 test('del object w/etag ok', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi'
     };
     var etag;
-    var self = this;
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
@@ -356,7 +334,7 @@ test('del object w/etag ok', function (t) {
                     return (cb(err));
 
                 t.ok(obj);
-                self.assertObject(t, obj, k, v);
+                assertObject(t, obj, k, v);
                 etag = obj._etag;
                 return (cb());
             });
@@ -372,8 +350,6 @@ test('del object w/etag ok', function (t) {
 
 
 test('put object w/etag conflict', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi'
@@ -400,8 +376,6 @@ test('put object w/etag conflict', function (t) {
 
 
 test('del object w/etag conflict', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi'
@@ -437,8 +411,6 @@ test('del object w/etag conflict', function (t) {
 
 
 test('MANTA-980 - null etag support', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi'
@@ -448,7 +420,6 @@ test('MANTA-980 - null etag support', function (t) {
     };
     var etag;
     var value;
-    var self = this;
 
     function get_cb(cb) {
         function _cb(err, obj) {
@@ -457,10 +428,9 @@ test('MANTA-980 - null etag support', function (t) {
                 return;
             }
 
-
             t.ok(obj);
             if (obj) {
-                self.assertObject(t, obj, k, value);
+                assertObject(t, obj, k, value);
                 etag = obj._etag;
             }
             cb();
@@ -504,8 +474,6 @@ test('MANTA-980 - null etag support', function (t) {
 
 
 test('find (like marlin)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hello',
@@ -548,8 +516,6 @@ test('find (like marlin)', function (t) {
 
 
 test('find _mtime', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var now = Date.now();
     var v = {
@@ -594,8 +560,6 @@ test('find _mtime', function (t) {
 
 
 test('find _key', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hello',
@@ -638,8 +602,6 @@ test('find _key', function (t) {
 
 
 test('find MANTA-156', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         num: 0,
@@ -682,8 +644,6 @@ test('find MANTA-156', function (t) {
 
 
 test('non-indexed AND searches (MANTA-317)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hello',
@@ -726,14 +686,11 @@ test('non-indexed AND searches (MANTA-317)', function (t) {
 
 
 test('_txn_snap on update', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi'
     };
     var txn;
-    var self = this;
 
     vasync.pipeline({
         funcs: [ function create(_, cb) {
@@ -744,7 +701,7 @@ test('_txn_snap on update', function (t) {
                     cb(err);
                 } else {
                     t.ok(obj);
-                    self.assertObject(t, obj, k, v);
+                    assertObject(t, obj, k, v);
                     t.ok(obj._txn_snap);
                     txn = obj._txn_snap;
                     cb();
@@ -758,7 +715,7 @@ test('_txn_snap on update', function (t) {
                     cb(err);
                 } else {
                     t.ok(obj);
-                    self.assertObject(t, obj, k, v);
+                    assertObject(t, obj, k, v);
                     t.ok(obj._txn_snap);
                     t.notEqual(txn, obj._txn_snap);
                     t.ok(obj._txn_snap > txn);
@@ -776,8 +733,6 @@ test('_txn_snap on update', function (t) {
 
 
 test('find _txn_snap', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hello',
@@ -822,14 +777,11 @@ test('find _txn_snap', function (t) {
 
 
 test('trackModification (MANTA-269)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hi'
     };
     var id1;
-    var self = this;
 
     vasync.pipeline({
         funcs: [ function create(_, cb) {
@@ -840,7 +792,7 @@ test('trackModification (MANTA-269)', function (t) {
                     cb(err);
                 } else {
                     t.ok(obj);
-                    self.assertObject(t, obj, k, v);
+                    assertObject(t, obj, k, v);
                     id1 = obj._id;
                     cb();
                 }
@@ -853,7 +805,7 @@ test('trackModification (MANTA-269)', function (t) {
                     cb(err);
                 } else {
                     t.ok(obj);
-                    self.assertObject(t, obj, k, v);
+                    assertObject(t, obj, k, v);
                     t.notEqual(id1, obj._id);
                     cb();
                 }
@@ -869,24 +821,23 @@ test('trackModification (MANTA-269)', function (t) {
 
 
 test('batch put objects', function (t) {
-    var c = this.client;
-    var self = this;
     var requests = [
         {
-            bucket: self.bucket,
+            bucket: b,
             key: uuid.v4(),
             value: {
                 foo: 'bar'
             }
         },
         {
-            bucket: self.bucket,
+            bucket: b,
             key: uuid.v4(),
             value: {
                 bar: 'baz'
             }
         }
     ];
+
     c.batch(requests, function (err, meta) {
         t.ifError(err);
         t.ok(meta);
@@ -896,19 +847,18 @@ test('batch put objects', function (t) {
                 t.ok(Array.isArray(meta.etags));
                 t.equal(meta.etags.length, 2);
                 meta.etags.forEach(function (e) {
-                    t.equal(self.bucket, e.bucket);
+                    t.equal(b, e.bucket);
                     t.ok(e.key);
                     t.ok(e.etag);
                 });
             }
         }
-        c.getObject(self.bucket, requests[0].key, function (er2, obj) {
+        c.getObject(b, requests[0].key, function (er2, obj) {
             t.ifError(er2);
             t.ok(obj);
             if (obj)
                 t.deepEqual(obj.value, requests[0].value);
 
-            var b = self.bucket;
             var r = requests[1];
             c.getObject(b, r.key, function (err3, obj2) {
                 t.ifError(err3);
@@ -923,13 +873,10 @@ test('batch put objects', function (t) {
 
 
 test('update objects no keys', function (t) {
-    var b = this.bucket;
-    var c = this.client;
-    var self = this;
     var requests = [];
     for (var i = 0; i < 10; i++) {
         requests.push({
-            bucket: self.bucket,
+            bucket: b,
             key: uuid.v4().substr(0, 7),
             value: {
                 num: 20,
@@ -957,13 +904,10 @@ test('update objects no keys', function (t) {
 
 
 test('update objects ok', function (t) {
-    var b = this.bucket;
-    var c = this.client;
-    var self = this;
     var requests = [];
     for (var i = 0; i < 10; i++) {
         requests.push({
-            bucket: self.bucket,
+            bucket: b,
             key: uuid.v4().substr(0, 7),
             value: {
                 num: 20,
@@ -1007,13 +951,10 @@ test('update objects ok', function (t) {
 
 
 test('update objects w/array (ufds - no effect)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
-    var self = this;
     var requests = [];
     for (var i = 0; i < 10; i++) {
         requests.push({
-            bucket: self.bucket,
+            bucket: b,
             key: uuid.v4().substr(0, 7),
             value: {
                 str: ['foo']
@@ -1058,8 +999,6 @@ test('update objects w/array (ufds - no effect)', function (t) {
 
 
 test('batch put/update', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var requests = [];
     for (var i = 0; i < 10; i++) {
         requests.push({
@@ -1125,13 +1064,10 @@ test('batch put/update', function (t) {
 
 
 test('delete many objects ok', function (t) {
-    var b = this.bucket;
-    var c = this.client;
-    var self = this;
     var requests = [];
     for (var i = 0; i < 10; i++) {
         requests.push({
-            bucket: self.bucket,
+            bucket: b,
             key: uuid.v4().substr(0, 7),
             value: {
                 num: 20,
@@ -1157,7 +1093,7 @@ test('delete many objects ok', function (t) {
 });
 
 test('get tokens unsupported', function (t) {
-    this.client.getTokens(function (err, res) {
+    c.getTokens(function (err, res) {
         t.notOk(res);
         t.ok(err);
         t.end();
@@ -1166,8 +1102,6 @@ test('get tokens unsupported', function (t) {
 
 
 test('MORAY-147 (sqli)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hello',
@@ -1198,8 +1132,6 @@ test('MORAY-147 (sqli)', function (t) {
 
 
 test('MORAY-148 (foo=bar=*)', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hello=world',
@@ -1229,8 +1161,6 @@ test('MORAY-148 (foo=bar=*)', function (t) {
 
 
 test('MORAY-166: deleteMany with LIMIT', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hello=world'
@@ -1293,8 +1223,6 @@ test('MORAY-166: deleteMany with LIMIT', function (t) {
 
 
 test('MORAY-166: update with LIMIT', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
     var v = {
         str: 'hello=world'
@@ -1351,8 +1279,6 @@ test('MORAY-166: update with LIMIT', function (t) {
 
 
 test('MORAY-166: delete w/LIMIT in batch', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4();
 
     vasync.pipeline({
@@ -1408,8 +1334,6 @@ test('MORAY-166: delete w/LIMIT in batch', function (t) {
 
 
 test('MORAY-175: overwrite with \' in name', function (t) {
-    var b = this.bucket;
-    var c = this.client;
     var k = uuid.v4() + '\'foo';
     var v = {
         str: 'hi',
@@ -1419,7 +1343,6 @@ test('MORAY-175: overwrite with \' in name', function (t) {
         str: 'hello world',
         pre: 'hi'
     };
-    var self = this;
 
     vasync.pipeline({
         funcs: [ function create(_, cb) {
@@ -1433,7 +1356,7 @@ test('MORAY-175: overwrite with \' in name', function (t) {
                 } else {
                     t.ok(obj);
                     v2.pre = 'pre_overwrite';
-                    self.assertObject(t, obj, k, v2);
+                    assertObject(t, obj, k, v2);
                     cb();
                 }
             });
@@ -1447,8 +1370,6 @@ test('MORAY-175: overwrite with \' in name', function (t) {
 
 
 test('reindex objects', function (t) {
-    var b = this.bucket;
-    var c = this.client;
 
     var field = 'unindexed';
     var COUNT = 1000;
