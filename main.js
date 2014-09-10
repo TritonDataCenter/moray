@@ -164,11 +164,6 @@ function run(options) {
 
     var opts = clone(options);
     opts.log = LOG;
-    if (opts.standalone) {
-        opts.standalone.log = LOG;
-    } else {
-        opts.manatee.log = LOG;
-    }
     opts.name = NAME;
 
     app.createServer(opts);

@@ -92,6 +92,7 @@ test: $(FAUCET)
 	node test/buckets.test.js | $(FAUCET)
 	node test/objects.test.js | $(FAUCET)
 	node test/integ.test.js | $(FAUCET)
+	node test/arrays.test.js | $(FAUCET)
 
 .PHONY: scripts
 scripts: deps/manta-scripts/.git

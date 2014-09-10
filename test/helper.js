@@ -8,8 +8,11 @@
  * Copyright (c) 2014, Joyent, Inc.
  */
 
+var fs = require('fs');
+
 var bunyan = require('bunyan');
 var moray = require('moray'); // client
+var app = require('../lib');
 
 ///--- API
 
@@ -33,11 +36,31 @@ function createClient() {
     return (client);
 }
 
+function createServer(cb) {
+    if (!process.env.MORAY_IP) {
+        var configPath = process.env.MORAY_CONFIG ||
+            __dirname + '/../etc/config.standalone.json';
+        var config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        config.log = createLogger('moray-server');
+        var server = app.createServer(config);
+        server.on('listening', function () {
+            cb(server);
+        });
+    } else {
+        cb(null);
+    }
+}
 
-
+function cleanupServer(server) {
+    if (server) {
+        server.close();
+    }
+}
 ///--- Exports
 
 module.exports = {
     createLogger: createLogger,
-    createClient: createClient
+    createClient: createClient,
+    createServer: createServer,
+    cleanupServer: cleanupServer
 };

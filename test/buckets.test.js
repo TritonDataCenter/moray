@@ -48,13 +48,17 @@ var FULL_CFG = {
 };
 
 var c; // client
+var server;
 var b; // bucket
 
 function test(name, setup) {
     tape.test(name + ' - setup', function (t) {
         b = 'moray_unit_test_' + uuid().substr(0, 7);
-        c = helper.createClient();
-        c.on('connect', t.end.bind(t));
+        helper.createServer(function (s) {
+            server = s;
+            c = helper.createClient();
+            c.on('connect', t.end.bind(t));
+        });
     });
 
     tape.test(name + ' - main', function (t) {
@@ -64,7 +68,10 @@ function test(name, setup) {
     tape.test(name + ' - teardown', function (t) {
         // May or may not exist, just blindly ignore
         c.delBucket(b, function () {
-            c.once('close', t.end.bind(t));
+            c.once('close', function () {
+                helper.cleanupServer(server);
+                t.end();
+            });
             c.close();
         });
     });

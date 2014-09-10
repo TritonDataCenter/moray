@@ -71,17 +71,20 @@ var BUCKET_CFG = {
 };
 
 var c; // client
+var server;
 var b; // bucket
 
 function test(name, setup) {
     tape.test(name + ' - setup', function (t) {
         b = 'moray_unit_test_' + uuid.v4().substr(0, 7);
-        c = helper.createClient();
-
-        c.on('connect', function () {
-            c.createBucket(b, BUCKET_CFG, function (err) {
-                t.ifError(err);
-                t.end();
+        helper.createServer(function (s) {
+            server = s;
+            c = helper.createClient();
+            c.on('connect', function () {
+                c.createBucket(b, BUCKET_CFG, function (err) {
+                    t.ifError(err);
+                    t.end();
+                });
             });
         });
     });
@@ -93,7 +96,10 @@ function test(name, setup) {
     tape.test(name + ' - teardown', function (t) {
         c.delBucket(b, function (err) {
             t.ifError(err);
-            c.once('close', t.end.bind(t));
+            c.once('close', function () {
+                helper.cleanupServer(server);
+                t.end();
+            });
             c.close();
         });
     });
