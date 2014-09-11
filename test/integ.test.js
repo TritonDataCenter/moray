@@ -41,8 +41,10 @@ function test(name, setup) {
         // May or may not exist, just blindly ignore
         c.delBucket(b, function () {
             c.on('close', function () {
-                helper.cleanupServer(server);
-                t.end();
+                helper.cleanupServer(server, function () {
+                    t.pass('closed');
+                    t.end();
+                });
             });
             c.close();
         });

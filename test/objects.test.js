@@ -97,8 +97,10 @@ function test(name, setup) {
         c.delBucket(b, function (err) {
             t.ifError(err);
             c.once('close', function () {
-                helper.cleanupServer(server);
-                t.end();
+                helper.cleanupServer(server, function () {
+                    t.pass('closed');
+                    t.end();
+                });
             });
             c.close();
         });

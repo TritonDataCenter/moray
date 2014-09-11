@@ -95,6 +95,7 @@ shrinkwrap: | $(NPM_EXEC)
 test: $(FAUCET)
 	$(NODE) test/buckets.test.js | $(FAUCET)
 	$(NODE) test/objects.test.js | $(FAUCET)
+	$(NODE) test/sql.test.js | $(FAUCET)
 	$(NODE) test/integ.test.js | $(FAUCET)
 	$(NODE) test/arrays.test.js | $(FAUCET)
 

@@ -51,9 +51,12 @@ function createServer(cb) {
     }
 }
 
-function cleanupServer(server) {
+function cleanupServer(server, cb) {
     if (server) {
+        server.once('close', cb);
         server.close();
+    } else {
+        cb();
     }
 }
 ///--- Exports
