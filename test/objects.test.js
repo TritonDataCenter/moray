@@ -880,6 +880,46 @@ test('batch put objects', function (t) {
 });
 
 
+test('batch delete object', function (t) {
+    var k = uuid.v4();
+    var v = { str: 'hi' };
+    var requests = [
+        {
+            operation: 'delete',
+            bucket: b,
+            key: k
+        }
+    ];
+
+    vasync.pipeline({
+        funcs: [
+            function put(_, cb) {
+                c.putObject(b, k, v, cb);
+            },
+            function checkPresent(_, cb) {
+                c.getObject(b, k, cb);
+            },
+            function batchDel(_, cb) {
+                c.batch(requests, cb);
+            },
+            function checkGone(_, cb) {
+                c.getObject(b, k, function (err) {
+                    t.ok(err);
+                    t.equal(err.name, 'ObjectNotFoundError');
+                    t.ok(err.message);
+                    cb();
+                });
+            }
+        ],
+        arg: {}
+    }, function (err) {
+        t.ifError(err);
+
+        t.end();
+    });
+});
+
+
 test('update objects no keys', function (t) {
     var requests = [];
     for (var i = 0; i < 10; i++) {
