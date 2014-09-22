@@ -23,7 +23,7 @@ check-manifests: $(SMF_MANIFESTS:%=%.smfchk)
 %.smfchk: %
 	$(XMLLINT) --path $(dir $(SMF_DTD)) --dtdvalid $(SMF_DTD) $^
 
-check: check-manifests
+check:: check-manifests
 
 $(SMF_MANIFESTS): %: %.in
 	$(SED) -e 's#@@NODE@@#@@PREFIX@@/$(NODE_INSTALL)/bin/node#' $< > $@

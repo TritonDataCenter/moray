@@ -1,6 +1,6 @@
 ---
 title: Moray: Joyent's Key/Value Store.
-markdown2extras: wiki-tables, code-friendly
+markdown2extras: tables, code-friendly
 apisections: Buckets, Objects
 ---
 
@@ -263,11 +263,12 @@ updates will fail if the version rolls backwards.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||name||string||globally unique name for the bucket||
-||config||object||configuration (indexes/pre/post) for the bucket||
-||options||object||any optional parameters (req\_id)||
-||callback||function||only argument is `err`||
+| Field    | Type     | Description                                     |
+| -------- | -------- | ----------------------------------------------- |
+| name     | string   | globally unique name for the bucket             |
+| config   | object   | configuration (indexes/pre/post) for the bucket |
+| options  | object   | any optional parameters (req\_id)               |
+| callback | function | only argument is `err`                          |
 
 ### Errors
 
@@ -306,10 +307,11 @@ besides the name of the bucket you want to fetch (and of course request\_id).
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||name||string||globally unique name for the bucket||
-||options||object||any optional parameters (req\_id)||
-||callback||function||only argument is `err`||
+| Field    | Type     | Description                         |
+| -------- | -------- | ----------------------------------- |
+| name     | string   | globally unique name for the bucket |
+| options  | object   | any optional parameters (req\_id)   |
+| callback | function | only argument is `err`              |
 
 ### Errors
 
@@ -367,9 +369,10 @@ Returns the configuration for all buckets.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||options||object||any optional parameters (req\_id)||
-||callback||function||only argument is `err`||
+| Field    | Type     | Description                       |
+| -------- | -------- | --------------------------------- |
+| options  | object   | any optional parameters (req\_id) |
+| callback | function | only argument is `err`            |
 
 ### Errors
 
@@ -463,11 +466,12 @@ Or alternatively:
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||name||string||globally unique name for the bucket||
-||config||object||configuration (indexes/pre/post) for the bucket||
-||options||object||any optional parameters (req\_id)||
-||callback||function||only argument is `err`||
+| Field    | Type     | Description                                     |
+| -------- | -------- | ----------------------------------------------- |
+| name     | string   | globally unique name for the bucket             |
+| config   | object   | configuration (indexes/pre/post) for the bucket |
+| options  | object   | any optional parameters (req\_id)               |
+| callback | function | only argument is `err`                          |
 
 ### Errors
 
@@ -494,10 +498,11 @@ Deletes a bucket, *and all data in that bucket!* No real options to speak of.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||name||string||globally unique name for the bucket||
-||options||object||any optional parameters (req\_id)||
-||callback||function||only argument is `err`||
+| Field    | Type     | Description                         |
+| -------- | -------- | ----------------------------------- |
+| name     | string   | globally unique name for the bucket |
+| options  | object   | any optional parameters (req\_id)   |
+| callback | function | only argument is `err`              |
 
 ### Errors
 
@@ -550,12 +555,13 @@ looks like:
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||bucket||string||bucket to write this key in||
-||key||string||bucket to write this key in||
-||value||object||free-form JS object||
-||options||object||any optional parameters (req\_id, etag)||
-||callback||function||only argument is `err`||
+| Field    | Type     | Description                             |
+| -------- | -------- | --------------------------------------- |
+| bucket   | string   | bucket to write this key in             |
+| key      | string   | bucket to write this key in             |
+| value    | object   | free-form JS object                     |
+| options  | object   | any optional parameters (req\_id, etag) |
+| callback | function | only argument is `err`                  |
 
 ### Errors
 
@@ -608,11 +614,12 @@ for a full example.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||bucket||string||bucket to write this key in||
-||key||string||bucket to write this key in||
-||options||object||any optional parameters (req\_id, noCache)||
-||callback||function||arguments of `err` and `obj`||
+| Field    | Type     | Description                                |
+| -------- | -------- | ------------------------------------------ |
+| bucket   | string   | bucket to write this key in                |
+| key      | string   | bucket to write this key in                |
+| options  | object   | any optional parameters (req\_id, noCache) |
+| callback | function | arguments of `err` and `obj`               |
 
 ### Errors
 
@@ -687,10 +694,11 @@ expect to receive back up to N records from this call.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||bucket||string||bucket to write this key in||
-||filter||string||search filter string||
-||options||object||any optional parameters (req\_id, limit, offset, sort)||
+| Field   | Type   | Description                                            |
+| ------- | ------ | ------------------------------------------------------ |
+| bucket  | string | bucket to write this key in                            |
+| filter  | string | search filter string                                   |
+| options | object | any optional parameters (req\_id, limit, offset, sort) |
 
 ### Errors
 
@@ -757,11 +765,12 @@ options to get `test/set` semantics.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||bucket||string||bucket to write this key in||
-||key||string||bucket to write this key in||
-||options||object||any optional parameters (req\_id, etag)||
-||callback||function||only argument is `err`||
+| Field    | Type     | Description                             |
+| -------- | -------- | --------------------------------------- |
+| bucket   | string   | bucket to write this key in             |
+| key      | string   | bucket to write this key in             |
+| options  | object   | any optional parameters (req\_id, etag) |
+| callback | function | only argument is `err`                  |
 
 ### Errors
 
@@ -806,11 +815,12 @@ A few caveats:
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||bucket||string||bucket to write this key in||
-||fields||object||key/values to update||
-||filter||string||search filter string||
-||options||object||any optional parameters (req\_id, limit, offset, sort)||
+| Field   | Type   | Description                                            |
+| ------- | ------ | ------------------------------------------------------ |
+| bucket  | string | bucket to write this key in                            |
+| fields  | object | key/values to update                                   |
+| filter  | string | search filter string                                   |
+| options | object | any optional parameters (req\_id, limit, offset, sort) |
 
 ## ReindexObjects
 
@@ -844,10 +854,11 @@ the same bucket but it's likely to race on rows and incur rollbacks/slowdowns.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||bucket||string||bucket to reindex||
-||count||object||max rows to reindex||
-||options||object||any optional parameters (req\_id, no\_count)||
+| Field   | Type   | Description                                  |
+| ------- | ------ | -------------------------------------------- |
+| bucket  | string | bucket to reindex                            |
+| count   | object | max rows to reindex                          |
+| options | object | any optional parameters (req\_id, no\_count) |
 
 ### Errors
 
@@ -873,10 +884,11 @@ API with a bucket and a filter, that is exactly the same syntax as
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||bucket||string||bucket to delete from||
-||filter||string||search filter string||
-||options||object||any optional parameters (req\_id, limit, offset, sort)||
+| Field   | Type   | Description                                            |
+| ------- | ------ | ------------------------------------------------------ |
+| bucket  | string | bucket to delete from                                  |
+| filter  | string | search filter string                                   |
+| options | object | any optional parameters (req\_id, limit, offset, sort) |
 
 
 ## Batch
@@ -926,10 +938,11 @@ The default operation is `put`.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||objects||object||bucket/key/value tuples to store||
-||options||object||any optional parameters (req\_id, etag)||
-||callback||function||only argument is `err` and `meta` which will have a list of etags||
+| Field    | Type     | Description                                                       |
+| -------- | -------- | ----------------------------------------------------------------- |
+| objects  | object   | bucket/key/value tuples to store                                  |
+| options  | object   | any optional parameters (req\_id, etag)                           |
+| callback | function | only argument is `err` and `meta` which will have a list of etags |
 
 ### Errors
 
@@ -963,10 +976,11 @@ extra tables et al in Moray for `post` triggers.
 
 ### Inputs
 
-||**Field**||**Type**||**Description**||
-||statement||string||SQL statement to run||
-||values||Array||values to insert (see node-postgres)||
-||options||object||any optional parameters (req\_id)||
+| Field     | Type   | Description                          |
+| --------- | ------ | ------------------------------------ |
+| statement | string | SQL statement to run                 |
+| values    | Array  | values to insert (see node-postgres) |
+| options   | object | any optional parameters (req\_id)    |
 
 ### CLI
 
