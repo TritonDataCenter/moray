@@ -164,7 +164,7 @@ should you want to use that for something.
 In order to interact with Moray, you are assumed to be using the `node-moray`
 package, which you can install like:
 
-    $ npm install git+ssh://git@git.joyent.com:node-moray.git
+    $ npm install git+ssh://git@github.com:joyent/node-moray.git
 
 In order to then use it, here's some sample code:
 
@@ -272,11 +272,11 @@ updates will fail if the version rolls backwards.
 
 ### Errors
 
-* InvalidBucketConfigError
-* InvalidBucketNameError
-* InvalidIndexDefinitionError
-* NoDatabaseError
-* NotFunctionError
+* `InvalidBucketConfigError`
+* `InvalidBucketNameError`
+* `InvalidIndexDefinitionError`
+* `NoDatabaseError`
+* `NotFunctionError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -315,8 +315,8 @@ besides the name of the bucket you want to fetch (and of course request\_id).
 
 ### Errors
 
-* BucketNotFoundError
-* NoDatabaseError
+* `BucketNotFoundError`
+* `NoDatabaseError`
 
 ### CLI
 
@@ -376,7 +376,7 @@ Returns the configuration for all buckets.
 
 ### Errors
 
-* NoDatabaseError
+* `NoDatabaseError`
 
 ### CLI
 
@@ -475,11 +475,11 @@ Or alternatively:
 
 ### Errors
 
-* BucketNotFoundError
-* InvalidBucketConfigError
-* InvalidIndexDefinitionError
-* NoDatabaseError
-* NotFunctionError
+* `BucketNotFoundError`
+* `InvalidBucketConfigError`
+* `InvalidIndexDefinitionError`
+* `NoDatabaseError`
+* `NotFunctionError`
 
 ### CLI
 
@@ -506,8 +506,8 @@ Deletes a bucket, *and all data in that bucket!* No real options to speak of.
 
 ### Errors
 
-* BucketNotFoundError
-* NoDatabaseError
+* `BucketNotFoundError`
+* `NoDatabaseError`
 
 ### CLI
 
@@ -565,10 +565,10 @@ looks like:
 
 ### Errors
 
-* BucketNotFoundError
-* EtagConflictError
-* NoDatabaseError
-* UniqueAttributeError
+* `BucketNotFoundError`
+* `EtagConflictError`
+* `NoDatabaseError`
+* `UniqueAttributeError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -623,9 +623,9 @@ for a full example.
 
 ### Errors
 
-* BucketNotFoundError
-* ObjectNotFoundError
-* NoDatabaseError
+* `BucketNotFoundError`
+* `ObjectNotFoundError`
+* `NoDatabaseError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -702,10 +702,10 @@ expect to receive back up to N records from this call.
 
 ### Errors
 
-* BucketNotFoundError
-* InvalidQueryError
-* NoDatabaseError
-* NotIndexedError
+* `BucketNotFoundError`
+* `InvalidQueryError`
+* `NoDatabaseError`
+* `NotIndexedError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -774,10 +774,10 @@ options to get `test/set` semantics.
 
 ### Errors
 
-* BucketNotFoundError
-* EtagConflictError
-* ObjectNotFoundError
-* NoDatabaseError
+* `BucketNotFoundError`
+* `EtagConflictError`
+* `ObjectNotFoundError`
+* `NoDatabaseError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -862,8 +862,8 @@ the same bucket but it's likely to race on rows and incur rollbacks/slowdowns.
 
 ### Errors
 
-* BucketNotFoundError
-* NoDatabaseError
+* `BucketNotFoundError`
+* `NoDatabaseError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -946,10 +946,10 @@ The default operation is `put`.
 
 ### Errors
 
-* BucketNotFoundError
-* EtagConflictError
-* NoDatabaseError
-* UniqueAttributeError
+* `BucketNotFoundError`
+* `EtagConflictError`
+* `NoDatabaseError`
+* `UniqueAttributeError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -957,9 +957,11 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 
 ## sql
 
-An API that really only exists for two reasons: (1) for humans to quickly get
-some debug info from moray, and (2) for systems like UFDS that need to create
-extra tables et al in Moray for `post` triggers.
+An API that really only exists for two reasons: 
+
+1. for humans to quickly get some debug info from Moray
+2. for systems like UFDS that need to create extra tables et al in Moray for
+   `post` triggers.
 
 ### API
 
