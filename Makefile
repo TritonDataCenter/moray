@@ -49,7 +49,7 @@ CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 #
 
 NODE_PREBUILT_TAG	= zone
-NODE_PREBUILT_VERSION	:= v0.10.24
+NODE_PREBUILT_VERSION	:= v0.11.14
 
 # RELENG-341: no npm cache is making builds unreliable
 NPM_FLAGS :=
