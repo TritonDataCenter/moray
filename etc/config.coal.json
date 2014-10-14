@@ -6,7 +6,7 @@
     },
     "manatee": {
         "manatee": {
-            "path": "/manatee/sdc/election",
+            "path": "/manatee/sdc",
             "zk": {
                 "connectTimeout": 2000,
                 "servers": [ {

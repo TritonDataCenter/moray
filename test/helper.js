@@ -43,8 +43,9 @@ function createServer(cb) {
         var config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         config.log = createLogger('moray-server');
         var server = app.createServer(config);
-        server.on('listening', function () {
-            cb(server);
+        server.once('ready', function () {
+            server.once('listening', cb.bind(null, server));
+            server.listen();
         });
     } else {
         cb(null);

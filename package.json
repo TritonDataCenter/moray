@@ -17,7 +17,7 @@
         "ldapjs": "0.7.0",
         "libuuid": "0.1.3",
         "lru-cache": "2.5.0",
-        "node-manatee": "git+ssh://git@github.com:joyent/node-manatee.git#93f9217",
+        "node-manatee": "git+ssh://git@github.com:joyent/node-manatee.git#26f5402",
         "manatee": "git+ssh://git@github.com:joyent/manatee.git#9b0a0f3",
         "microtime": "0.5.1",
         "once": "1.3.0",

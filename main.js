@@ -166,7 +166,8 @@ function run(options) {
     opts.log = LOG;
     opts.name = NAME;
 
-    app.createServer(opts);
+    var server = app.createServer(opts);
+    server.listen();
 }
 
 
