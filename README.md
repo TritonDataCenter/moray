@@ -11,7 +11,7 @@ documentation, visit the main [SDC](http://github.com/joyent/sdc) and
 
 ## Development
 
-You'll want a Manatee instance up and running first (which itself requires
+You'll want a [Manatee](https://github.com/joyent/manatee) instance up and running first (which itself requires
 ZooKeeper),  so the easiest way is to point at an existing COAL or Manta
 standup.  Once you have that, you'll need to create a database and the minimal
 schema necessary to bootstrap moray (issue these against whatever DB is
