@@ -515,6 +515,12 @@ Deletes a bucket, *and all data in that bucket!* No real options to speak of.
 
 # Objects
 
+With the exception of `ReindexObjects`, the object-related methods in Moray use
+a cache for bucket information.  When a bucket is updated, say to alter its
+index columns, stale data will persist in the bucket cache for up to 300
+seconds.  For object operations that absolutely require current bucket
+information, setting the `noBucketCache` option will bypass that cache.
+
 ## PutObject
 
 Creates or overwrites an object given a bucket, key and value.  The bucket must
