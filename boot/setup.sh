@@ -209,14 +209,16 @@ function manta_setup_moray_config {
 }
 
 function sdc_moray_createdb {
-    MANATEE_MAIN_ADMIN_IP=$(json -f /var/tmp/metadata.json manatee_admin_ips)
+
+    local shard_name=$(json -f ${METADATA} manatee_shard)
+    [[ $? -eq 0 ]] || fatal "Unable to retrieve shard name"
 
     # Try to connect to manatee PostgreSQL instance. If we can connect, create the
     # moray db when required. If we cannot connect after 10 retries, fail and exit.
     #
     # FIXME: Actually, we're manually overriding manatee's PG Password and setting
     # the PG user to the default one. These should be configuration values:
-    POSTGRES_HOST=$MANATEE_MAIN_ADMIN_IP
+    POSTGRES_HOST=pg.${shard_name}
     POSTGRES_PW='PgresPass123'
     for i in 0 1 2 3 4 5 6 7 8 9
     do
