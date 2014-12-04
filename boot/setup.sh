@@ -189,27 +189,30 @@ function manta_setup_moray_config {
     local moray_cfg=$SVC_ROOT/etc/config.json
     local svc_name=$(json -f ${METADATA} SERVICE_NAME)
     [[ $? -eq 0 ]] || fatal "Unable to retrieve service name"
+    local primary_ip=`/opt/smartdc/moray/node_modules/node-manatee/bin/manatee-primary-ip $moray_cfg`
+    [[ $? -eq 0 ]] || fatal "Unable to retrieve postgres primary ip"
 
     # create the moray user which isn't a super user but can create tables and
     # can't create rolse. Creating the user will fail if the user alredy
     # exists, so we don't check error, subsequent pg requests will fail with
     # this user if it dne.
-    createuser -U postgres -h pg.$svc_name -p 5432 -d -S -R $PG_USER
+    createuser -U postgres -h $primary_ip -p 5432 -d -S -R $PG_USER
 
     # Postgres sucks at return codes, so we basically have no choice but to
     # ignore the error code here since we can't conditionally create the DB
-    createdb -h pg.$svc_name -p 5432 -U $PG_USER -T template0 --locale=C moray
-    psql -U $PG_USER -h pg.$svc_name -p 5432 \
+    createdb -h $primary_ip -p 5432 -U $PG_USER -T template0 --locale=C moray
+    psql -U $PG_USER -h $primary_ip -p 5432 \
         -c 'CREATE TABLE IF NOT EXISTS buckets_config (name text PRIMARY KEY, index text NOT NULL, pre text NOT NULL, post text NOT NULL, options text, mtime timestamp without time zone DEFAULT now() NOT NULL);' \
         moray
     [[ $? -eq 0 ]] || fatal "Unable to create moray database"
 
     echo "alias manatee-stat='/opt/smartdc/moray/node_modules/.bin/manatee-stat -s $svc_name -p $zk'" >> $PROFILE
-    echo "alias psql='/opt/local/bin/psql -h pg.$svc_name -U $PG_USER moray'" >> $PROFILE
+    echo "alias psql='/opt/local/bin/psql -h $primary_ip -U $PG_USER moray'" >> $PROFILE
 }
 
 function sdc_moray_createdb {
 
+    local moray_cfg=$SVC_ROOT/etc/config.json
     local shard_name=$(json -f ${METADATA} manatee_shard)
     [[ $? -eq 0 ]] || fatal "Unable to retrieve shard name"
 
@@ -218,7 +221,8 @@ function sdc_moray_createdb {
     #
     # FIXME: Actually, we're manually overriding manatee's PG Password and setting
     # the PG user to the default one. These should be configuration values:
-    POSTGRES_HOST=pg.${shard_name}
+    POSTGRES_HOST=`/opt/smartdc/moray/node_modules/node-manatee/bin/manatee-primary-ip $moray_cfg`
+    [[ $? -eq 0 ]] || fatal "Unable to retrieve postgres primary ip"
     POSTGRES_PW='PgresPass123'
     for i in 0 1 2 3 4 5 6 7 8 9
     do

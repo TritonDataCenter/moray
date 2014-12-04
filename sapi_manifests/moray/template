@@ -12,16 +12,12 @@
     "manatee": {
       "path": "/manatee/{{SERVICE_NAME}}",
       "zk": {
-        "connectTimeout": 2000,
-        "servers": [
-        {{#ZK_SERVERS}}
-        {
-          "host": "{{host}}",
-            "port": {{port}}
-        }{{^last}}, {{/last}}
-        {{/ZK_SERVERS}}
-        ],
-          "timeout": 20000
+        "connStr": "{{#ZK_SERVERS}}{{host}}:{{port}}{{^last}},{{/last}}{{/ZK_SERVERS}}",
+        "opts": {
+          "sessionTimeout": 60000,
+          "spinDelay": 1000,
+          "retries": 60
+        }
       }
     },
     "pg": {
