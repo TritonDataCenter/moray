@@ -6,43 +6,31 @@
         "type": "udp"
       }
   },
-    "numWorkers": 0,
-    "audit": false,
-    "manatee": {
-      "manatee":{
-        "path": "/manatee/{{manatee_shard}}",
-        "zk": {
-          "connectTimeout": 2000,
-          "servers": [
-          {{#ZK_HA_SERVERS}}
-          {
-            "host": "{{host}}",
-              "port": {{port}}
-          }{{^last}}, {{/last}}
-          {{/ZK_HA_SERVERS}}
-          {{^ZK_HA_SERVERS}}
-          {{#ZK_SERVERS}}
-          {
-            "host": "{{host}}",
-              "port": {{port}}
-          }{{^last}}, {{/last}}
-          {{/ZK_SERVERS}}
-          {{/ZK_HA_SERVERS}}
-          ],
-            "timeout": 20000
+  "numWorkers": 0,
+  "audit": false,
+  "manatee": {
+    "manatee":{
+      "path": "/manatee/{{manatee_shard}}",
+      "zk": {
+        "connStr": "{{#ZK_HA_SERVERS}}{{host}}:{{port}}{{^last}},{{/last}}{{/ZK_HA_SERVERS}}{{^ZK_HA_SERVERS}}{{#ZK_SERVERS}}{{host}}:{{port}}{{^last}},{{/last}}{{/ZK_SERVERS}}{{/ZK_HA_SERVERS}}",
+        "opts": {
+          "sessionTimeout": 20000,
+          "spinDelay": 1000,
+          "retries": 31536000
         }
-      },
-      "pg": {
-        "connectTimeout": 4000,
-        "checkInterval": 90000,
-        "maxConnections": {{MORAY_MAX_PG_CONNS}},
-        "maxIdleTime": 270000,
-        "queryTimeout": 30000,
-        "user": "moray"
       }
     },
-    "cache": {
-      "size": 5000,
-      "expiry": 60
+    "pg": {
+      "connectTimeout": 4000,
+      "checkInterval": 90000,
+      "maxConnections": {{MORAY_MAX_PG_CONNS}},
+      "maxIdleTime": 270000,
+      "queryTimeout": 30000,
+      "user": "moray"
     }
+  },
+  "cache": {
+    "size": 5000,
+    "expiry": 60
+  }
 }
