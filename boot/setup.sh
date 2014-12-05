@@ -324,7 +324,7 @@ function sdc_ensure_manatee {
 
     local zonename=$(zonename)
 
-    local svc_name=$(json -f ${METADATA} SERVICE_NAME)
+    local shard=$(json -f ${METADATA} manatee_shard)
     local zk_ips=$(json -f ${METADATA} ZK_HA_SERVERS | json -a host)
 
     if [[ -z ${zk_ips} ]]; then
@@ -342,8 +342,8 @@ function sdc_ensure_manatee {
             zkok=$(echo "ruok" | nc -w 1 $ip 2181)
             if [[ $? -eq 0 ]] && [[ "$zkok" == "imok" ]]
             then
-                pgok=$(/opt/smartdc/moray/node_modules/.bin/manatee-stat -s $svc_name $ip 2>/dev/null | json sdc.registrar.database.primary)
-                if [[ $? -eq 0 ]] && [[ $pgok == tcp* ]]
+                pgip=$(/opt/smartdc/moray/node_modules/.bin/manatee-stat $ip 2>/dev/null | json ${shard}.primary.ip)
+                if [[ $? -eq 0 ]] && [[ -n "$pgip" ]]
                 then
                     isok=1
                     break
