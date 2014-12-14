@@ -16,7 +16,7 @@
         "opts": {
           "sessionTimeout": 20000,
           "spinDelay": 1000,
-          "retries": 31536000
+          "retries": 2
         }
       }
     },
