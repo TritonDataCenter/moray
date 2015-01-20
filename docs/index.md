@@ -41,8 +41,8 @@ Upon creating a bucket you are allowed to define the bucket to have indexes,
 which allow you to later `search` for multiple records that match those
 indexes.  If indexes are defined on a bucket, when you write a key/value pair,
 the value is automatically indexed server-side in Moray for you.  Indexes can
-be defined to be of type `number`, `boolean` or `string`. They can optionally
-be defined to enforce uniquness of a value.
+be defined to be of type `number`, `boolean`, `string`, or `inet` (IP address
+or network). They can optionally be defined to enforce uniquness of a value.
 
 ## Arrays
 
@@ -575,6 +575,7 @@ looks like:
 * `EtagConflictError`
 * `NoDatabaseError`
 * `UniqueAttributeError`
+* `InvalidIndexTypeError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -660,8 +661,7 @@ you want it).
 
 Search filters are fully specified according to LDAP search filter rules (which
 is one of the few sane parts of LDAP).  Whatever you search on must be part of
-the index on the bucket config; this is non-negotiable.  Ask markc for a soapbox
-speech if you really want to argue.
+the index on the bucket config; this is non-negotiable.
 
 In addition to the search filter, you can specify `limit`, `offset`, and `sort`;
 the first two act like they usually do in DBs, and `sort` must be a JS object
@@ -702,7 +702,7 @@ expect to receive back up to N records from this call.
 
 | Field   | Type   | Description                                            |
 | ------- | ------ | ------------------------------------------------------ |
-| bucket  | string | bucket to write this key in                            |
+| bucket  | string | bucket to seach in                                     |
 | filter  | string | search filter string                                   |
 | options | object | any optional parameters (req\_id, limit, offset, sort) |
 
@@ -712,6 +712,7 @@ expect to receive back up to N records from this call.
 * `InvalidQueryError`
 * `NoDatabaseError`
 * `NotIndexedError`
+* `InvalidIndexTypeError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -773,8 +774,8 @@ options to get `test/set` semantics.
 
 | Field    | Type     | Description                             |
 | -------- | -------- | --------------------------------------- |
-| bucket   | string   | bucket to write this key in             |
-| key      | string   | bucket to write this key in             |
+| bucket   | string   | bucket to delete this key from          |
+| key      | string   | key to delete                           |
 | options  | object   | any optional parameters (req\_id, etag) |
 | callback | function | only argument is `err`                  |
 
@@ -963,7 +964,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 
 ## sql
 
-An API that really only exists for two reasons: 
+An API that really only exists for two reasons:
 
 1. for humans to quickly get some debug info from Moray
 2. for systems like UFDS that need to create extra tables et al in Moray for

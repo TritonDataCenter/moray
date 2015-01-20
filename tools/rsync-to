@@ -1,0 +1,53 @@
+#!/bin/bash
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
+#
+# Copyright (c) 2014, Joyent, Inc.
+#
+
+#
+# Rsync the master in this working copy to the install on the given HN.
+#
+
+#set -o xtrace
+set -o errexit
+
+TOP=$(cd $(dirname $0)/../; pwd)
+NODE=$1
+
+if [[ -z "$MORAY_ZONE" ]]; then
+    MORAY_ZONE=$(ssh $NODE "/opt/smartdc/bin/sdc-vmapi /vms" 2>/dev/null \
+        | json -H -c 'this.tags && this.tags.smartdc_role === "moray"' \
+            -c 'this.state === "running"' 0.uuid)
+fi
+echo "MORAY_ZONE: $MORAY_ZONE"
+
+extraOpts=
+if [[ $(uname -s) != "SunOS" ]]; then
+    extraOpts="--exclude *.node --exclude build"
+else
+    # Clean node_modules everytime.
+    ssh $NODE rm -rf /zones/$MORAY_ZONE/root/opt/smartdc/moray/node_modules
+fi
+
+rsync -av ${TOP}/ \
+    $NODE:/zones/$MORAY_ZONE/root/opt/smartdc/moray/ \
+    $extraOpts \
+    --exclude .git/ \
+    --exclude /etc/config.json \
+    --exclude /deps/ \
+    --exclude /docs/ \
+    --exclude /tools/ \
+    --exclude /tmp/
+
+state=$(ssh ${NODE} svcs -z ${MORAY_ZONE} -H -o state moray)
+if [[ "$state" == "maintenance" ]]; then
+    ssh ${NODE} svcadm -z ${MORAY_ZONE} clear \*moray-202\*
+else
+    ssh ${NODE} svcadm -z ${MORAY_ZONE} restart \*moray-202\*
+fi
+ssh ${NODE} svcadm -z ${MORAY_ZONE} restart config-agent

@@ -40,6 +40,20 @@ var FULL_CFG = {
         bool_u: {
             type: 'boolean',
             unique: true
+        },
+        ip: {
+            type: 'ip'
+        },
+        ip_u: {
+            type: 'ip',
+            unique: true
+        },
+        subnet: {
+            type: 'subnet'
+        },
+        subnet_u: {
+            type: 'subnet',
+            unique: true
         }
     },
     pre: [function onePre(req, cb) { cb(); }],
