@@ -40,6 +40,13 @@ var FULL_CFG = {
         bool_u: {
             type: 'boolean',
             unique: true
+        },
+        inet: {
+            type: 'inet',
+        },
+        inet_u: {
+            type: 'inet',
+            unique: true
         }
     },
     pre: [function onePre(req, cb) { cb(); }],

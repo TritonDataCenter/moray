@@ -41,8 +41,8 @@ Upon creating a bucket you are allowed to define the bucket to have indexes,
 which allow you to later `search` for multiple records that match those
 indexes.  If indexes are defined on a bucket, when you write a key/value pair,
 the value is automatically indexed server-side in Moray for you.  Indexes can
-be defined to be of type `number`, `boolean` or `string`. They can optionally
-be defined to enforce uniquness of a value.
+be defined to be of type `number`, `boolean`, `string`, or `inet` (IP address
+or network). They can optionally be defined to enforce uniquness of a value.
 
 ## Arrays
 
@@ -963,7 +963,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 
 ## sql
 
-An API that really only exists for two reasons: 
+An API that really only exists for two reasons:
 
 1. for humans to quickly get some debug info from Moray
 2. for systems like UFDS that need to create extra tables et al in Moray for
