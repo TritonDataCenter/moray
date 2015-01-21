@@ -880,6 +880,52 @@ test('batch put objects', function (t) {
 });
 
 
+test('batch put with bad _value', function (t) {
+    // In a future node-moray, this shouldn't even be possible, but for now it
+    // needs to be dealt with.
+    var k = uuid.v4();
+    var requests = [
+        {
+            bucket: b,
+            key: k,
+            value: {
+                foo: 'bar'
+            },
+            options: {
+                _value: '{"this":"is", "bs":[}'
+            }
+        }
+    ];
+
+    vasync.pipeline({
+        funcs: [
+            function prepBucket(_, cb) {
+                var cfg = clone(BUCKET_CFG);
+                // Simplify test by removing pre/post bucket actions
+                // (Required for positive verification)
+                delete cfg.pre;
+                delete cfg.post;
+                cfg.options.version = 2;
+                c.updateBucket(b, cfg, cb);
+            },
+            function put(_, cb) {
+                c.batch(requests, cb);
+            },
+            function checkValid(_, cb) {
+                c.getObject(b, k, cb);
+            },
+            function cleanup(_, cb) {
+                c.delObject(b, k, cb);
+            }
+        ],
+        arg: {}
+    }, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+});
+
+
 test('batch delete object', function (t) {
     var k = uuid.v4();
     var v = { str: 'hi' };
