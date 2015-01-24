@@ -53,11 +53,18 @@ var BUCKET_CFG = {
             type: 'boolean',
             unique: true
         },
-        inet: {
-            type: 'inet'
+        ip: {
+            type: 'ip'
         },
-        inet_u: {
-            type: 'inet',
+        ip_u: {
+            type: 'ip',
+            unique: true
+        },
+        subnet: {
+            type: 'subnet'
+        },
+        subnet_u: {
+            type: 'subnet',
             unique: true
         }
     },
@@ -1558,10 +1565,10 @@ test('reindex objects', function (t) {
     });
 });
 
-test('MORAY-291: add inet', function(t) {
+test('MORAY-291: add ip', function (t) {
     var k = uuid.v4();
     var v = {
-        inet: '192.168.1.10'
+        ip: '192.168.1.10'
     };
 
     vasync.pipeline({
@@ -1581,13 +1588,12 @@ test('MORAY-291: add inet', function(t) {
                     return (cb(err));
 
                 t.ok(obj);
+                t.ok(obj.value.ip, 'has ip value');
 
-                console.error(obj);
-
-                t.ok(obj.value.inet, 'has inet value');
-
-                if (obj.value.inet)
-                    t.ok(net.isIPv4(obj.value.inet), 'inet value is IPv4');
+                if (obj.value.ip) {
+                    t.ok(net.isIPv4(obj.value.ip), 'ip value is IPv4');
+                    t.equal(obj.value.ip, v.ip, 'ip is correct');
+                }
 
                 return (cb());
             });
@@ -1598,21 +1604,123 @@ test('MORAY-291: add inet', function(t) {
     });
 });
 
-test('MORAY-291: add inet not ok', function(t) {
+test('MORAY-291: add partial ip not ok', function (t) {
     var k = uuid.v4();
     var v = {
-        inet: '192.168'
+        ip: '192.168'
     };
+    var errmsg = 'invalid input syntax for type ip: "' + v.ip + '"';
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
             c.putObject(b, k, v, function (err, meta) {
                 if (err) {
                     t.ok(err, 'received an error');
-                    t.ok(err.message === 'invalid input syntax for type inet: "192.168"', 'with the right message')
+                    t.ok(err.message === errmsg, 'with the right message');
                     return (cb());
                 }
-                t.notOk(false, 'did not error on bogus inet');
+                t.notOk(false, 'did not error on bogus ip');
+                return (cb());
+            });
+        }]
+    }, function (err) {
+        t.ifError(err, 'no errors');
+        t.end();
+    });
+});
+
+test('MORAY-291: add ip/cidr -> results in null', function (t) {
+    var k = uuid.v4();
+    var v = {
+        ip: '192.168.1.10/24'
+    };
+
+    vasync.pipeline({
+        funcs: [ function put(_, cb) {
+            c.putObject(b, k, v, function (err, meta) {
+                if (err)
+                    return (cb(err));
+
+                t.ok(meta);
+                if (meta)
+                    t.ok(meta.etag);
+                return (cb());
+            });
+        }, function get(_, cb) {
+            c.getObject(b, k, function (err, obj) {
+                if (err)
+                    return (cb(err));
+
+                t.ok(obj);
+                t.ok(obj.value.hasOwnProperty('ip'), 'has ip key');
+
+                if (obj.value.hasOwnProperty('ip'))
+                    t.false(obj.value.ip, 'ip value is null');
+
+                return (cb());
+            });
+        }]
+    }, function (err) {
+        t.ifError(err, 'no errors');
+        t.end();
+    });
+});
+
+test('MORAY-291: add subnet', function (t) {
+    var k = uuid.v4();
+    var v = {
+        subnet: '192.168.1.0/24'
+    };
+
+    vasync.pipeline({
+        funcs: [ function put(_, cb) {
+            c.putObject(b, k, v, function (err, meta) {
+                if (err)
+                    return (cb(err));
+
+                t.ok(meta);
+                if (meta)
+                    t.ok(meta.etag);
+                return (cb());
+            });
+        }, function get(_, cb) {
+            c.getObject(b, k, function (err, obj) {
+                if (err)
+                    return (cb(err));
+
+                t.ok(obj);
+                t.ok(obj.value.subnet, 'has subnet value');
+
+                if (obj.value.ip) {
+                    t.equal(obj.value.subnet, v.subnet, 'subnet value correct');
+                }
+
+                return (cb());
+            });
+        }]
+    }, function (err) {
+        t.ifError(err, 'no errors');
+        t.end();
+    });
+});
+
+test('MORAY-291: invalid subnet', function (t) {
+    var k = uuid.v4();
+    var v = {
+        subnet: '192.168.1.10/24'
+    };
+    var errmsg = 'invalid cidr value: "' + v.subnet + '"';
+
+    vasync.pipeline({
+        funcs: [ function put(_, cb) {
+            c.putObject(b, k, v, function (err, meta) {
+                if (err) {
+                    t.ok(err, 'received an error');
+                    t.ok(err.message === errmsg,
+                         'with the right message');
+                    return (cb());
+                }
+                t.notOk(false, 'did not error on bogus ip');
                 return (cb());
             });
         }]

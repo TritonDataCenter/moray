@@ -42,7 +42,7 @@ var FULL_CFG = {
             unique: true
         },
         inet: {
-            type: 'inet',
+            type: 'inet'
         },
         inet_u: {
             type: 'inet',
