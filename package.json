@@ -1,7 +1,7 @@
 {
     "name": "moray",
     "description": "SmartDataCenter H/A Key/Value store",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "author": "Joyent (joyent.com)",
     "private": true,
     "dependencies": {
@@ -34,6 +34,9 @@
         "moray": "git+ssh://git@github.com:joyent/node-moray.git#master",
         "tape": "2.14.0",
         "faucet": "0.0.1"
+    },
+    "sdcDependencies": {
+        "config-agent": ">=1.2.0"
     },
     "directories": {
         "bin": "./bin",
