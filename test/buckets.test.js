@@ -41,11 +41,18 @@ var FULL_CFG = {
             type: 'boolean',
             unique: true
         },
-        inet: {
-            type: 'inet'
+        ip: {
+            type: 'ip'
         },
-        inet_u: {
-            type: 'inet',
+        ip_u: {
+            type: 'ip',
+            unique: true
+        },
+        subnet: {
+            type: 'subnet'
+        },
+        subnet_u: {
+            type: 'subnet',
             unique: true
         }
     },
