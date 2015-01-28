@@ -660,8 +660,7 @@ you want it).
 
 Search filters are fully specified according to LDAP search filter rules (which
 is one of the few sane parts of LDAP).  Whatever you search on must be part of
-the index on the bucket config; this is non-negotiable.  Ask markc for a soapbox
-speech if you really want to argue.
+the index on the bucket config; this is non-negotiable.
 
 In addition to the search filter, you can specify `limit`, `offset`, and `sort`;
 the first two act like they usually do in DBs, and `sort` must be a JS object

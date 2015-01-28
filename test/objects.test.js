@@ -1588,6 +1588,7 @@ test('MORAY-291: add ip', function (t) {
                     return (cb(err));
 
                 t.ok(obj);
+                assertObject(t, obj, k, v);
                 t.ok(obj.value.ip, 'has ip value');
 
                 if (obj.value.ip) {
@@ -1609,14 +1610,14 @@ test('MORAY-291: add partial ip not ok', function (t) {
     var v = {
         ip: '192.168'
     };
-    var errmsg = 'invalid input syntax for type ip: "' + v.ip + '"';
+    var errmsg = 'index(ip) is of type ip';
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
             c.putObject(b, k, v, function (err, meta) {
                 if (err) {
                     t.ok(err, 'received an error');
-                    t.ok(err.message === errmsg, 'with the right message');
+                    t.equal(err.message, errmsg, 'with the right message');
                     return (cb());
                 }
                 t.notOk(false, 'did not error on bogus ip');
@@ -1629,34 +1630,22 @@ test('MORAY-291: add partial ip not ok', function (t) {
     });
 });
 
-test('MORAY-291: add ip/cidr -> results in null', function (t) {
+test('MORAY-291: add ip/cidr not ok', function (t) {
     var k = uuid.v4();
     var v = {
         ip: '192.168.1.10/24'
     };
+    var errmsg = 'index(ip) is of type ip';
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
             c.putObject(b, k, v, function (err, meta) {
-                if (err)
-                    return (cb(err));
-
-                t.ok(meta);
-                if (meta)
-                    t.ok(meta.etag);
-                return (cb());
-            });
-        }, function get(_, cb) {
-            c.getObject(b, k, function (err, obj) {
-                if (err)
-                    return (cb(err));
-
-                t.ok(obj);
-                t.ok(obj.value.hasOwnProperty('ip'), 'has ip key');
-
-                if (obj.value.hasOwnProperty('ip'))
-                    t.false(obj.value.ip, 'ip value is null');
-
+                if (err) {
+                    t.ok(err, 'received an error');
+                    t.equal(err.message, errmsg, 'with the right message');
+                    return (cb());
+                }
+                t.notOk(false, 'did not error on ip/cidr input');
                 return (cb());
             });
         }]
@@ -1716,8 +1705,7 @@ test('MORAY-291: invalid subnet', function (t) {
             c.putObject(b, k, v, function (err, meta) {
                 if (err) {
                     t.ok(err, 'received an error');
-                    t.ok(err.message === errmsg,
-                         'with the right message');
+                    t.equal(err.message, errmsg, 'with the right message');
                     return (cb());
                 }
                 t.notOk(false, 'did not error on bogus ip');
@@ -1729,3 +1717,97 @@ test('MORAY-291: invalid subnet', function (t) {
         t.end();
     });
 });
+
+// TODO: should create own bucket.
+test('MORAY-291: able to query on IP types', function(t) {
+    var k = uuid.v4();
+    var v = {
+        ip: '192.168.1.10'
+    }
+
+    vasync.pipeline({
+        funcs: [ function put(_, cb) {
+            c.putObject(b, k, v, function (err, meta) {
+                if (err)
+                    return (cb(err));
+
+                t.ok(meta);
+                if (meta)
+                    t.ok(meta.etag);
+                return (cb());
+            });
+        }, function query(_, cb) {
+            var f = '(ip=192.168.1.10)';
+            var req = c.findObjects(b, f);
+            var ok = false;
+            req.once('error', function(err) {
+                t.ifError(err, 'query error');
+                t.end();
+            });
+            req.once('end', function() {
+                t.ok(ok);
+                t.end();
+            });
+            req.on('record', function (obj) {
+                t.ok(obj, 'received an object from the query');
+                assertObject(t, obj, k, v);
+                ok = true;
+            });
+        }]
+    }, function (err) {
+        t.ifError(err, 'no errors');
+        t.end();
+    });
+});
+
+// TODO: should create own bucket.
+test('MORAY-291: able to query <= on IP types', function(t) {
+    var k = uuid.v4();
+    var v = {
+        ip: '192.168.1.8'
+    }
+
+    vasync.pipeline({
+        funcs: [ function put(_, cb) {
+            c.putObject(b, k, v, function (err, meta) {
+                if (err)
+                    return (cb(err));
+
+                t.ok(meta);
+                if (meta)
+                    t.ok(meta.etag);
+                return (cb());
+            });
+        }, function query(_, cb) {
+            var f = '(ip<=192.168.1.9)';
+            var req = c.findObjects(b, f);
+            var ok = false;
+            req.once('error', function(err) {
+                t.ifError(err, 'query error');
+                t.end();
+            });
+            req.once('end', function() {
+                t.ok(ok);
+                t.end();
+            });
+            req.on('record', function (obj) {
+                t.ok(obj, 'received an object from the query');
+                assertObject(t, obj, k, v);
+                t.ok(obj.value.ip, 'has ip value');
+
+                if (obj.value.ip) {
+                    t.ok(net.isIPv4(obj.value.ip), 'ip value is IPv4');
+                    t.equal(obj.value.ip, v.ip, 'ip is correct');
+                }
+
+                ok = true;
+            });
+        }]
+    }, function (err) {
+        t.ifError(err, 'no errors');
+        t.end();
+    });
+});
+
+// TODO: other queries on IP types that we need: <=
+// TODO: queries on subnet types =, <=
