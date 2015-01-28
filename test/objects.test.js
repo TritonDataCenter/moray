@@ -1719,11 +1719,11 @@ test('MORAY-291: invalid subnet', function (t) {
 });
 
 // TODO: should create own bucket.
-test('MORAY-291: able to query on IP types', function(t) {
+test('MORAY-291: able to query on IP types', function (t) {
     var k = uuid.v4();
     var v = {
         ip: '192.168.1.10'
-    }
+    };
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
@@ -1740,11 +1740,11 @@ test('MORAY-291: able to query on IP types', function(t) {
             var f = '(ip=192.168.1.10)';
             var req = c.findObjects(b, f);
             var ok = false;
-            req.once('error', function(err) {
+            req.once('error', function (err) {
                 t.ifError(err, 'query error');
                 t.end();
             });
-            req.once('end', function() {
+            req.once('end', function () {
                 t.ok(ok);
                 t.end();
             });
@@ -1761,11 +1761,11 @@ test('MORAY-291: able to query on IP types', function(t) {
 });
 
 // TODO: should create own bucket.
-test('MORAY-291: able to query <= on IP types', function(t) {
+test('MORAY-291: able to query <= on IP types', function (t) {
     var k = uuid.v4();
     var v = {
         ip: '192.168.1.8'
-    }
+    };
 
     vasync.pipeline({
         funcs: [ function put(_, cb) {
@@ -1782,11 +1782,11 @@ test('MORAY-291: able to query <= on IP types', function(t) {
             var f = '(ip<=192.168.1.9)';
             var req = c.findObjects(b, f);
             var ok = false;
-            req.once('error', function(err) {
+            req.once('error', function (err) {
                 t.ifError(err, 'query error');
                 t.end();
             });
-            req.once('end', function() {
+            req.once('end', function () {
                 t.ok(ok);
                 t.end();
             });
