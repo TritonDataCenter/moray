@@ -575,6 +575,7 @@ looks like:
 * `EtagConflictError`
 * `NoDatabaseError`
 * `UniqueAttributeError`
+* `InvalidIndexTypeError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -701,7 +702,7 @@ expect to receive back up to N records from this call.
 
 | Field   | Type   | Description                                            |
 | ------- | ------ | ------------------------------------------------------ |
-| bucket  | string | bucket to write this key in                            |
+| bucket  | string | bucket to seach in                                     |
 | filter  | string | search filter string                                   |
 | options | object | any optional parameters (req\_id, limit, offset, sort) |
 
@@ -711,6 +712,7 @@ expect to receive back up to N records from this call.
 * `InvalidQueryError`
 * `NoDatabaseError`
 * `NotIndexedError`
+* `InvalidIndexTypeError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -772,8 +774,8 @@ options to get `test/set` semantics.
 
 | Field    | Type     | Description                             |
 | -------- | -------- | --------------------------------------- |
-| bucket   | string   | bucket to write this key in             |
-| key      | string   | bucket to write this key in             |
+| bucket   | string   | bucket to delete this key from          |
+| key      | string   | key to delete                           |
 | options  | object   | any optional parameters (req\_id, etag) |
 | callback | function | only argument is `err`                  |
 
