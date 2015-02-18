@@ -1893,3 +1893,92 @@ test('MORAY-298: presence filter works for all types', function (t) {
         t.end();
     });
 });
+test('filter on unindexed fields', function (t) {
+    var v = {
+        str: 'required',
+        ui_str: 'value',
+        ui_num: 15,
+        ui_zero: 0,
+        ui_null: null
+    };
+    var k = uuid.v4();
+    var tests = {
+        // Equality:
+        '(ui_str=value)': true,
+        '(ui_str=bad)': false,
+        // '(ui_num=15)': true, ruined by strict types
+        '(ui_num=14)': false,
+        '(ui_num=0)': false,
+        // '(ui_zero=0)': true, ruined by strict types
+        '(ui_zero=1)': false,
+        // Presence:
+        '(ui_str=*)': true,
+        '(ui_num=*)': true,
+        '(ui_zero=*)': true,
+        '(ui_null=*)': false,
+        '(ui_bogus=*)': false,
+        // GE/LE:
+        '(ui_num>=15)': true,
+        '(ui_num>=0)': true,
+        '(ui_num>=16)': false,
+        '(ui_num<=15)': true,
+        '(ui_num<=0)': false,
+        '(ui_num<=16)': true,
+        '(ui_str>=value)': true,
+        '(ui_str>=valud)': true,
+        '(ui_str>=valuf)': false,
+        '(ui_str<=value)': true,
+        '(ui_str<=valud)': false,
+        '(ui_str<=valuf)': true,
+        // Substring:
+        '(ui_str=val*)': true,
+        '(ui_str=val*e)': true,
+        '(ui_str=*alue)': true,
+        '(ui_str=v*l*e)': true,
+        '(ui_str=n*ope)': false,
+        '(ui_str=*nope)': false,
+        '(ui_str=nope*)': false,
+        '(ui_str=no*p*e)': false,
+        // Ext:
+        '(ui_str:caseIgnoreMatch:=VALUE)': true,
+        '(ui_str:caseIgnoreMatch:=NOPE)': false,
+        '(ui_str:caseIgnoreSubstringsMatch:=V*LUE)': true,
+        '(ui_str:caseIgnoreSubstringsMatch:=N*PE)': false
+    };
+    c.putObject(b, k, v, function (putErr) {
+        if (putErr) {
+            t.ifError(putErr);
+            t.end();
+            return;
+        }
+        vasync.forEachParallel({
+            inputs: Object.keys(tests),
+            func: function filterCheck(f, cb) {
+                var found = false;
+                cb = once(cb);
+                var fixed = '(&(str=required)' + f + ')';
+                var res = c.findObjects(b, fixed);
+                res.once('error', function (err) {
+                    t.ifError(err);
+                    cb(err);
+                });
+                res.on('record', function (obj) {
+                    if (k !== obj.key)
+                        t.fail('invalid key');
+                    found = true;
+                });
+                res.once('end', function () {
+                    if (tests[f]) {
+                        t.ok(found, f + ' should find object');
+                    } else {
+                        t.notOk(found, f + ' should not find object');
+                    }
+                    cb();
+                });
+            }
+        }, function (err) {
+            t.ifError(err);
+            t.end();
+        });
+    });
+});
