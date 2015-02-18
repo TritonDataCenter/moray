@@ -1811,3 +1811,85 @@ test('MORAY-291: able to query <= on IP types', function (t) {
 
 // TODO: other queries on IP types that we need: <=
 // TODO: queries on subnet types =, <=
+
+test('MORAY-298: presence filter works for all types', function (t) {
+    var recs = [
+        {
+            k: 'str',
+            v: 'string'
+        },
+        {
+            k: 'str_u',
+            v: 'unique string'
+        },
+        {
+            k: 'num',
+            v: 40
+        },
+        {
+            k: 'bool',
+            v: true
+        },
+        {
+            k: 'bool_u',
+            v: true
+        },
+        {
+            k: 'ip',
+            v: '192.168.5.2'
+        },
+        {
+            k: 'ip_u',
+            v: '192.168.5.3'
+        },
+        {
+            k: 'subnet',
+            v: '192.168.5.0/24'
+        },
+        {
+            k: 'subnet_u',
+            v: '192.168.6.0/24'
+        }
+    ];
+
+    vasync.forEachParallel({
+        inputs: recs,
+        func: function presence(rec, cb) {
+            var v = {};
+            v[rec.k] = rec.v;
+
+            c.putObject(b, rec.k, v, function (putErr, meta) {
+                var desc = ': ' + rec.k + '/' + rec.v;
+                var f = util.format('(%s=*)', rec.k);
+                var n = 0;
+                var req;
+
+                t.ifErr(putErr, 'put' + desc);
+                if (putErr)
+                    return (cb(putErr));
+
+                req = c.findObjects(b, f);
+
+                req.once('error', function (err) {
+                    t.ifError(err, 'query error' + desc);
+                    return (cb(err));
+                });
+
+                req.once('end', function () {
+                    t.equal(n, 1, '1 record returned' + desc);
+                    return (cb());
+                });
+
+                req.on('record', function (obj) {
+                    n++;
+                    t.equal(obj.value[rec.k], rec.v, 'value' + desc);
+                });
+
+                return req;
+            });
+        }
+    }, function (err) {
+        t.ifError(err, 'no errors');
+        t.end();
+    });
+});
