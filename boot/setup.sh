@@ -298,7 +298,7 @@ function sdc_moray_createdb {
       -h ${POSTGRES_HOST} \
       -c 'alter database moray owner to moray;' moray
 
-    for tbl in `PGPASSWORD=PgresPass123 /opt/local/bin/psql -h ${POSTGRES_HOST} -U postgres -qAt -c "select tablename from pg_tables where schemaname = 'public';" moray`; do
+    for tbl in `PGPASSWORD=PgresPass123 /opt/local/bin/psql -h ${POSTGRES_HOST} -U postgres -qAt -c "select tablename from pg_tables where schemaname = 'public' and tableowner != 'moray';" moray`; do
       PGPASSWORD=PgresPass123 /opt/local/bin/psql \
         -h ${POSTGRES_HOST} \
         -U postgres \
