@@ -7,7 +7,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2015, Joyent, Inc.
 #
 
 export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
@@ -305,7 +305,7 @@ function sdc_moray_createdb {
         -c "alter table $tbl owner to moray" moray;>/dev/null
     done
 
-    for tbl in `PGPASSWORD=PgresPass123 /opt/local/bin/psql -h ${POSTGRES_HOST} -U postgres -qAt -c "select sequence_name from information_schema.sequences where sequence_schema = 'public';" moray`; do
+    for tbl in `PGPASSWORD=PgresPass123 /opt/local/bin/psql -h ${POSTGRES_HOST} -U postgres -qAt -c "SELECT iss.sequence_name FROM pg_class pgc, information_schema.sequences iss, pg_user pgu WHERE pgu.usesysid = pgc.relowner AND pgu.usename != 'moray' AND pgc.relname = iss.sequence_name AND iss.sequence_schema = 'public' AND pgc.relkind = 'S';" moray`; do
       PGPASSWORD=PgresPass123 /opt/local/bin/psql \
         -U postgres \
         -h ${POSTGRES_HOST} \
