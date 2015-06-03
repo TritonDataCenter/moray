@@ -973,7 +973,7 @@ An API that really only exists for two reasons:
 ### API
 
     var req = client.sql('select * from buckets_config');
-    req.on('record, function (r) {
+    req.on('record', function (r) {
         console.log(JSON.stringify(r));
     });
     req.on('error', function (err) {
