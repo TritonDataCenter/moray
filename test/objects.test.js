@@ -1893,6 +1893,7 @@ test('MORAY-298: presence filter works for all types', function (t) {
         t.end();
     });
 });
+
 test('filter on unindexed fields', function (t) {
     var v = {
         str: 'required',
@@ -1973,6 +1974,47 @@ test('filter on unindexed fields', function (t) {
                     } else {
                         t.notOk(found, f + ' should not find object');
                     }
+                    cb();
+                });
+            }
+        }, function (err) {
+            t.ifError(err);
+            t.end();
+        });
+    });
+});
+
+test('MORAY-311: ext filters survive undefined fields', function (t) {
+    var v = {
+        num: 5
+    };
+    var k = uuid.v4();
+    var filters = [
+        '(&(num=5)(!(str:caseIgnoreSubstringsMatch:=*test*)))',
+        '(&(num=5)(!(str:caseIgnoreMatch:=*test*)))'
+    ];
+    c.putObject(b, k, v, function (putErr) {
+        if (putErr) {
+            t.ifError(putErr);
+            t.end();
+            return;
+        }
+        vasync.forEachParallel({
+            inputs: filters,
+            func: function filterCheck(f, cb) {
+                var found = false;
+                cb = once(cb);
+                var res = c.findObjects(b, f);
+                res.once('error', function (err) {
+                    t.ifError(err);
+                    cb(err);
+                });
+                res.on('record', function (obj) {
+                    t.equal(k, obj.key);
+                    found = true;
+                });
+                res.once('end', function () {
+                    t.ok(found);
                     cb();
                 });
             }
