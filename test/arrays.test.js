@@ -551,7 +551,6 @@ test('schema array, array value (boolean), updates', function (t) {
 
 
 test('schema array, value (string) includes commas/curly braces', function (t) {
-    var k = libuuid.create();
     var cfg = {
         index: {
             name: {
@@ -560,33 +559,76 @@ test('schema array, value (string) includes commas/curly braces', function (t) {
             }
         }
     };
-    var data = {
-        name: ['{"foo": {"bar": "baz"}}'],
-        ignoreme: 'foo'
+    var data = {};
+
+    data[libuuid.create()] = {
+        name: ['{foo}', '{bar}', 'baz']
+    };
+    data[libuuid.create()] = {
+        name: ['{"foo": {"baz": "bar", "with": "commas"}}']
+    };
+    data['quotedkey'] = {
+        name: ['foo == "bar"', '"quoted"', '"bar" = baz']
     };
 
-    var objects = [];
+    vasync.pipeline({
+        funcs: [
+            function setup(_, cb) {
+                c.putBucket(b, cfg, function (err) {
+                    t.ifError(err);
+                    cb(err);
+                });
+            },
+            function putObjs(_, cb) {
+                var batchData = [];
+                Object.keys(data).forEach(function (key) {
+                    batchData.push({
+                        bucket: b,
+                        key: key,
+                        value: data[key]
+                    });
+                });
+                c.batch(batchData, function (err) {
+                    t.ifError(err);
+                    cb(err);
+                });
+            },
+            function checkObjs(_, cb) {
+                var count = 0;
+                cb = once(cb);
 
-    objects.push({
-        bucket: b,
-        key: k,
-        value: data
-    });
+                var req = c.findObjects(b, '(name=*)');
+                req.once('error', cb);
+                req.on('record', function (row) {
+                    t.ok(data[row.key]);
+                    t.deepEqual(row.value, data[row.key]);
+                    count++;
+                });
+                req.once('end', function () {
+                    t.equal(count, Object.keys(data).length);
+                    cb();
+                });
+            },
+            function checkSearch(_, cb) {
+                var count = 0;
+                cb = once(cb);
 
-    objects.push({
-        bucket: b,
-        key: k,
-        value: {
-            name: ['{"foo": {"baz": "bar", "with": "commas"}}']
-        }
-    });
-
-    c.putBucket(b, cfg, function (err) {
+                var req = c.findObjects(b, '(name="quoted")');
+                req.once('error', cb);
+                req.on('record', function (row) {
+                    t.equal(row.key, 'quotedkey');
+                    count++;
+                });
+                req.once('end', function () {
+                    t.equal(count, 1);
+                    cb();
+                });
+            }
+        ],
+        arg: null
+    }, function (err, results) {
         t.ifError(err);
-        c.batch(objects, function (err2) {
-            // TODO: broken since when?
-            t.skip(err2);
-            t.end();
-        });
+        t.end();
     });
+
 });
