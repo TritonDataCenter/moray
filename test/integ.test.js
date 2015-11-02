@@ -26,7 +26,7 @@ var b; // bucket
 function test(name, setup) {
     tape.test(name + ' - setup', function (t) {
         b = 'moray_unit_test_' + libuuid.create().substr(0, 7);
-        helper.createServer(function (s) {
+        helper.createServer(null, function (s) {
             server = s;
             c = helper.createClient();
             c.on('connect', t.end.bind(t));
@@ -551,5 +551,112 @@ test('MORAY-131 case insensitive substrings match', function (t) {
                 t.end();
             });
         });
+    });
+});
+
+
+test('MORAY-322 bucketCache shootdown during update', function (t) {
+    var server2;
+    var c2;
+    var k = libuuid.create();
+    var cfg = {
+        index: {
+            num: {
+                type: 'number'
+            }
+        },
+        options: {
+            version: 1
+        }
+    };
+
+    vasync.pipeline({
+        funcs: [
+            function setupServer(_, cb) {
+                cb = once(cb);
+                var opts = {
+                    portOverride: 2021
+                };
+                helper.createServer(opts, function (s) {
+                    server2 = s;
+                    c2 = helper.createClient();
+                    c2.once('error', cb);
+                    c2.once('connect', cb);
+                });
+            },
+            function setupBucket(_, cb) {
+                c.putBucket(b, cfg, cb);
+            },
+            function insert(_, cb) {
+                var data = {
+                    num: 10,
+                    new_num: 20
+                };
+                c.putObject(b, k, data, cb);
+            },
+            function primeCache(_, cb) {
+                c2.getObject(b, k, cb);
+            },
+            function bucketUpdate(_, cb) {
+                cfg.options.version = 2;
+                cfg.index.new_num = {
+                    type: 'number'
+                };
+                c.updateBucket(b, cfg, cb);
+            },
+            function reindexRow(_, cb) {
+                c.reindexObjects(b, 100, function (err, res) {
+                    t.ifError(err);
+                    t.equal(res.processed, 1);
+                    c.reindexObjects(b, 100, function (err2, res2) {
+                        t.ifError(err2);
+                        t.equal(res2.processed, 0);
+                        cb();
+                    });
+                });
+            },
+            function checkLocalIndex(_, cb) {
+                var filter = '(new_num=20)';
+                var found = 0;
+                var res = c.findObjects(b, filter, {});
+                res.on('error', cb);
+                res.on('record', function () {
+                    found++;
+                });
+                res.on('end', function () {
+                    t.equal(found, 1);
+                    cb();
+                });
+            },
+            function updateRow(_, cb) {
+                var data = {
+                    num: 10,
+                    new_num: 30
+                };
+                c2.putObject(b, k, data, cb);
+            },
+            function checkRemoteIndex(_, cb) {
+                cb = once(cb);
+                var filter = '(new_num=30)';
+                var found = 0;
+                var res = c2.findObjects(b, filter, {});
+                res.on('error', cb);
+                res.on('record', function () {
+                    found++;
+                });
+                res.on('end', function () {
+                    t.equal(found, 1);
+                    cb();
+                });
+            }
+        ],
+        arg: null
+    }, function (err, results) {
+        t.ifError(err);
+        c2.on('close', function () {
+            server2.close();
+        });
+        c2.close();
+        t.end();
     });
 });

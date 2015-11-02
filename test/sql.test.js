@@ -24,7 +24,7 @@ var q;
 
 function test(name, setup) {
     tape.test(name + ' - setup', function (t) {
-        helper.createServer(function (s) {
+        helper.createServer(null, function (s) {
             server = s;
             c = helper.createClient();
             c.on('connect', t.end.bind(t));

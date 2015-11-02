@@ -36,12 +36,16 @@ function createClient() {
     return (client);
 }
 
-function createServer(cb) {
+function createServer(opts, cb) {
+    opts = opts || {};
     if (!process.env.MORAY_IP) {
         var configPath = process.env.MORAY_CONFIG ||
             __dirname + '/../etc/config.standalone.json';
         var config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         config.log = createLogger('moray-server');
+        if (opts.portOverride !== undefined) {
+            config.port = opts.portOverride;
+        }
         var server = app.createServer(config);
         server.once('ready', function () {
             server.once('listening', cb.bind(null, server));

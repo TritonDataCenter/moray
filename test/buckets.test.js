@@ -68,7 +68,7 @@ var b; // bucket
 function test(name, setup) {
     tape.test(name + ' - setup', function (t) {
         b = 'moray_unit_test_' + uuid().substr(0, 7);
-        helper.createServer(function (s) {
+        helper.createServer(null, function (s) {
             server = s;
             c = helper.createClient();
             c.on('connect', t.end.bind(t));
