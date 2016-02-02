@@ -34,6 +34,13 @@ var FULL_CFG = {
             type: 'number',
             unique: true
         },
+        numr: {
+            type: 'numrange'
+        },
+        numr_u: {
+            type: 'numrange',
+            unique: true
+        },
         bool: {
             type: 'boolean'
         },

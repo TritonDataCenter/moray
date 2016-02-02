@@ -654,7 +654,9 @@ test('MORAY-322 bucketCache shootdown during update', function (t) {
     }, function (err, results) {
         t.ifError(err);
         c2.on('close', function () {
-            server2.close();
+            if (server2 !== null) {
+                server2.close();
+            }
         });
         c2.close();
         t.end();
