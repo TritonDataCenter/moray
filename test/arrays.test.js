@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2016, Joyent, Inc.
  */
 
 var once = require('once');
@@ -170,6 +170,159 @@ test('schema array, scalar value (string)', function (t) {
     });
 });
 
+test('schema array, array value (inet)', function (t) {
+    var k = uuid.v4();
+    var cfg = {
+        index: {
+            ips: {
+                type: '[ip]',
+                unique: false
+            }
+        }
+    };
+    var data = {
+        ips: ['192.168.0.1', 'fd00::45'],
+        ignoreme: 'foo'
+    };
+
+    vasync.pipeline({
+        funcs: [
+            function bucket(_, cb) {
+                c.putBucket(b, cfg, cb);
+            },
+            function object(_, cb) {
+                c.putObject(b, k, data, cb);
+            },
+            function find4(_, cb) {
+                cb = once(cb);
+
+                var found = false;
+                var req = c.findObjects(b, '(ips=192.168.0.1)');
+                req.once('error', cb);
+                req.once('record', function (obj) {
+                    t.ok(obj);
+                    if (obj) {
+                        t.equal(obj.bucket, b);
+                        t.equal(obj.key, k);
+                        t.deepEqual(obj.value, data);
+                        t.ok(obj._id);
+                        t.ok(obj._etag);
+                        t.ok(obj._mtime);
+                        found = true;
+                    }
+                });
+                req.once('end', function () {
+                    t.ok(found);
+                    cb();
+                });
+            },
+            function find6(_, cb) {
+                cb = once(cb);
+
+                var found = false;
+                var req = c.findObjects(b, '(ips=fd00::045)');
+                req.once('error', cb);
+                req.once('record', function (obj) {
+                    t.ok(obj);
+                    if (obj) {
+                        t.equal(obj.bucket, b);
+                        t.equal(obj.key, k);
+                        t.deepEqual(obj.value, data);
+                        t.ok(obj._id);
+                        t.ok(obj._etag);
+                        t.ok(obj._mtime);
+                        found = true;
+                    }
+                });
+                req.once('end', function () {
+                    t.ok(found);
+                    cb();
+                });
+            }
+        ],
+        arg: null
+    }, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+});
+
+test('schema array, array value (cidr)', function (t) {
+    var k = uuid.v4();
+    var cfg = {
+        index: {
+            networks: {
+                type: '[subnet]',
+                unique: false
+            }
+        }
+    };
+    var data = {
+        networks: ['10.10.0.0/16', 'fe80::/64'],
+        ignoreme: 'foo'
+    };
+
+    vasync.pipeline({
+        funcs: [
+            function bucket(_, cb) {
+                c.putBucket(b, cfg, cb);
+            },
+            function object(_, cb) {
+                c.putObject(b, k, data, cb);
+            },
+            function find4(_, cb) {
+                cb = once(cb);
+
+                var found = false;
+                var req = c.findObjects(b, '(networks=10.10.0.0/16)');
+                req.once('error', cb);
+                req.once('record', function (obj) {
+                    t.ok(obj);
+                    if (obj) {
+                        t.equal(obj.bucket, b);
+                        t.equal(obj.key, k);
+                        t.deepEqual(obj.value, data);
+                        t.ok(obj._id);
+                        t.ok(obj._etag);
+                        t.ok(obj._mtime);
+                        found = true;
+                    }
+                });
+                req.once('end', function () {
+                    t.ok(found);
+                    cb();
+                });
+            },
+            function find6(_, cb) {
+                cb = once(cb);
+
+                var found = false;
+                var req = c.findObjects(b, '(networks=fe80::0/64)');
+                req.once('error', cb);
+                req.once('record', function (obj) {
+                    t.ok(obj);
+                    if (obj) {
+                        t.equal(obj.bucket, b);
+                        t.equal(obj.key, k);
+                        t.deepEqual(obj.value, data);
+                        t.ok(obj._id);
+                        t.ok(obj._etag);
+                        t.ok(obj._mtime);
+                        found = true;
+                    }
+                });
+                req.once('end', function () {
+                    t.ok(found);
+                    cb();
+                });
+            }
+        ],
+        arg: null
+    }, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+});
 
 test('schema array, array value (number)', function (t) {
     var k = uuid.v4();
