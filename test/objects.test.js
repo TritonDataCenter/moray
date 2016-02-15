@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2016, Joyent, Inc.
  */
 
 var clone = require('clone');
@@ -1717,6 +1717,95 @@ test('MORAY-291: invalid subnet', function (t) {
         t.end();
     });
 });
+
+test('MORAY-333: able to query on null subnet field', function (t) {
+    var k = uuid.v4();
+    var v = {
+        ip: '192.168.1.10'
+    };
+
+    vasync.pipeline({
+        funcs: [
+            function put(_, cb) {
+                c.putObject(b, k, v, function (err, meta) {
+                    if (err)
+                        return (cb(err));
+
+                    t.ok(meta);
+                    if (meta)
+                        t.ok(meta.etag);
+                    return (cb());
+                });
+            },
+            function query(_, cb) {
+                var f = '(|(subnet=10.0.0.0/8)(ip=192.168.1.10))';
+                var req = c.findObjects(b, f);
+                var ok = false;
+                req.once('error', function (err) {
+                    t.ifError(err, 'query error');
+                    t.end();
+                });
+                req.once('end', function () {
+                    t.ok(ok);
+                    t.end();
+                });
+                req.on('record', function (obj) {
+                    t.ok(obj, 'received an object from the query');
+                    assertObject(t, obj, k, v);
+                    ok = true;
+                });
+            }
+        ]
+    }, function (err) {
+        t.ifError(err, 'no errors');
+        t.end();
+    });
+});
+
+test('MORAY-333: able to query on null IP field', function (t) {
+    var k = uuid.v4();
+    var v = {
+        subnet: '192.168.0.0/16'
+    };
+
+    vasync.pipeline({
+        funcs: [
+            function put(_, cb) {
+                c.putObject(b, k, v, function (err, meta) {
+                    if (err)
+                        return (cb(err));
+
+                    t.ok(meta);
+                    if (meta)
+                        t.ok(meta.etag);
+                    return (cb());
+                });
+            },
+            function query(_, cb) {
+                var f = '(|(ip=1.2.3.4)(subnet=192.168.0.0/16))';
+                var req = c.findObjects(b, f);
+                var ok = false;
+                req.once('error', function (err) {
+                    t.ifError(err, 'query error');
+                    t.end();
+                });
+                req.once('end', function () {
+                    t.ok(ok);
+                    t.end();
+                });
+                req.on('record', function (obj) {
+                    t.ok(obj, 'received an object from the query');
+                    assertObject(t, obj, k, v);
+                    ok = true;
+                });
+            }
+        ]
+    }, function (err) {
+        t.ifError(err, 'no errors');
+        t.end();
+    });
+});
+
 
 // TODO: should create own bucket.
 test('MORAY-291: able to query on IP types', function (t) {
