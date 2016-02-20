@@ -11,7 +11,8 @@
       },
       "ttl": 60
     },
-    "ttl": 30
+    "ttl": 30,
+    "ports": [@@PORTS@@]
   },
 
   "zookeeper": {

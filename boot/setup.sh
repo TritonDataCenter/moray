@@ -119,6 +119,21 @@ function setup_moray {
         ports[$i]=`expr 2020 + $i`
     done
 
+    #Regenerate the registrar config with the real ports included
+    #(the bootstrap one just includes 2020 alone)
+    IFS=','
+    local portlist=$(echo "${ports[*]}" | sed 's/^,//')
+    local RTPL=$SVC_ROOT/sapi_manifests/registrar/template
+    sed -e "s/@@PORTS@@/${portlist}/g" ${RTPL}.in > ${RTPL}
+
+    #Wait until config-agent regenerates config.json before restarting
+    #registrar
+    svcadm restart config-agent
+    while [[ /opt/smartdc/registrar/etc/config.json -ot ${RTPL} ]]; do
+        sleep 1
+    done
+    svcadm restart registrar
+
     #To preserve whitespace in echo commands...
     IFS='%'
 
