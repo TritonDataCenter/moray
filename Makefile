@@ -41,7 +41,8 @@ JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -C -f ./tools/jsstyle.conf
 SHRINKWRAP	 = npm-shrinkwrap.json
 SMF_MANIFESTS_IN = smf/manifests/haproxy.xml.in
-BOOTSTRAP_MANIFESTS = sapi_manifests/registrar/template
+BOOTSTRAP_MANIFESTS = 	sapi_manifests/registrar/template \
+			sdc/sapi_manifests/registrar/template
 
 CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files \
 		   $(BOOTSTRAP_MANIFESTS)
@@ -144,7 +145,7 @@ publish: release
 	mkdir -p $(BITS_DIR)/moray
 	cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/moray/$(RELEASE_TARBALL)
 
-sapi_manifests/registrar/template: sapi_manifests/registrar/template.in
+%/template: %/template.in
 	sed -e 's/@@PORTS@@/2020/g' $< > $@
 
 include ./tools/mk/Makefile.deps
