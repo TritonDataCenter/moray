@@ -15,3 +15,4 @@ cover_html
 *.tar.bz2
 smf/manifests/*.xml
 sapi_manifests/registrar/template
+sdc/sapi_manifests/registrar/template

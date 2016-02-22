@@ -123,7 +123,11 @@ function setup_moray {
     #(the bootstrap one just includes 2020 alone)
     IFS=','
     local portlist=$(echo "${ports[*]}" | sed 's/^,//')
-    local RTPL=$SVC_ROOT/sapi_manifests/registrar/template
+    if [[ ${FLAVOR} == "manta" ]]; then
+        local RTPL=$SVC_ROOT/sapi_manifests/registrar/template
+    else
+        local RTPL=$SVC_ROOT/sdc/sapi_manifests/registrar/template
+    fi
     sed -e "s/@@PORTS@@/${portlist}/g" ${RTPL}.in > ${RTPL}
 
     #Wait until config-agent regenerates config.json before restarting
