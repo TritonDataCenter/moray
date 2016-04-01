@@ -42,7 +42,7 @@ which allow you to later `search` for multiple records that match those
 indexes.  If indexes are defined on a bucket, when you write a key/value pair,
 the value is automatically indexed server-side in Moray for you.  Indexes can
 be defined to be of type `number`, `boolean`, `string`, or `inet` (IP address
-or network). They can optionally be defined to enforce uniquness of a value.
+or network). They can optionally be defined to enforce uniqueness of a value.
 
 ## Arrays
 
@@ -81,7 +81,7 @@ small example is given, and then explained:
 Array types work just like regular types, except they are defined by `[:type:]`,
 and on writes, moray knows how to index those properly.  On searches, the
 contract is to return the record if _any_ of the array values match the filter
-subclause.  There is one caveat:  _wilcard_ searches do not work (and can't).
+subclause.  There is one caveat:  _wildcard_ searches do not work (and can't).
 So doing `(name=f*)` will return an error to you.  The reason is that Postgres
 does not have any sane way of doing this (it is technically possible, but
 expensive, and not currently implemented in Moray).
@@ -702,7 +702,7 @@ expect to receive back up to N records from this call.
 
 | Field   | Type   | Description                                            |
 | ------- | ------ | ------------------------------------------------------ |
-| bucket  | string | bucket to seach in                                     |
+| bucket  | string | bucket to search in                                    |
 | filter  | string | search filter string                                   |
 | options | object | any optional parameters (req\_id, limit, offset, sort) |
 
