@@ -1,5 +1,5 @@
 {
-    "name": "moray",
+    "name": "moray-server",
     "description": "SmartDataCenter H/A Key/Value store",
     "version": "2.1.0",
     "author": "Joyent (joyent.com)",
