@@ -334,8 +334,16 @@ function sdc_moray_createdb {
 }
 
 
-# Will likely move these into sdc util.sh once I can test them:
-function sdc_ensure_manatee {
+#
+# ensure_manatee: waits up to about 90 seconds for the zookeeper cluster
+# to come online and for the local manatee cluster to come online.  It's a fatal
+# error if this doesn't happen within the alloted timeout.
+#
+function ensure_manatee {
+    local SHARD_KEY=$1
+
+    [[ -n ${SHARD_KEY} ]] || fatal "ensure_manatee: must specify shard key!"
+
     local attempt=0
     local isok=0
     local pgok
@@ -343,35 +351,23 @@ function sdc_ensure_manatee {
 
     local zonename=$(zonename)
 
-    local shard=$(json -f ${METADATA} manatee_shard)
-    local zk_ips=$(json -f ${METADATA} ZK_HA_SERVERS | json -a host)
+    local shard=$(json -f ${METADATA} ${SHARD_KEY})
+    local zk_ips=$(json -f ${METADATA} ZK_HA_SERVERS | json -d: -a host port \
+        | tr '\n' ',')
 
     if [[ -z ${zk_ips} ]]; then
-        zk_ips=$(json -f ${METADATA} ZK_SERVERS | json -a host)
+        zk_ips=$(json -f ${METADATA} ZK_SERVERS | json -d: -a host port \
+            | tr '\n' ',')
     fi
 
     if [[ $? -ne 0 ]] ; then
         zk_ips=127.0.0.1
     fi
 
-    while [[ $attempt -lt 90 ]]
-    do
-        for ip in $zk_ips
-        do
-            zkok=$(echo "ruok" | nc -w 1 $ip 2181)
-            if [[ $? -eq 0 ]] && [[ "$zkok" == "imok" ]]
-            then
-                pgip=$(/opt/smartdc/moray/node_modules/.bin/manatee-stat $ip 2>/dev/null | json ${shard}.primary.ip)
-                if [[ $? -eq 0 ]] && [[ -n "$pgip" ]]
-                then
-                    isok=1
-                    break
-                fi
-            fi
-        done
-
-        if [[ $isok -eq 1 ]]
-        then
+    while [[ $attempt -lt 90 ]]; do
+        if /opt/smartdc/moray/node_modules/.bin/manatee-adm pg-status \
+            -s $shard -z $zk_ips --role=primary -H -o pg-online | grep ok; then
+            isok=1
             break
         fi
 
@@ -437,7 +433,7 @@ if [[ ${FLAVOR} == "manta" ]]; then
     manta_common_setup "moray" 0
 
     manta_ensure_zk
-    manta_ensure_manatee
+    ensure_manatee SERVICE_NAME
 
     echo "Setting up Moray"
     manta_setup_moray_config
@@ -465,7 +461,7 @@ else # ${FLAVOR} == "sdc"
     sdc_moray_setup
 
     sdc_ensure_zk
-    sdc_ensure_manatee
+    ensure_manatee manatee_shard
 
     # Create the DB for moray
     sdc_moray_createdb
