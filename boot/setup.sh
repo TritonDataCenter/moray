@@ -130,12 +130,10 @@ function setup_moray {
     fi
     sed -e "s/@@PORTS@@/${portlist}/g" ${RTPL}.in > ${RTPL}
 
-    #Wait until config-agent regenerates config.json before restarting
-    #registrar
-    svcadm restart config-agent
-    while [[ /opt/smartdc/registrar/etc/config.json -ot ${RTPL} ]]; do
-        sleep 1
-    done
+    # Wait until config-agent updates registrar's config before restarting
+    # registrar.
+    svcadm disable -s config-agent
+    svcadm enable -s config-agent
     svcadm restart registrar
 
     #To preserve whitespace in echo commands...
