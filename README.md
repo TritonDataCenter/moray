@@ -51,22 +51,19 @@ Which will open up Moray on port 2020.  You can now use the CLI in
 
 ## Testing
 
-Before run tests, you should consider point config file to a different DB
-than `moray`. There is a script at `tools/coal-test-env.sh` which will create
-a `moray_test` DB for you and run an additional `moray-test` instance listening
-at port `2222`. Just scping into GZ and executing it should work.
+For testing, see the separate
+[moray-test-suite](https://github.com/joyent/moray-test-suite) repository.  You
+will need to supply your own server configuration file.  You should consider
+pointing the config file to a different DB than `moray`. There is a script at
+`tools/coal-test-env.sh` which will create a `moray_test` DB for you and run an
+additional `moray-test` instance listening at port `2222`. Just scping into GZ
+and executing it should work.  You will need to configure the test suite
+appropriately (see the README.md in the moray-test-suite repository).
 
-Then, make sure your test file points to the right port:
-
-    MORAY_PORT=2222 make test
-
-To run tests on default `2020` port just do:
-
-    make test
 
 ## License
 
 This Source Code Form is subject to the terms of the Mozilla Public License, v.
 2.0.  For the full license text see LICENSE, or http://mozilla.org/MPL/2.0/.
 
-Copyright (c) 2014, Joyent, Inc.
+Copyright (c) 2016, Joyent, Inc.

@@ -27,14 +27,13 @@
 #
 NODE		:= ./build/node/bin/node
 BUNYAN		:= ./node_modules/.bin/bunyan
-FAUCET		:= ./node_modules/.bin/faucet
 JSONTOOL	:= ./node_modules/.bin/json
 
 #
 # Files
 #
 DOC_FILES	 = index.md
-JS_FILES	:= $(shell ls *.js) $(shell find lib test -name '*.js' | grep -v sql.js)
+JS_FILES	:= $(shell ls *.js) $(shell find lib -name '*.js' | grep -v sql.js)
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
@@ -96,12 +95,8 @@ shrinkwrap: | $(NPM_EXEC)
 	$(NPM) shrinkwrap
 
 .PHONY: test
-test: $(FAUCET)
-	$(NODE) test/buckets.test.js | $(FAUCET)
-	$(NODE) test/objects.test.js | $(FAUCET)
-	$(NODE) test/sql.test.js | $(FAUCET)
-	$(NODE) test/integ.test.js | $(FAUCET)
-	$(NODE) test/arrays.test.js | $(FAUCET)
+test:
+	@echo See the separate moray-test-suite repository for testing.
 
 .PHONY: scripts
 scripts: deps/manta-scripts/.git
