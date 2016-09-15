@@ -2,7 +2,7 @@
 
 This repo contains Moray, the highly-available key/value store from Joyent.
 Moray offers a simple put/get/del (as well as search) protocol on top of
-Postgres 9.x, over plain TCP see <https://github.com/mcavage/node-fast>.
+Postgres 9.x, over plain TCP see <https://github.com/joyent/node-fast>.
 
 This repository is part of the Joyent SmartDataCenter project (SDC), and the
 Joyent Manta project.  For contribution guidelines, issues, and general
