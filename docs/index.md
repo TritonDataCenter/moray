@@ -41,14 +41,22 @@ Upon creating a bucket you are allowed to define the bucket to have indexes,
 which allow you to later `search` for multiple records that match those
 indexes.  If indexes are defined on a bucket, when you write a key/value pair,
 the value is automatically indexed server-side in Moray for you.  Indexes can
-be defined to be of type `number`, `boolean`, `string`, or `inet` (IP address
-or network). They can optionally be defined to enforce uniqueness of a value.
+be defined to be of type `number`, `boolean`, `string`, `ip` or `subnet`. They
+can optionally be defined to enforce uniqueness of a value. Index names must:
+
+- Contain only Latin letters, Arabic numerals, and underscores.
+- Start with a Latin letter or an underscore.
+- Not end with an underscore.
+- When starting with an underscore, not contain any further underscores.
+- Not start with `moray`.
+- Not be a reserved name (`_etag`, `_id`, `_key`, `_atime`, `_ctime`, `_mtime`,
+  `_rver`, `_txn_snap`, `_value`, or `_vnode`).
 
 ## Arrays
 
-As of git commit `#ccb80c9`, Moray now supports the ability to define
-multi-valued entries such that indexing still works (mostly) as expected.  A
-small example is given, and then explained:
+As of release 20130822 (integrated in Git commit `#ccb80c9`), Moray now supports
+the ability to define multi-valued entries such that indexing still works
+(mostly) as expected. A small example is given, and then explained:
 
     var assert = require('assert-plus');
     var moray = require('moray');
