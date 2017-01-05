@@ -1,12 +1,22 @@
+<!--
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<!--
+    Copyright 2017, Joyent, Inc.
+-->
+
 # Moray, the highly-available key/value store
 
 This repo contains Moray, the highly-available key/value store from Joyent.
-Moray offers a simple put/get/del (as well as search) protocol on top of
-Postgres 9.x, over plain TCP see <https://github.com/joyent/node-fast>.
+Moray offers a simple put/get/del/search protocol on top of Postgres 9.x,
+using the [node-fast](https://github.com/joyent/node-fast) RPC protocol.
 
-This repository is part of the Joyent SmartDataCenter project (SDC), and the
-Joyent Manta project.  For contribution guidelines, issues, and general
-documentation, visit the main [SDC](http://github.com/joyent/sdc) and
+This repository is part of the Joyent Manta and Triton projects. For
+contribution guidelines, issues, and general documentation, visit the main
+[Triton](http://github.com/joyent/triton) and
 [Manta](http://github.com/joyent/manta) project pages.
 
 ## Development
@@ -60,6 +70,27 @@ additional `moray-test` instance listening at port `2222`. Just scping into GZ
 and executing it should work.  You will need to configure the test suite
 appropriately (see the README.md in the moray-test-suite repository).
 
+## Running in standalone mode
+
+Moray can be used as a library to run a standalone Moray server that talks to a
+Postgres database without using Manatee. A single function is exported,
+`createServer`, which takes an object with the following fields:
+
+- `log`, a [bunyan](https://github.com/trentm/node-bunyan) logger
+- `port`, the TCP port to listen on
+- `bindip`, the IP address to bind to
+- `audit`, a boolean indicating whether to log the result and duration of all
+  requests
+- `standalone`, an object specifying the standalone server's configuration:
+    * `pg`, an object which specifies the Postgres client pool confguration:
+        - `queryTimeout`, how long (in milliseconds) before a query is timed out
+        - `maxConnections`, the maximum number of connections to maintain
+          to Postgres
+    * `url`, a [pg](https://github.com/brianc/node-postgres) URL describing how
+      to connect to the server (i.e., `/path/to/unix/socket/dir dbName`)
+
+`createServer` returns a server object with a `listen()` method to start the
+server. The server will emit a `ready` event once it's started up.
 
 ## License
 
