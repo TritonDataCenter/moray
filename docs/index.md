@@ -6,9 +6,10 @@ apisections: Buckets, Objects
 
 # Moray
 
-This is the reference documentation for Moray, which is a key/value store built
-on top of [Manatee](https://mo.joyent.com/docs/manatee/master/), and
-[fast](https://github.com/mcavage/node-fast).
+This is the reference documentation for Moray, which is a key-value store built
+on top of [Manatee](https://github.com/joyent/manatee/) and
+[fast](https://github.com/joyent/node-fast).  For general information about
+Moray, see the [README](https://github.com/joyent/moray).
 
 This documentation provides descriptions of the APIs that Moray offers, as well
 as how to use the (node.js) [client SDK](https://mo.joyent.com/node-moray) to
@@ -27,22 +28,32 @@ information are formatted like this:
         assert.ifError(err);
     });
 
+
 # Overview
 
-Moray allows you to store arbitrary data as a JSON document in a `bucket`. A
-bucket is essentially a namespace, such that bucket `foo` can have a key `mykey`
-and bucket `bar` can have a key `mykey` with different values.  There is no
-limit on the number of buckets, nor on the number of keys in a bucket.  That
-said, a single Moray instance is backed by a single logical Postgres instance,
-so you are practically limited to how much data you can maintain.  The basic
-operations on objects in a bucket are `put`, `get`, and `delete`.
+Moray allows you to store arbitrary JSON documents (called **objects**) inside
+namespaces called **buckets**.  Buckets can have **indexes**, which are
+top-level fields that are extracted so that search operations using those fields
+can be executed efficiently.  Indexes can also be used to enforce uniqueness of
+a value.  Since buckets are essentially namespaces, bucket `foo` can have a key
+`mykey` and bucket `bar` can have a key `mykey` with different values.
 
-Upon creating a bucket you are allowed to define the bucket to have indexes,
-which allow you to later `search` for multiple records that match those
-indexes.  If indexes are defined on a bucket, when you write a key/value pair,
-the value is automatically indexed server-side in Moray for you.  Indexes can
-be defined to be of type `number`, `boolean`, `string`, `ip` or `subnet`. They
-can optionally be defined to enforce uniqueness of a value. Index names must:
+There is no limit on the number of buckets, nor on the number of keys in a
+bucket.  That said, a single Moray instance is backed by a single logical
+Postgres instance, so you are practically limited to how much data you can
+maintain.
+
+The basic operations on objects in a bucket are `put`, `get`, and `delete`.
+`search`, `update`, and `deleteMany` are also supported using filter strings
+that operate on indexed fields.
+
+You define a bucket's indexes when you initially create the bucket.  When you
+write an object, the value of each indexed field is updated in the server-side
+index for that field.  You can update a bucket's indexes later, but objects
+already written in that bucket will need to be reindexed.
+
+Indexes can be defined to be of type `number`, `boolean`, `string`, `ip` or
+`subnet`.  Index names must:
 
 - Contain only Latin letters, Arabic numerals, and underscores.
 - Start with a Latin letter or an underscore.
@@ -52,174 +63,29 @@ can optionally be defined to enforce uniqueness of a value. Index names must:
 - Not be a reserved name (`_etag`, `_id`, `_key`, `_atime`, `_ctime`, `_mtime`,
   `_rver`, `_txn_snap`, `_value`, or `_vnode`).
 
-## Arrays
+Moray also supports multi-valued entries such that indexing still works (mostly)
+as expected.  There's an example later in this document under "Using Arrays".
 
-As of release 20130822 (integrated in Git commit `#ccb80c9`), Moray now supports
-the ability to define multi-valued entries such that indexing still works
-(mostly) as expected. A small example is given, and then explained:
-
-    var assert = require('assert-plus');
-    var moray = require('moray');
-
-    var cfg = {
-        index: {
-            name: {
-                type: '[string]'
-            }
-        }
-    };
-    var client = moray.createClient({...});
-    client.putBucket('foo', cfg, function (bucket_err) {
-        assert.ifError(bucket_err);
-
-        var data = {
-            something_irrelevant: 'blah blah',
-            name: ['foo', 'bar', 'baz']
-        };
-        client.putObject('foo', 'bar', data, function (put_err) {
-            assert.ifError(put_err);
-
-            var req = client.findObjects('foo', '(name=bar)');
-            req.once('error', assert.ifError.bind(assert));
-            req.on('record', ...);
-            req.once('end', ...);
-        });
-    });
-
-Array types work just like regular types, except they are defined by `[:type:]`,
-and on writes, moray knows how to index those properly.  On searches, the
-contract is to return the record if _any_ of the array values match the filter
-subclause.  There is one caveat:  _wildcard_ searches do not work (and can't).
-So doing `(name=f*)` will return an error to you.  The reason is that Postgres
-does not have any sane way of doing this (it is technically possible, but
-expensive, and not currently implemented in Moray).
-
-## Triggers
-
-While a quasi-advanced topic, Moray does support `pre` and `post` "triggers" on
-buckets, which are guaranteed to run before and after a write
-(so put|del object) is performed.  You write them as just plain old JS functions
-when you create your bucket, and note that they are guaranteed to run as part of
-the transaction scope.  You typically will use `pre` triggers to transform
-and/or validate data before being saved, and use `post` triggers to write an
-audit log or some such thing (UFDS leverages `post` triggers to generate the
-changelog).  The are guaranteed to run in the order you define them.  Note that
-`pre` triggers only run before `putObject`, whereas `post` runs after both
-`putObject` and `delObject`.
-
-In general, you need to be super careful with these, as they run in the same VM
-that Moray does, so a null pointer deref will bring down the whole server.  This
-is intentional for performance reasons.  So basically, don't screw up.
-
-### pre
-
-The definition for a pre trigger looks like this:
-
-    function myPreTrigger(req, cb) {
-        ....
-        cb();
-    }
-
-Where `req` is an object like this:
-
-    {
-        bucket: 'foo',
-        key: 'bar',
-        log: <logger>,
-        pg: <postgres handle>,
-        schema: <index configuration>,
-        value: {
-            email: 'mark.cavage@joyent.com'
-        }
-    }
-
-That is, you are passed in the name of the bucket, the name of the key, the
-value (as a JS object) the user wanted to write, the bucket configuration, a
-bunyan instance you can use to log to the Moray log, and the current Postgres
-connection (which is a raw [node-pg](https://github.com/brianc/node-postgres/)
-handle).
-
-### post
-
-The definition for a post trigger is nearly identical:
-
-
-    function myPostTrigger(req, cb) {
-        ....
-        cb();
-    }
-
-Where `req` is an object like this:
-
-    {
-        bucket: 'foo',
-        key: 'bar',
-        id: 123,
-        log: <logger>,
-        pg: <postgres handle>,
-        schema: <index configuration>,
-        value: {
-            email: 'mark.cavage@joyent.com'
-        }
-    }
-
-The `req` object is basically the same, except you will now also have the
-database `id` (a monotonically increasing sequence number) tacked in as well,
-should you want to use that for something.
 
 # Basic MorayClient usage
 
-In order to interact with Moray, you are assumed to be using the `node-moray`
-package, which you can install like:
+You can install the node-moray client library and CLI tools using:
 
-    $ npm install git+ssh://git@github.com:joyent/node-moray.git
+    $ npm install moray
 
-In order to then use it, here's some sample code:
+Or, to install the CLI tools and manual pages on your path:
 
-    var bunyan = require('bunyan');
-    var moray = require('moray');
+    $ npm install -g moray
 
-    var client = moray.createClient({
-        host: '127.0.0.1',
-        port: 2020,
-        log: bunyan.createLogger({
-            name: 'moray',
-            level: 'INFO',
-            stream: process.stdout,
-            serializers: bunyan.stdSerializers
-        })
-    });
+The CLI tools have detailed manual pages.  Start with `moray(1)` for an
+overview.
 
-    client.on('error', function (err) {
-         // client is no longer usable
-         // ...
-    });
+The library interface has an overview manual page `moray(3)` that describes how
+to initialize the client for Triton and Manta services and CLI tools.  The API
+documentation below includes examples of using both the CLI tools and Node
+client library interfaces.  It's worth reviewing `moray(1)` and `moray(3)` to
+understand the basic conventions used below.
 
-    client.on('connect', function () {
-        client.close();
-    });
-
-Note that connect timeout and backoff/retry are options that are currently not
-supported, but are on the (very) short-term TODO list.
-
-All of the APIs shown below have an optional `options` argument that is always
-second to last (callback being last). Typically, you would use this to pass in
-a `req_id` that we can use to correlate logs from one service to the
-interactions of moray.  Some APIs (namely put/get/del object) have additional
-logic there to allow cache bypassing, etc.  For example, both of these are
-valid:
-
-    client.getObject('foo', 'bar', function (err, obj) {
-        ...
-    });
-
-    var opts = {
-        req_id: 1,
-        noCache: true
-    };
-    client.getObject('foo', 'bar', opts, function (err, obj) {
-        ...
-    });
 
 # Buckets
 
@@ -232,7 +98,7 @@ updates will fail if the version rolls backwards.
 
 ### API
 
- A "fully loaded" config (w/o post triggers) would look like this:
+A "fully loaded" config (without post triggers) would look like this:
 
     var cfg = {
         index: {
@@ -389,7 +255,6 @@ Returns the configuration for all buckets.
 ### CLI
 
     $ listbuckets
-
     [{
       "name": foo",
       "index": {
@@ -438,7 +303,7 @@ version in the database.
 Note that if you *add* new indexes via `updateBucket`, then any *new* data will
 be indexed accordingly, but _old_ data will not.  See the ReindexObjects
 function for a method to update old rows. (A bucket version _must_ be specified
-for `reindexObjects` to operation properly.)
+for `reindexObjects` to work.)
 
 Also, note that all operations involving the bucket configuration in Moray will
 use a cached copy of the bucket configuration, so it may take a few minutes for
@@ -496,7 +361,7 @@ Or alternatively:
 
 ## DeleteBucket
 
-Deletes a bucket, *and all data in that bucket!* No real options to speak of.
+Deletes a bucket, *and all data in that bucket!*
 
 ### API
 
@@ -593,27 +458,18 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 
 ## GetObject
 
-Retrieves an object by bucket/key.  An important option to keep in mind is the
-`noCache` option.  By default, Moray keeps a fairly small in-memory cache for
-`GetObject` specifically, so if you want strong consistency on reads, set
-`noCache: true` in the client.  Note also that if noCache is not set, Moray will
-try to read from the Postgres asynchronous slave.  So, if you want guaranteed read
-after write consistency, set `noCache`.  This can be done on a request by
-request basis.
+Retrieves an object by bucket and key.
 
-Also, another important note is regarding the magic column `_txn_snap`.  This
-field represents the postgres internal transaction *snapshot* that corresponds
-to when this record was written (specifically the `xmin` component).  To really
-get this, you probably want to go read up on how
-[MVCC is implemented in postgres](http://momjian.us/main/writings/pgsql/internalpics.pdf);
-specifically pp56-58.  The short of it is, for records in moray, it is
-possible/probable that more than one record will have the same `_txn_snap`
-value, so you cannot rely on it as a unique id.  However, you can rely on it to
-be the only thing that will increase over time, and if your query's `_txn_snap`
-is not the *latest* one, you won't see phantom reads.  This field was built into
-Moray to solve the "sliding window" problem where consumers use Moray as a queue
-(it makes sense if you want durable H/A...); what it means is that consumers
-doing this need to use both the `_id` and `_txn_snap` fields.
+The `_txn_snap` field represents the postgres internal transaction *snapshot*
+that corresponds to when this record was written (specifically the `xmin`
+component).  To really understand this, you probably want to go read up on how
+[MVCC is implemented in
+postgres](http://momjian.us/main/writings/pgsql/internalpics.pdf); specifically
+pp56-58.  The short of it is, for records in Moray, it is possible that more
+than one record will have the same `_txn_snap` value, so you cannot rely on it
+as a unique id.  You also cannot rely on this value to increase over time.
+Objects with later `_txn_snap` values can be visible before objects with earlier
+`_txn_snap` values.
 
 ### API
 
@@ -664,20 +520,24 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 ## FindObjects
 
 Allows you to query a bucket for a set of records that match indexed fields.
-Note this is not a streaming API (there is no pagination. do that yourself if
-you want it).
+Note this is not a streaming API.  (Pagination must be implemented by consumers,
+if desired.)
 
-Search filters are fully specified according to LDAP search filter rules (which
-is one of the few sane parts of LDAP).  Whatever you search on must be part of
-the index on the bucket config; this is non-negotiable.
+Search filters are fully specified according to search filters resembling LDAP
+filter rules.  All fields included in your search query should be indexed in the
+bucket config, though the server only enforces that at least one field that's
+used to limit the result set is indexed (to avoid an obvious case where a table
+scan is required).  **Surprising behavior results when searching with
+non-indexed fields, and this is strongly discouraged.**  For details, see
+`findobjects(1)`.
 
 In addition to the search filter, you can specify `limit`, `offset`, and `sort`;
-the first two act like they usually do in DBs, and `sort` must be a JS object
+the first two act like they usually do in DBs, and `sort` must be a JSON object
 specifying the attribute to sort by, and an order, which is one of `ASC` or
-`DESC` (so also like DBs).  The default `limit` setting is `1000`. There is
-no default `offset`.  The default `sort` order is `ASC`, and the default
-attribute is `_id` (which means records are returned in the order they were
-*created*).
+`DESC` (so also like DBs).  The default `limit` setting is `1000`. There is no
+default `offset`.  The default `sort` order is `ASC`, and the default attribute
+is `_id` (which means records are returned in the order they were created or
+updated).
 
 ### API
 
@@ -805,15 +665,14 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
 
 Allows you to bulk update a set of objects in one transaction.  Note you can
 only update indexed fields.  You call this API with a bucket, a list of fields
-to update and a filter, that is exactly the same syntax as `findObjects`.  To
-use this API, you must set the bucket options `syncUpdates: true` at
-`putBucket` time, otherwise you'll effectively have data corruption.
+to update and a filter, that is exactly the same syntax as `findObjects`.
 
 A few caveats:
 
 - All objects affected by the update will have the same `_etag`.
-- The `JSON value` will *not* be updated.  You will have to pay on every get
-  request to merge them (the bucket options field drives this logic).
+- The `JSON value` will *not* be updated in situ, though Moray hides this fact
+  from you.  Subsequent "get" operations will merge the results into the
+  returned value.
 
 ### API
 
@@ -833,7 +692,7 @@ A few caveats:
 | Field   | Type   | Description                                            |
 | ------- | ------ | ------------------------------------------------------ |
 | bucket  | string | bucket to write this key in                            |
-| fields  | object | key/values to update                                   |
+| fields  | object | keys and values to update                              |
 | filter  | string | search filter string                                   |
 | options | object | any optional parameters (req\_id, limit, offset, sort) |
 
@@ -847,10 +706,10 @@ parameter to set the max rows per iteration, `reindexObjects` must be called
 repeatedly until it reports 0 rows processed.  Only then will the added indexes
 be made available for use.
 
-The selected `count` value should be chosen with the expected bucket object
-size in mind.  Too large a value may cause Moray to consume excessive amounts
-of memory since it's unable to exert backpressure on PostgreSQL when fetching
-rows.
+The selected `count` value should be chosen with the expected bucket object size
+in mind.  Too large a value can cause transactions to remain open for extended
+periods, and may also cause Moray to consume excessive amounts of memory since
+it's unable to exert backpressure on PostgreSQL when fetching rows.
 
 It is safe to make multiple simultaneous calls to `reindexObjects` acting on
 the same bucket but it's likely to race on rows and incur rollbacks/slowdowns.
@@ -978,6 +837,8 @@ An API that really only exists for two reasons:
 2. for systems like UFDS that need to create extra tables et al in Moray for
    `post` triggers.
 
+The latter use-case (filling in gaps in the Moray API) is considered deprecated.
+
 ### API
 
     var req = client.sql('select * from buckets_config');
@@ -1005,3 +866,122 @@ An API that really only exists for two reasons:
     {
         "now": "2012-08-01T15:50:33.291Z"
     }
+
+
+# Additional features
+
+## Using Arrays
+
+Here's a small example demonstrating how to use arrays:
+
+    var assert = require('assert-plus');
+    var moray = require('moray');
+
+    var cfg = {
+        index: {
+            name: {
+                type: '[string]'
+            }
+        }
+    };
+    var client = moray.createClient({...});
+    client.putBucket('foo', cfg, function (bucket_err) {
+        assert.ifError(bucket_err);
+
+        var data = {
+            something_irrelevant: 'blah blah',
+            name: ['foo', 'bar', 'baz']
+        };
+        client.putObject('foo', 'bar', data, function (put_err) {
+            assert.ifError(put_err);
+
+            var req = client.findObjects('foo', '(name=bar)');
+            req.once('error', assert.ifError.bind(assert));
+            req.on('record', ...);
+            req.once('end', ...);
+        });
+    });
+
+Array types work just like regular types, except they are defined by `[:type:]`,
+and on writes, Moray knows how to index those properly.  On searches, the
+contract is to return the record if _any_ of the array values match the filter
+subclause.  There is one caveat:  _wildcard_ searches do not work (and can't).
+So doing `(name=f*)` will return an error to you.  The reason is that Postgres
+does not have any sane way of doing this (it is technically possible, but
+expensive, and not currently implemented in Moray).
+
+## Triggers
+
+While a quasi-advanced topic, Moray does support `pre` and `post` "triggers" on
+buckets, which are guaranteed to run before and after a write
+(so put|del object) is performed.  You write them as just plain old JS functions
+when you create your bucket, and note that they are guaranteed to run as part of
+the transaction scope.  You typically will use `pre` triggers to transform
+and/or validate data before being saved, and use `post` triggers to write an
+audit log or some such thing (UFDS leverages `post` triggers to generate the
+changelog).  They are guaranteed to run in the order you define them.  Note that
+`pre` triggers only run before `putObject`, whereas `post` runs after both
+`putObject` and `delObject`.
+
+In general, you need to be super careful with these, as they run in the same VM
+that Moray does, so any uncaught exception will bring down the whole server.
+This is intentional for performance reasons.  Additionally, they run in the same
+callback chain as the rest of the operation, so failure to invoke the callback
+will stall the operation and leak the Postgres handle.  So basically, don't
+screw up.
+
+### pre
+
+The definition for a `pre` trigger looks like this:
+
+    function myPreTrigger(req, cb) {
+        ....
+        cb();
+    }
+
+Where `req` is an object like this:
+
+    {
+        bucket: 'foo',
+        key: 'bar',
+        log: <logger>,
+        pg: <postgres handle>,
+        schema: <index configuration>,
+        value: {
+            email: 'mark.cavage@joyent.com'
+        }
+    }
+
+That is, you are passed in the name of the bucket, the name of the key, the
+value (as a JS object) the user wanted to write, the bucket configuration, a
+bunyan instance you can use to log to the Moray log, and the current Postgres
+connection (which is a raw [node-pg](https://github.com/brianc/node-postgres/)
+handle).
+
+### post
+
+The definition for a `post` trigger is nearly identical:
+
+
+    function myPostTrigger(req, cb) {
+        ....
+        cb();
+    }
+
+Where `req` is an object like this:
+
+    {
+        bucket: 'foo',
+        key: 'bar',
+        id: 123,
+        log: <logger>,
+        pg: <postgres handle>,
+        schema: <index configuration>,
+        value: {
+            email: 'mark.cavage@joyent.com'
+        }
+    }
+
+The `req` object is basically the same, except you will now also have the
+database `id` (a monotonically increasing sequence number) tacked in as well,
+should you want to use that for something.
