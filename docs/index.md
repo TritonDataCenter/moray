@@ -572,7 +572,13 @@ expect to receive back up to N records from this call.
 | ------- | ------ | ------------------------------------------------------ |
 | bucket  | string | bucket to search in                                    |
 | filter  | string | search filter string                                   |
-| options | object | any optional parameters (req\_id, limit, offset, sort) |
+| options | object | any optional parameters (req\_id, limit, offset, sort, requireIndexes) |
+
+#### requireIndexes option
+
+When passing `requireIndexes: true`, `findObjects` requests will respond with a
+`NotIndexedError` error if at least one of the fields included in the search
+filter has an index that can't be used.
 
 ### Errors
 
