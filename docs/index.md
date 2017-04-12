@@ -624,6 +624,12 @@ that would be returned by the same request with no `offset`. Default is `0`.
 A string that can be used to track a request. Default is an automatically
 generated V4 UUID.
 
+##### requireIndexes
+
+When passing `requireIndexes: true`, `findObjects` requests will respond with a
+`NotIndexedError` error if at least one of the fields included in the search
+filter has an index that can't be used.
+
 ##### sort
 
 An object or an array of objects with the following properties:
