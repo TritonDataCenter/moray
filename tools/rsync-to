@@ -20,9 +20,7 @@ TOP=$(cd $(dirname $0)/../; pwd)
 NODE=$1
 
 if [[ -z "$MORAY_ZONE" ]]; then
-    MORAY_ZONE=$(ssh $NODE "/opt/smartdc/bin/sdc-vmapi /vms" 2>/dev/null \
-        | json -H -c 'this.tags && this.tags.smartdc_role === "moray"' \
-            -c 'this.state === "running"' 0.uuid)
+    MORAY_ZONE=$(ssh $NODE "vmadm lookup -1 alias=moray0" 2>/dev/null)
 fi
 echo "MORAY_ZONE: $MORAY_ZONE"
 
