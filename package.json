@@ -20,7 +20,7 @@
         "lru-cache": "2.5.0",
         "node-manatee": "git+https://github.com/joyent/node-manatee.git#c2ad9ae",
         "manatee": "git+https://github.com/joyent/manatee.git#86ae52d",
-        "moray": "git+https://github.com/joyent/node-moray.git#fd5781b",
+        "moray": "3.1.1",
         "microtime": "0.5.1",
         "once": "1.3.0",
         "panic": "0.2.1",

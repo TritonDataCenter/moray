@@ -7,7 +7,7 @@
 #
 
 #
-# Copyright (c) 2015, Joyent, Inc.
+# Copyright (c) 2017, Joyent, Inc.
 #
 
 export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
@@ -184,9 +184,11 @@ function sdc_moray_setup {
         -keyout /opt/smartdc/$role/ssl/key.pem \
         -out /opt/smartdc/$role/ssl/cert.pem -days 3650
 
-    # Add build/node/bin and node_modules/.bin to PATH
+    # Add node and CLI tools to PATH, and manual pages to MANPATH
     echo "" >>/root/.profile
     echo "export PATH=\$PATH:/opt/smartdc/$role/build/node/bin:/opt/smartdc/$role/node_modules/.bin:/opt/smartdc/$role/node_modules/$role/bin" >>/root/.profile
+    echo "export MANPATH=/opt/smartdc/$role/node_modules/moray/man:\$MANPATH" >> /root/.profile
+
 
     # Log Rotation FTW
     # What about manta/haproxy?
@@ -202,6 +204,9 @@ function manta_setup_moray_config {
     #.bashrc
     echo 'function req() { grep "$@" `svcs -L moray` | bunyan ;}' >> $PROFILE
     echo 'export PATH=/opt/smartdc/moray/bin:$PATH' >> $PROFILE
+
+    # Add manual pages to MANPATH
+    echo "export MANPATH=/opt/smartdc/$role/node_modules/moray/man:\$MANPATH" >> /root/.profile
 
     local moray_cfg=$SVC_ROOT/etc/config.json
     local svc_name=$(json -f ${METADATA} SERVICE_NAME)
