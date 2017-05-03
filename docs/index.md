@@ -572,7 +572,89 @@ expect to receive back up to N records from this call.
 | ------- | ------ | ------------------------------------------------------ |
 | bucket  | string | bucket to search in                                    |
 | filter  | string | search filter string                                   |
-| options | object | any optional parameters (req\_id, limit, offset, sort) |
+| options | object | any optional parameters, see below |
+
+#### Options
+
+##### limit
+
+A number that limits the number of records that are processed by the request.
+Default is `1000`, unless `noLimit` is set to `true`.
+
+Using large values (> 1000, or setting `noLimit` to `true`) is considered
+dangerous. The design center of Moray is around short-lived requests, and there
+are serious consequences in PostgreSQL for leaving connections open in
+transactions for extended periods while other transactions are making changes.
+
+##### noBucketCache
+
+A boolean which, when set to `true`, makes Moray refresh its bucket cache before
+handling the request. Default is `false`.
+
+The bucket cache should generally not be be disabled (i.e `noBucketCache` set to
+`true`). It is key to ensuring that the performance of a Moray server scales
+with the number of requests. This feature primarily exists to write internal
+Moray tests.
+
+##### no_count
+
+A boolean which, when set to `true`, makes Moray not include a `_count` property
+on each record sent with the response. Default is `false`.
+
+The purpose of this option is to avoid performing a potentially expensive
+`COUNT` query in addition to the query that fetches data records.
+
+##### noLimit
+
+A boolean which, when set to `true` and `limit` is not set, makes Moray not have
+a maximum number of records processed by the request. Default is `false`.
+
+Using this option is __considered dangerous__. The design center of Moray is
+around short-lived requests, and there are serious consequences in PostgreSQL
+for leaving connections open in transactions for extended periods while other
+transactions are making changes.
+
+##### offset
+
+A number which indicates the offset at which Moray starts processing records
+that would be returned by the same request with no `offset`. Default is `0`.
+
+##### req_id
+
+A string that can be used to track a request. Default is an automatically
+generated V4 UUID.
+
+##### sort
+
+An object or an array of objects with the following properties:
+
+* `attribute`: a required property of type string representing a field name on
+  which to sort the result
+
+* `order`: an optional property of type string that is either `ASC` or `DESC` to
+  sort with ascending or descending order respectively. Default value is `ASC`.
+
+Default value is `undefined`.
+
+##### sql_only
+
+A boolean which, if `true`, makes Moray send the SQL statement that would be
+executed in the response instead of sending actual data records. Default is
+`false`.
+
+##### timeout
+
+A number that represents the delay in milliseconds that the request waits on a
+reply from its underlying Postgres query before it errors with a
+`QueryTimeoutError`. Default is `30000` (30 seconds).
+
+Using this option is __strongly discouraged__. For identifying network failures,
+TCP keep-alive, which is what the node-moray client library uses, is a better
+fit. Otherwise, if the request hasn't completed, then the database is stuck
+processing that request, and applications cannot generally do anything safely
+except to wait (or possibly raise an alarm). Moreover, expiration of this
+timeout does not cancel the underlying PostgreSQL query and the corresponding
+PostgreSQL resources remain in use until the query ultimately does complete.
 
 ### Errors
 
