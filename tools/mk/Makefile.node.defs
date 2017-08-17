@@ -1,4 +1,3 @@
-# -*- mode: makefile -*-
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -6,7 +5,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2017, Joyent, Inc.
 #
 
 #
@@ -97,8 +96,15 @@ NODE_EXEC	= $(NODE_INSTALL)/bin/node
 NODE_WAF_EXEC	= $(NODE_INSTALL)/bin/node-waf
 NPM_EXEC	= $(NODE_INSTALL)/bin/npm
 
-# Ensure these use absolute paths to the executables to allow running
-# from a dir other than the project top.
+#
+# These paths should be used during the build process to invoke Node and
+# Node-related build tools like NPM.  All paths are fully qualified so that
+# they work regardless of the current working directory at the point of
+# invocation.
+#
+# Note that where PATH is overridden, the value chosen must cause execution of
+# "node" to find the same binary to which the NODE macro refers.
+#
 NODE		:= $(TOP)/$(NODE_EXEC)
 NODE_WAF	:= $(TOP)/$(NODE_WAF_EXEC)
-NPM		:= PATH=$(TOP)/$(NODE_INSTALL)/bin:$(PATH) node $(TOP)/$(NPM_EXEC)
+NPM		:= PATH=$(TOP)/$(NODE_INSTALL)/bin:$(PATH) $(NODE) $(TOP)/$(NPM_EXEC)

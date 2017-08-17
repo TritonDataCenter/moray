@@ -33,8 +33,11 @@
         "posix-getopt": "1.2.0",
         "vasync": "1.6.4",
         "restify": "5.2.0",
-        "verror": "1.3.7",
-        "xtend": "2.1.2"
+        "verror": "1.3.7"
+    },
+    "devDependencies": {
+        "eslint": "2.13.1",
+        "eslint-plugin-joyent": "1.3.0"
     },
     "sdcDependencies": {
         "config-agent": ">=1.2.0"

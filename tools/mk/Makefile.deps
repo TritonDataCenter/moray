@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2017, Joyent, Inc.
 #
 
 #
@@ -43,6 +43,39 @@ JSSTYLE_EXEC	?= deps/jsstyle/jsstyle
 JSSTYLE		?= $(JSSTYLE_EXEC)
 
 $(JSSTYLE_EXEC): | deps/jsstyle/.git
+
+#
+# eslint
+#
+ESLINT_EXEC	?= node_modules/.bin/eslint
+ifdef NODE
+    ESLINT	:= $(NODE) $(ESLINT_EXEC)
+else
+    ESLINT	?= $(ESLINT_EXEC)
+endif
+
+# Install eslint.
+#
+# The install of specific modules is to allow running "make check"
+# without having to do a complete install of all npm dependencies.
+#
+# NPM_EXEC will be defined if either of "Makefile.{node,node_prebuilt}.defs"
+# is included.
+ifdef NPM
+$(ESLINT_EXEC): package.json | $(NPM_EXEC)
+	ESLINT_VER=$$($(NODE) -e 'console.log(require("./package.json").devDependencies["eslint"] || "")') && \
+	    ESLINT_JOY_VER=$$($(NODE) -e 'console.log(require("./package.json").devDependencies["eslint-plugin-joyent"] || "")') && \
+	    [[ -n $$ESLINT_VER && -n $$ESLINT_JOY_VER ]] && \
+	    $(NPM) install --no-save eslint@$$ESLINT_VER eslint-plugin-joyent@$$ESLINT_JOY_VER && \
+	    touch $(ESLINT_EXEC)
+else
+$(ESLINT_EXEC): package.json
+	ESLINT_VER=$$(node -e 'console.log(require("./package.json").devDependencies["eslint"] || "")') && \
+	    ESLINT_JOY_VER=$$(node -e 'console.log(require("./package.json").devDependencies["eslint-plugin-joyent"] || "")') && \
+	    [[ -n $$ESLINT_VER && -n $$ESLINT_JOY_VER ]] && \
+	    npm install --no-save eslint@$$ESLINT_VER eslint-plugin-joyent@$$ESLINT_JOY_VER && \
+	    touch $(ESLINT_EXEC)
+endif
 
 #
 # restdown

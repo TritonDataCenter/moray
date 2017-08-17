@@ -5,17 +5,14 @@
  */
 
 /*
- * Copyright (c) 2017, Joyent, Inc.
+ * Copyright (c) 2018, Joyent, Inc.
  */
-
-var fs = require('fs');
-var os = require('os');
 
 var assert = require('assert-plus');
 var bsyslog = require('bunyan-syslog');
 var bunyan = require('bunyan');
 var clone = require('clone');
-var extend = require('xtend');
+var fs = require('fs');
 var getopt = require('posix-getopt');
 var jsprim = require('jsprim');
 var VError = require('verror').VError;
@@ -25,7 +22,7 @@ var app = require('./lib');
 
 
 
-///--- Globals
+// --- Globals
 
 var MIN_PORT = 1;
 var MAX_PORT = 65535;
@@ -42,7 +39,7 @@ var LOG_SERIALIZERS = {
         return (client ? client._moray_id : undefined);
     }
 };
-//We'll replace this with the syslog later, if applicable
+// We'll replace this with the syslog later, if applicable
 var LOG = bunyan.createLogger({
     name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
@@ -53,7 +50,7 @@ var LOG_LEVEL_OVERRIDE = false;
 
 
 
-///--- Internal Functions
+// --- Internal Functions
 
 function setupLogger(config) {
     var cfg_b = config.bunyan;
@@ -177,11 +174,10 @@ function readConfig(options) {
             file: options.file
         }, 'Unable to read/parse configuration file');
         throw new VError(e,
-                         'Unable to parse configuration file %s',
-                         options.file);
+            'Unable to parse configuration file %s', options.file);
     }
 
-    return (extend({}, clone(DEFAULTS), cfg, options));
+    return (jsprim.mergeObjects(cfg, options, DEFAULTS));
 }
 
 
@@ -198,7 +194,7 @@ function run(options) {
 
 
 
-///--- Mainline
+// --- Mainline
 
 (function main() {
     var options = parseOptions();

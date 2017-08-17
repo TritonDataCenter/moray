@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (c) 2017, Joyent, Inc.
+# Copyright (c) 2018, Joyent, Inc.
 #
 
 #
@@ -23,45 +23,42 @@
 #
 
 #
-# Tools
-#
-NODE		:= ./build/node/bin/node
-BUNYAN		:= ./node_modules/.bin/bunyan
-JSONTOOL	:= ./node_modules/.bin/json
-
-#
 # Files
 #
 DOC_FILES	 = index.md
 JS_FILES	:= $(shell ls *.js) $(shell find lib -name '*.js' | grep -v sql.js)
+ESLINT_FILES	:= $(JS_FILES)
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -C -f ./tools/jsstyle.conf
-SHRINKWRAP	 = npm-shrinkwrap.json
 SMF_MANIFESTS_IN = smf/manifests/haproxy.xml.in
 BOOTSTRAP_MANIFESTS = 	sapi_manifests/registrar/template \
 			sdc/sapi_manifests/registrar/template
 
-CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files \
+CLEAN_FILES	+= node_modules cscope.files \
 		   $(BOOTSTRAP_MANIFESTS)
 
 #
 # Variables
 #
 
-NODE_PREBUILT_TAG	= zone
-NODE_PREBUILT_VERSION	:= v0.10.48
-NODE_PREBUILT_IMAGE = fd2cc906-8938-11e3-beab-4359c665ac99
+ifeq ($(shell uname -s),SunOS)
+	NODE_PREBUILT_TAG	= zone
+	NODE_PREBUILT_VERSION	:= v0.10.48
+	NODE_PREBUILT_IMAGE = fd2cc906-8938-11e3-beab-4359c665ac99
+endif
 
 # RELENG-341: no npm cache is making builds unreliable
 NPM_FLAGS :=
 
 include ./tools/mk/Makefile.defs
 ifeq ($(shell uname -s),SunOS)
-    include ./tools/mk/Makefile.node_prebuilt.defs
+	include ./tools/mk/Makefile.node_prebuilt.defs
 else
-    include ./tools/mk/Makefile.node.defs
+	NODE := node
+	NPM := $(shell which npm)
+	NPM_EXEC=$(NPM)
 endif
 include ./tools/mk/Makefile.node_deps.defs
 include ./tools/mk/Makefile.smf.defs
@@ -88,11 +85,7 @@ all: $(SMF_MANIFESTS) deps scripts sdc-scripts
 
 .PHONY: deps
 deps: | $(REPO_DEPS) $(NPM_EXEC)
-	$(NPM_ENV) $(NPM) install
-
-.PHONY: shrinkwrap
-shrinkwrap: | $(NPM_EXEC)
-	$(NPM) shrinkwrap
+	$(NPM) install --production
 
 .PHONY: test
 test:
