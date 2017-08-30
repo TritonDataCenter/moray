@@ -1,7 +1,7 @@
 {
     "name": "moray-server",
     "description": "SmartDataCenter H/A Key/Value store",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "author": "Joyent (joyent.com)",
     "private": true,
     "main": "lib/index.js",

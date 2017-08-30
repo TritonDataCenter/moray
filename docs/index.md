@@ -87,6 +87,102 @@ client library interfaces.  It's worth reviewing `moray(1)` and `moray(3)` to
 understand the basic conventions used below.
 
 
+# Common Options
+
+There are some options that can be used with several RPCs. They are documented
+here, and linked to from each of the RPCs where they are valid to use.
+
+##### <a name="option-etag">etag</a>
+
+An `etag` that an already existing object must first have before being affected.
+If the `etag` on the existing object differs from the one specified in the
+options, then the server will return an `EtagConflictError`. See
+[PutObject](#putobject) for further details.
+
+##### <a name="option-limit">limit</a>
+
+A number that limits the number of records that are processed by the request.
+Default is `1000`, unless `noLimit` is set to `true`.
+
+Using large values (> 1000, or setting `noLimit` to `true`) is considered
+dangerous. The design center of Moray is around short-lived requests, and there
+are serious consequences in PostgreSQL for leaving connections open in
+transactions for extended periods while other transactions are making changes.
+
+##### <a name="option-nobucketcache">noBucketCache</a>
+
+A boolean which, when set to `true`, makes Moray refresh its bucket cache before
+handling the request. Default is `false`.
+
+The bucket cache should generally not be be disabled (i.e `noBucketCache` set to
+`true`). It is key to ensuring that the performance of a Moray server scales
+with the number of requests. This feature primarily exists to write internal
+Moray tests.
+
+##### <a name="option-no_count">no_count</a>
+
+A boolean which, when set to `true`, makes Moray not include a `_count` property
+on each record sent with the response. Default is `false`.
+
+The purpose of this option is to avoid performing a potentially expensive
+`COUNT` query in addition to the query that fetches data records.
+
+##### <a name="option-nolimit">noLimit</a>
+
+A boolean which, when set to `true` and `limit` is not set, makes Moray not have
+a maximum number of records processed by the request. Default is `false`.
+
+Using this option is __considered dangerous__. The design center of Moray is
+around short-lived requests, and there are serious consequences in PostgreSQL
+for leaving connections open in transactions for extended periods while other
+transactions are making changes.
+
+##### <a name="option-offset">offset</a>
+
+A number which indicates the offset at which Moray starts processing records
+that would be returned by the same request with no `offset`. Default is `0`.
+
+##### <a name="option-requireonlinereindexing">requireOnlineReindexing</a>
+
+When passing `requireOnlineReindexing: true`, the client will make sure that
+the server supports safely reading the contents of a reindexing bucket. Recent
+versions of the server will always behave correctly here. This option is to
+allow clients to make certain that they receive an `UnhandledOptionsError`
+instead of having their data corrupted if they suspect that they are talking
+to an older server.
+
+##### <a name="option-req_id">req_id</a>
+
+A string that can be used to track a request. Default is an automatically
+generated V4 UUID.
+
+##### <a name="option-sort">sort</a>
+
+An object or an array of objects with the following properties:
+
+* `attribute`: a required property of type string representing a field name on
+  which to sort the result
+
+* `order`: an optional property of type string that is either `ASC` or `DESC` to
+  sort with ascending or descending order respectively. Default value is `ASC`.
+
+Default value is `undefined`.
+
+##### <a name="option-timeout">timeout</a>
+
+A number that represents the delay in milliseconds that the request waits on a
+reply from its underlying Postgres query before it errors with a
+`QueryTimeoutError`. Default is `30000` (30 seconds).
+
+Using this option is __strongly discouraged__. For identifying network failures,
+TCP keep-alive, which is what the node-moray client library uses, is a better
+fit. Otherwise, if the request hasn't completed, then the database is stuck
+processing that request, and applications cannot generally do anything safely
+except to wait (or possibly raise an alarm). Moreover, expiration of this
+timeout does not cancel the underlying PostgreSQL query and the corresponding
+PostgreSQL resources remain in use until the query ultimately does complete.
+
+
 # Buckets
 
 ## CreateBucket
@@ -141,8 +237,13 @@ A "fully loaded" config (without post triggers) would look like this:
 | -------- | -------- | ----------------------------------------------- |
 | name     | string   | globally unique name for the bucket             |
 | config   | object   | configuration (indexes/pre/post) for the bucket |
-| options  | object   | any optional parameters (req\_id)               |
+| options  | object   | any optional parameters, see below              |
 | callback | function | only argument is `err`                          |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -184,8 +285,13 @@ besides the name of the bucket you want to fetch (and of course request\_id).
 | Field    | Type     | Description                         |
 | -------- | -------- | ----------------------------------- |
 | name     | string   | globally unique name for the bucket |
-| options  | object   | any optional parameters (req\_id)   |
+| options  | object   | any optional parameters, see below  |
 | callback | function | only argument is `err`              |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -243,10 +349,15 @@ Returns the configuration for all buckets.
 
 ### Inputs
 
-| Field    | Type     | Description                       |
-| -------- | -------- | --------------------------------- |
-| options  | object   | any optional parameters (req\_id) |
-| callback | function | only argument is `err`            |
+| Field    | Type     | Description                        |
+| -------- | -------- | ---------------------------------- |
+| options  | object   | any optional parameters, see below |
+| callback | function | only argument is `err`             |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -343,8 +454,13 @@ Or alternatively:
 | -------- | -------- | ----------------------------------------------- |
 | name     | string   | globally unique name for the bucket             |
 | config   | object   | configuration (indexes/pre/post) for the bucket |
-| options  | object   | any optional parameters (req\_id)               |
+| options  | object   | any optional parameters, see below              |
 | callback | function | only argument is `err`                          |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -365,7 +481,7 @@ Deletes a bucket, *and all data in that bucket!*
 
 ### API
 
-     client.delBucket('foo', function (err) {
+    client.delBucket('foo', function (err) {
         assert.ifError(err);
     });
 
@@ -374,8 +490,13 @@ Deletes a bucket, *and all data in that bucket!*
 | Field    | Type     | Description                         |
 | -------- | -------- | ----------------------------------- |
 | name     | string   | globally unique name for the bucket |
-| options  | object   | any optional parameters (req\_id)   |
+| options  | object   | any optional parameters, see below  |
 | callback | function | only argument is `err`              |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -439,8 +560,14 @@ looks like:
 | bucket   | string   | bucket to write this key in             |
 | key      | string   | bucket to write this key in             |
 | value    | object   | free-form JS object                     |
-| options  | object   | any optional parameters (req\_id, etag) |
+| options  | object   | any optional parameters, see below      |
 | callback | function | only argument is `err`                  |
+
+#### Options
+
+- [etag](#option-etag)
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -489,8 +616,15 @@ for a full example.
 | -------- | -------- | ------------------------------------------ |
 | bucket   | string   | bucket to write this key in                |
 | key      | string   | bucket to write this key in                |
-| options  | object   | any optional parameters (req\_id, noCache) |
+| options  | object   | any optional parameters, see below         |
 | callback | function | arguments of `err` and `obj`               |
+
+#### Options
+
+- [noBucketCache](#option-nobucketcache)
+- [requireOnlineReindexing](#option-requireonlinereindexing)
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -572,57 +706,17 @@ expect to receive back up to N records from this call.
 | ------- | ------ | ------------------------------------------------------ |
 | bucket  | string | bucket to search in                                    |
 | filter  | string | search filter string                                   |
-| options | object | any optional parameters, see below |
+| options | object | any optional parameters, see below                     |
 
 #### Options
 
-##### limit
-
-A number that limits the number of records that are processed by the request.
-Default is `1000`, unless `noLimit` is set to `true`.
-
-Using large values (> 1000, or setting `noLimit` to `true`) is considered
-dangerous. The design center of Moray is around short-lived requests, and there
-are serious consequences in PostgreSQL for leaving connections open in
-transactions for extended periods while other transactions are making changes.
-
-##### noBucketCache
-
-A boolean which, when set to `true`, makes Moray refresh its bucket cache before
-handling the request. Default is `false`.
-
-The bucket cache should generally not be be disabled (i.e `noBucketCache` set to
-`true`). It is key to ensuring that the performance of a Moray server scales
-with the number of requests. This feature primarily exists to write internal
-Moray tests.
-
-##### no_count
-
-A boolean which, when set to `true`, makes Moray not include a `_count` property
-on each record sent with the response. Default is `false`.
-
-The purpose of this option is to avoid performing a potentially expensive
-`COUNT` query in addition to the query that fetches data records.
-
-##### noLimit
-
-A boolean which, when set to `true` and `limit` is not set, makes Moray not have
-a maximum number of records processed by the request. Default is `false`.
-
-Using this option is __considered dangerous__. The design center of Moray is
-around short-lived requests, and there are serious consequences in PostgreSQL
-for leaving connections open in transactions for extended periods while other
-transactions are making changes.
-
-##### offset
-
-A number which indicates the offset at which Moray starts processing records
-that would be returned by the same request with no `offset`. Default is `0`.
-
-##### req_id
-
-A string that can be used to track a request. Default is an automatically
-generated V4 UUID.
+- [limit](#option-limit)
+- [noBucketCache](#option-nobucketcache)
+- [noLimit](#option-nolimit)
+- [offset](#option-offset)
+- [requireOnlineReindexing](#option-requireonlinereindexing)
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ##### requireIndexes
 
@@ -630,37 +724,11 @@ When passing `requireIndexes: true`, `findObjects` requests will respond with a
 `NotIndexedError` error if at least one of the fields included in the search
 filter has an index that can't be used.
 
-##### sort
-
-An object or an array of objects with the following properties:
-
-* `attribute`: a required property of type string representing a field name on
-  which to sort the result
-
-* `order`: an optional property of type string that is either `ASC` or `DESC` to
-  sort with ascending or descending order respectively. Default value is `ASC`.
-
-Default value is `undefined`.
-
 ##### sql_only
 
 A boolean which, if `true`, makes Moray send the SQL statement that would be
 executed in the response instead of sending actual data records. Default is
 `false`.
-
-##### timeout
-
-A number that represents the delay in milliseconds that the request waits on a
-reply from its underlying Postgres query before it errors with a
-`QueryTimeoutError`. Default is `30000` (30 seconds).
-
-Using this option is __strongly discouraged__. For identifying network failures,
-TCP keep-alive, which is what the node-moray client library uses, is a better
-fit. Otherwise, if the request hasn't completed, then the database is stuck
-processing that request, and applications cannot generally do anything safely
-except to wait (or possibly raise an alarm). Moreover, expiration of this
-timeout does not cancel the underlying PostgreSQL query and the corresponding
-PostgreSQL resources remain in use until the query ultimately does complete.
 
 ### Errors
 
@@ -732,8 +800,14 @@ options to get `test/set` semantics.
 | -------- | -------- | --------------------------------------- |
 | bucket   | string   | bucket to delete this key from          |
 | key      | string   | key to delete                           |
-| options  | object   | any optional parameters (req\_id, etag) |
+| options  | object   | any optional parameters, see below      |
 | callback | function | only argument is `err`                  |
+
+#### Options
+
+- [etag](#option-etag)
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -792,7 +866,17 @@ A few caveats:
 | bucket  | string | bucket to write this key in                            |
 | fields  | object | keys and values to update                              |
 | filter  | string | search filter string                                   |
-| options | object | any optional parameters (req\_id, limit, offset, sort) |
+| options | object | any optional parameters, see below                     |
+
+#### Options
+
+- [limit](#option-limit)
+- [noBucketCache](#option-nobucketcache)
+- [noLimit](#option-nolimit)
+- [offset](#option-offset)
+- [req_id](#option-req_id)
+- [sort](#option-sort)
+- [timeout](#option-timeout)
 
 ## ReindexObjects
 
@@ -830,7 +914,13 @@ the same bucket but it's likely to race on rows and incur rollbacks/slowdowns.
 | ------- | ------ | -------------------------------------------- |
 | bucket  | string | bucket to reindex                            |
 | count   | object | max rows to reindex                          |
-| options | object | any optional parameters (req\_id, no\_count) |
+| options | object | any optional parameters, see below           |
+
+#### Options
+
+- [no_count](#option-no_count)
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -860,8 +950,17 @@ API with a bucket and a filter, that is exactly the same syntax as
 | ------- | ------ | ------------------------------------------------------ |
 | bucket  | string | bucket to delete from                                  |
 | filter  | string | search filter string                                   |
-| options | object | any optional parameters (req\_id, limit, offset, sort) |
+| options | object | any optional parameters, see below                     |
 
+#### Options
+
+- [limit](#option-limit)
+- [noBucketCache](#option-nobucketcache)
+- [noLimit](#option-nolimit)
+- [offset](#option-offset)
+- [req_id](#option-req_id)
+- [sort](#option-sort)
+- [timeout](#option-timeout)
 
 ## Batch
 
@@ -913,8 +1012,14 @@ The default operation is `put`.
 | Field    | Type     | Description                                                       |
 | -------- | -------- | ----------------------------------------------------------------- |
 | objects  | object   | bucket/key/value tuples to store                                  |
-| options  | object   | any optional parameters (req\_id, etag)                           |
+| options  | object   | any optional parameters, see below                                |
 | callback | function | only argument is `err` and `meta` which will have a list of etags |
+
+#### Options
+
+- [etag](#option-etag)
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### Errors
 
@@ -956,7 +1061,12 @@ The latter use-case (filling in gaps in the Moray API) is considered deprecated.
 | --------- | ------ | ------------------------------------ |
 | statement | string | SQL statement to run                 |
 | values    | Array  | values to insert (see node-postgres) |
-| options   | object | any optional parameters (req\_id)    |
+| options   | object | any optional parameters, see below   |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
 
 ### CLI
 
