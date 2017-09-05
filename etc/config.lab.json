@@ -7,7 +7,6 @@
                         "type": "udp"
                 }
         },
-        "audit": false,
         "numWorkers": 0,
         "manatee": {
                 "path": "/manatee/sdc/election",

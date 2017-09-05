@@ -239,7 +239,7 @@ Returns the configuration for all buckets.
      client.listBuckets(function (err, buckets) {
         assert.ifError(err);
         console.log(util.inspect(buckets));
-    });
+     });
 
 ### Inputs
 

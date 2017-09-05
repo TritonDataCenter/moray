@@ -1,6 +1,5 @@
 {
         "port": 2020,
-        "audit": false,
         "bunyan": {
                 "level": "info"
         },

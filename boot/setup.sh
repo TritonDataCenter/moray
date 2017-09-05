@@ -117,6 +117,7 @@ function setup_moray {
     local ports
     for (( i=1; i<=$moray_instances; i++ )); do
         ports[$i]=`expr 2020 + $i`
+        kangs[$i]=`expr 3020 + $i`
     done
 
     #Regenerate the registrar config with the real ports included
@@ -154,10 +155,13 @@ function setup_moray {
 
     #moray instances
     local moray_xml_in=$SVC_ROOT/smf/manifests/moray.xml.in
-    for port in "${ports[@]}"; do
+    for (( i=1; i<=$moray_instances; i++ )); do
+        local port=${ports[$i]}
+        local kang=${kangs[$i]}
         local moray_instance="moray-$port"
         local moray_xml_out=$SVC_ROOT/smf/manifests/moray-$port.xml
         sed -e "s#@@MORAY_PORT@@#$port#g" \
+            -e "s#@@KANG_PORT@@#$kang#g" \
             -e "s#@@MORAY_INSTANCE_NAME@@#$moray_instance#g" \
             $moray_xml_in  > $moray_xml_out || \
             fatal "could not process $moray_xml_in to $moray_xml_out"

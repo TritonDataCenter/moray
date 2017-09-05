@@ -4,7 +4,6 @@
     "bunyan": {
         "level": "info"
     },
-    "audit": false,
     "standalone": {
         "pg": {
             "connectTimeout": 3000,

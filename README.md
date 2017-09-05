@@ -179,6 +179,7 @@ Postgres database without using Manatee. A single function is exported,
 - `bindip`, the IP address to bind to
 - `audit`, a boolean indicating whether to log the result and duration of all
   requests
+- `kangPort`, the port the Kang server should listen on
 - `standalone`, an object specifying the standalone server's configuration:
     * `pg`, an object which specifies the Postgres client pool confguration:
         - `queryTimeout`, how long (in milliseconds) before a query is timed out

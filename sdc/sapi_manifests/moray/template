@@ -7,7 +7,6 @@
       }
   },
   "numWorkers": 0,
-  "audit": false,
   "manatee": {
     "manatee":{
       "path": "/manatee/{{manatee_shard}}",

@@ -7,7 +7,7 @@
 -->
 
 <!--
-    Copyright (c) 2014, Joyent, Inc.
+    Copyright (c) 2017, Joyent, Inc.
 -->
 
 <service_bundle type="manifest" name="smartdc-moray">
@@ -44,7 +44,7 @@
         <exec_method
             type="method"
             name="start"
-            exec="node main.js -f etc/config.json -p %{moray/port} &amp;"
+            exec="node --abort-on-uncaught-exception main.js -f etc/config.json -p %{moray/port} -k %{moray/kang} &amp;"
             timeout_seconds="30">
             <method_context working_directory="/opt/smartdc/moray">
                 <method_credential user="nobody"
@@ -70,6 +70,7 @@
         <instance name="@@MORAY_INSTANCE_NAME@@" enabled="true">
           <property_group name="moray" type="application">
             <propval name="port" type="astring" value="@@MORAY_PORT@@" />
+            <propval name="kang" type="astring" value="@@KANG_PORT@@" />
           </property_group>
         </instance>
 

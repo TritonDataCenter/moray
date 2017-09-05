@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2017, Joyent, Inc.
 #
 
 #
@@ -51,7 +51,7 @@ CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files \
 #
 
 NODE_PREBUILT_TAG	= zone
-NODE_PREBUILT_VERSION	:= v0.10.24
+NODE_PREBUILT_VERSION	:= v0.10.48
 NODE_PREBUILT_IMAGE = fd2cc906-8938-11e3-beab-4359c665ac99
 
 # RELENG-341: no npm cache is making builds unreliable

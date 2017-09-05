@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
 var fs = require('fs');
@@ -17,7 +17,6 @@ var bunyan = require('bunyan');
 var clone = require('clone');
 var extend = require('xtend');
 var getopt = require('posix-getopt');
-var panic = require('panic');
 var VError = require('verror').VError;
 
 
@@ -29,6 +28,7 @@ var app = require('./lib');
 
 var DEFAULTS = {
     file: process.cwd() + '/etc/config.json',
+    kangPort: 3020,
     port: 2020,
     bindip: '0.0.0.0'
 };
@@ -93,7 +93,7 @@ function setupLogger(config) {
 function parseOptions() {
     var option;
     var opts = {};
-    var parser = new getopt.BasicParser('cvf:p:', process.argv);
+    var parser = new getopt.BasicParser('cvf:p:k:', process.argv);
 
     while ((option = parser.getopt()) !== undefined) {
         switch (option.option) {
@@ -112,6 +112,14 @@ function parseOptions() {
                 }, 'Invalid port.');
                 throw new Error('Invalid port: ' +
                                 option.optarg);
+            }
+            break;
+
+        case 'k':
+            opts.kangPort = parseInt(option.optarg, 10);
+            if (isNaN(opts.kangPort)) {
+                LOG.fatal({ port: option.optarg }, 'Invalid port');
+                throw new Error('Invalid port: ' + option.optarg);
             }
             break;
 
@@ -191,9 +199,4 @@ function run(options) {
             process.exit(0);
         });
     }
-
-    panic.enablePanicOnCrash({
-        'skipDump': true,
-        'abortOnPanic': true
-    });
 })();
