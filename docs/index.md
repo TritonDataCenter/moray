@@ -761,6 +761,16 @@ A few caveats:
 - The `JSON value` will *not* be updated in situ, though Moray hides this fact
   from you.  Subsequent "get" operations will merge the results into the
   returned value.
+- If an object has been stored with an array value in a field that has a scalar
+  index type, attempts to use UpdateObjects on that field in that object will
+  have no effect.
+
+  This is done to maintain compatibility with how UFDS uses Moray. UFDS stores
+  arrays of strings in fields with a `string` index. Moray then flattens the
+  array into a comma-separated list of values, which gets stored in Postgres.
+  Since these values cannot be reliably split back into the original array,
+  Moray ignores the values in the Postgres column in favor of the values in the
+  original JSON object.
 
 ### API
 
