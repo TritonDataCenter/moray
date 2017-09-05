@@ -183,6 +183,7 @@ Postgres database without using Manatee. A single function is exported,
 - `standalone`, an object specifying the standalone server's configuration:
     * `pg`, an object which specifies the Postgres client pool confguration:
         - `queryTimeout`, how long (in milliseconds) before a query is timed out
+          (defaults to 0, which disables the timeout)
         - `maxConnections`, the maximum number of connections to maintain
           to Postgres
     * `url`, a [pg](https://github.com/brianc/node-postgres) URL describing how

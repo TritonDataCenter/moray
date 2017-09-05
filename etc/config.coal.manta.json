@@ -26,7 +26,6 @@
       "checkInterval": 90000,
       "maxConnections": 16,
       "maxIdleTime": 270000,
-      "queryTimeout": 30000,
       "user": "moray"
     }
   },

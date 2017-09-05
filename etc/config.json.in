@@ -22,8 +22,7 @@
             "connectTimeout": 3000,
             "maxConnections": 15,
             "maxIdleTime": 120000,
-            "checkInterval": 30000,
-            "queryTimeout": 30000
+            "checkInterval": 30000
         }
     },
     "cache": {

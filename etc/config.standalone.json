@@ -9,8 +9,7 @@
             "connectTimeout": 3000,
             "maxConnections": 15,
             "maxIdleTime": 120000,
-            "checkInterval": 30000,
-            "queryTimeout": 30000
+            "checkInterval": 30000
         },
         "url": "tcp://moray@10.99.99.16:5432/moray"
     },

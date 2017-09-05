@@ -19,7 +19,6 @@
                         "maxConnections": 15,
                         "maxIdleTime": 30000,
                         "checkInterval": 90000,
-                        "queryTimeout": 0,
                         "user": "postgres"
                 }
         },

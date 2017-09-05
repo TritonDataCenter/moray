@@ -14,8 +14,7 @@
                         "connectTimeout": 2000,
                         "maxConnections": 5,
                         "maxIdleTime": 30000,
-                        "checkInterval": 120000,
-                        "queryTimeout": 2000
+                        "checkInterval": 120000
                 },
                 "zk": {
                         "connectTimeout": 2000,
