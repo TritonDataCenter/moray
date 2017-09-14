@@ -12,7 +12,7 @@
         "bunyan-syslog": "0.2.2",
         "clone": "0.1.11",
         "crc": "0.2.1",
-        "dtrace-provider": "0.2.8",
+        "dtrace-provider": "~0.8",
         "deep-equal": "0.0.0",
         "fast": "2.2.4",
         "ip6addr": "0.1.1",
