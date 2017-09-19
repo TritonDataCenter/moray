@@ -17,6 +17,7 @@ var bunyan = require('bunyan');
 var clone = require('clone');
 var extend = require('xtend');
 var getopt = require('posix-getopt');
+var jsprim = require('jsprim');
 var VError = require('verror').VError;
 
 
@@ -26,6 +27,8 @@ var app = require('./lib');
 
 ///--- Globals
 
+var MIN_PORT = 1;
+var MAX_PORT = 65535;
 var DEFAULTS = {
     file: process.cwd() + '/etc/config.json',
     monitorPort: 3020,
@@ -90,10 +93,27 @@ function setupLogger(config) {
 }
 
 
+function parsePort(str) {
+    var port = jsprim.parseInteger(str);
+
+    if (port instanceof Error) {
+        LOG.fatal({ port: str }, 'Invalid port');
+        throw new VError(port, 'Invalid port %j', str);
+    }
+
+    if (port < MIN_PORT || port > MAX_PORT) {
+        throw new VError('Invalid port %j: should be in range %d-%d',
+            port, MIN_PORT, MAX_PORT);
+    }
+
+    return port;
+}
+
+
 function parseOptions() {
     var option;
     var opts = {};
-    var parser = new getopt.BasicParser('cvf:p:k:', process.argv);
+    var parser = new getopt.BasicParser(':cvf:p:k:', process.argv);
 
     while ((option = parser.getopt()) !== undefined) {
         switch (option.option) {
@@ -105,22 +125,11 @@ function parseOptions() {
             break;
 
         case 'p':
-            opts.port = parseInt(option.optarg, 10);
-            if (isNaN(opts.port)) {
-                LOG.fatal({
-                    port: option.optarg
-                }, 'Invalid port.');
-                throw new Error('Invalid port: ' +
-                                option.optarg);
-            }
+            opts.port = parsePort(option.optarg);
             break;
 
         case 'k':
-            opts.monitorPort = parseInt(option.optarg, 10);
-            if (isNaN(opts.monitorPort)) {
-                LOG.fatal({ port: option.optarg }, 'Invalid port');
-                throw new Error('Invalid port: ' + option.optarg);
-            }
+            opts.monitorPort = parsePort(option.optarg);
             break;
 
         case 'v':
@@ -132,9 +141,18 @@ function parseOptions() {
                 LOG = LOG.child({src: true});
             break;
 
+        case ':':
+            throw new VError('Expected argument for -%s', option.optopt);
+
         default:
-            throw new Error('Invalid option: ' + option.option);
+            throw new VError('Invalid option: -%s', option.optopt);
         }
+    }
+
+    if (parser.optind() !== process.argv.length) {
+        throw new VError(
+            'Positional arguments found when none were expected: %s',
+            process.argv.slice(parser.optind()).join(' '));
     }
 
     if (!opts.file) {
