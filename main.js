@@ -28,7 +28,7 @@ var app = require('./lib');
 
 var DEFAULTS = {
     file: process.cwd() + '/etc/config.json',
-    kangPort: 3020,
+    monitorPort: 3020,
     port: 2020,
     bindip: '0.0.0.0'
 };
@@ -116,8 +116,8 @@ function parseOptions() {
             break;
 
         case 'k':
-            opts.kangPort = parseInt(option.optarg, 10);
-            if (isNaN(opts.kangPort)) {
+            opts.monitorPort = parseInt(option.optarg, 10);
+            if (isNaN(opts.monitorPort)) {
                 LOG.fatal({ port: option.optarg }, 'Invalid port');
                 throw new Error('Invalid port: ' + option.optarg);
             }

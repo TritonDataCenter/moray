@@ -180,6 +180,8 @@ Postgres database without using Manatee. A single function is exported,
 - `audit`, a boolean indicating whether to log the result and duration of all
   requests
 - `kangPort`, the port the Kang server should listen on
+- `collector`, an [artedi](https://github.com/joyent/node-artedi) metric
+  collector
 - `standalone`, an object specifying the standalone server's configuration:
     * `pg`, an object which specifies the Postgres client pool confguration:
         - `queryTimeout`, how long (in milliseconds) before a query is timed out
@@ -191,6 +193,66 @@ Postgres database without using Manatee. A single function is exported,
 
 `createServer` returns a server object with a `listen()` method to start the
 server. The server will emit a `ready` event once it's started up.
+
+## Monitoring
+
+Moray exposes metric and Kang internal state information accessible through a
+REST API. The port used for the monitoring server is provided as the `-k`
+argument when starting the Moray server.
+
+### Kang
+
+[Kang](https://github.com/davepacheco/kang) data can be retrieved from Moray
+by issuing `GET /kang/snapshot` on the Kang port.
+
+For example, a `curl` command assuming the monitoring server is running on
+port 3020 of the local host:
+
+```
+$ curl http://localhost:3020/kang/snapshot
+```
+
+Kang also offers a command-line interactive debugger, which ships in Moray
+zones. This can be used to combine Kang data from multiple Moray processes.
+
+For example, if we have four Moray processes inside a Moray zone we can use this
+command to view their state simultaneously:
+
+```
+$ kang -h localhost:3021,localhost:3022,localhost:3023,localhost:3024
+
+```
+
+### Metrics
+
+Application metrics can be retrieved from the route `GET /metrics`, also on the
+Kang port. The metrics are returned in the [Prometheus](https://prometheus.io/)
+v0.0.4 text format.
+
+For example, a `curl` command can be used to scrape metrics:
+
+```
+$ curl http://localhost:3020/metrics
+```
+
+The following metrics are always collected:
+
+- Open Postgres connections
+- Available Postgres connections
+- Pending Postgres connections
+- Backend request queue length
+- End-to-end latency for all requests
+- Count of requests completed
+
+Each of the metrics returned include the following metadata labels:
+
+- Datacenter name (i.e. us-east-1)
+- CN UUID
+- Zone UUID
+- PID
+
+The metric collection functionality is intended to be consumed by a monitoring
+service like a Prometheus or InfluxDB server.
 
 ## License
 

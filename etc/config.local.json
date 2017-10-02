@@ -25,5 +25,7 @@
         "cache": {
                 "size": 1000,
                 "expiry": 60
-        }
+        },
+        "server_uuid": "fake-localhost-uuid",
+        "datacenter": "local"
 }
