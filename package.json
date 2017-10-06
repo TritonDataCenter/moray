@@ -7,6 +7,7 @@
     "main": "lib/index.js",
     "dependencies": {
         "ajv": "4.11.4",
+        "artedi": "1.1.0",
         "assert-plus": "1.0.0",
         "bunyan": "1.8.10",
         "bunyan-syslog": "0.2.2",
@@ -14,7 +15,7 @@
         "crc": "0.2.1",
         "dtrace-provider": "~0.8",
         "deep-equal": "0.0.0",
-        "fast": "2.2.4",
+        "fast": "2.3.0",
         "ip6addr": "0.1.1",
         "jsprim": "1.4.0",
         "kang": "1.2.0",
@@ -31,6 +32,7 @@
         "pooling": "0.4.5",
         "posix-getopt": "1.0.0",
         "vasync": "1.6.4",
+        "restify": "5.2.0",
         "verror": "1.3.7",
         "xtend": "2.1.2"
     },
