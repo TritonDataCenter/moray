@@ -149,7 +149,7 @@ A "fully loaded" config (without post triggers) would look like this:
 * `InvalidBucketConfigError`
 * `InvalidBucketNameError`
 * `InvalidIndexDefinitionError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 * `NotFunctionError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
@@ -190,7 +190,7 @@ besides the name of the bucket you want to fetch (and of course request\_id).
 ### Errors
 
 * `BucketNotFoundError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 
 ### CLI
 
@@ -250,7 +250,7 @@ Returns the configuration for all buckets.
 
 ### Errors
 
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 
 ### CLI
 
@@ -351,7 +351,7 @@ Or alternatively:
 * `BucketNotFoundError`
 * `InvalidBucketConfigError`
 * `InvalidIndexDefinitionError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 * `NotFunctionError`
 
 ### CLI
@@ -380,7 +380,7 @@ Deletes a bucket, *and all data in that bucket!*
 ### Errors
 
 * `BucketNotFoundError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 
 ### CLI
 
@@ -446,7 +446,7 @@ looks like:
 
 * `BucketNotFoundError`
 * `EtagConflictError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 * `UniqueAttributeError`
 * `InvalidIndexTypeError`
 
@@ -496,7 +496,7 @@ for a full example.
 
 * `BucketNotFoundError`
 * `ObjectNotFoundError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -666,7 +666,7 @@ PostgreSQL resources remain in use until the query ultimately does complete.
 
 * `BucketNotFoundError`
 * `InvalidQueryError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 * `NotIndexedError`
 * `InvalidIndexTypeError`
 
@@ -740,7 +740,7 @@ options to get `test/set` semantics.
 * `BucketNotFoundError`
 * `EtagConflictError`
 * `ObjectNotFoundError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -835,7 +835,7 @@ the same bucket but it's likely to race on rows and incur rollbacks/slowdowns.
 ### Errors
 
 * `BucketNotFoundError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).
 
@@ -920,7 +920,7 @@ The default operation is `put`.
 
 * `BucketNotFoundError`
 * `EtagConflictError`
-* `NoDatabaseError`
+* `NoDatabasePeersError`
 * `UniqueAttributeError`
 
 Plus any currently unhandled Postgres Errors (such as relation already exists).

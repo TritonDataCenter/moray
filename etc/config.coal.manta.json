@@ -6,7 +6,6 @@
       "type": "udp"
     }
   },
-  "numWorkers": 0,
   "manatee": {
     "manatee": {
       "path": "/manatee/1.moray.coal.joyent.us/election",

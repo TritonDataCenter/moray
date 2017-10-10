@@ -6,7 +6,6 @@
       "type": "udp"
     }
   },
-  "numWorkers": 0,
   "manatee": {
     "manatee": {
       "path": "/manatee/{{SERVICE_NAME}}",
