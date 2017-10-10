@@ -6,7 +6,6 @@
         "type": "udp"
       }
   },
-  "numWorkers": 0,
   "manatee": {
     "manatee":{
       "path": "/manatee/{{manatee_shard}}",
