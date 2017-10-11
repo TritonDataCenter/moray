@@ -13,7 +13,7 @@
         "bunyan-syslog": "0.2.2",
         "clone": "0.1.11",
         "crc": "0.2.1",
-        "cueball": "2.2.9",
+        "cueball": "git+https://github.com/joyent/node-cueball.git#dev-codel",
         "dtrace-provider": "~0.8",
         "deep-equal": "0.0.0",
         "fast": "2.3.0",
