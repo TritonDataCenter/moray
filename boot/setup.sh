@@ -204,6 +204,72 @@ function sdc_moray_setup {
 
 }
 
+function manta_set_moray_role_connlimit {
+    # Having 18 reserve connections ensures that the maximum possible number of
+    # Moray postgres connections does not exceed the imposed "moray"
+    # rolconnlimit in any of the default deployment sizes: coal, lab,
+    # production.
+    #
+    #       pg_max_conns  procs_per_zone      num_zones  max_conns_per_proc
+    # coal  100           1                   1          16
+    # lab   210           4                   3          16
+    # prod  1000          4                   3          16
+    #
+    # pg_max_conns - the default value of the postgres parameter
+    # max_connections set in postgres.conf for each deployment size.
+    #
+    # procs_per_zone - the default number of processes per Moray zone for the
+    # given deployment size.
+    #
+    # num_zones - the default number of Moray zones per shard for the
+    # deployment size.
+    #
+    # max_conns_per_proc - the default value of the SAPI tunable
+    # MORAY_MAX_PG_CONNS.
+    #
+    # Reserving 18 connections imposes an upper bound of 82, 192, and 982 moray
+    # role connections in coal, lab, and production deployments. These upper
+    # bounds are fine because with their default configurations, coal, lab, and
+    # production deployment Morays may have (in aggregate) a maximum of 16,
+    # 192, and 192 total connections to postgres, respectively.
+    local pg_max_conns
+    local rolconnlimit
+    local sql
+
+    local reserve_conns=18
+    local primary_ip="$1"
+
+    pg_max_conns=$(psql -t -P format=unaligned -U postgres -h "$primary_ip" \
+            -p 5432 -c 'SHOW max_connections')
+    if [[ $? -ne 0 ]]; then
+        warn "Unable to retrieve postgres max_connections. " \
+             "Role property \'rolconnlimit\' not applied to \'moray\'."
+        return
+    fi
+
+    if ! [[ $pg_max_conns =~ ^[0-9]+$ ]]; then
+        warn "Maximum allowed postgres connections value ($pg_max_conns) is " \
+             "not a positive integer. Role property \'rolconnlimit\' not " \
+             "applied to \'moray\'."
+        return
+    fi
+
+    if [[ $pg_max_conns -le $reserve_conns ]]; then
+        warn "Maximum allowed postgres connections ($pg_max_conns) is lower" \
+             "than the number of reserve connections ($reserve_conns). Role " \
+             "property \'rolconnlimit\' not applied to \'moray\'."
+        return
+    fi
+
+    rolconnlimit="$(($pg_max_conns - $reserve_conns))"
+    sql="ALTER ROLE $PG_USER WITH CONNECTION LIMIT $rolconnlimit"
+    psql -U postgres -h $primary_ip -p 5432 -c "$sql"
+    if [[ $? -ne 0 ]]; then
+        warn "Unable to set \'moray\' role property rolconnlimit\'."
+        return
+    fi
+}
+
 function manta_setup_moray_config {
     #.bashrc
     echo 'function req() { grep "$@" `svcs -L moray` | bunyan ;}' >> $PROFILE
@@ -223,6 +289,7 @@ function manta_setup_moray_config {
     # exists, so we don't check error, subsequent pg requests will fail with
     # this user if it dne.
     createuser -U postgres -h $primary_ip -p 5432 -d -S -R $PG_USER
+    manta_set_moray_role_connlimit $primary_ip
 
     # Postgres sucks at return codes, so we basically have no choice but to
     # ignore the error code here since we can't conditionally create the DB
