@@ -7,7 +7,7 @@
     "main": "lib/index.js",
     "dependencies": {
         "ajv": "4.11.4",
-        "artedi": "1.1.0",
+        "artedi": "1.1.1",
         "assert-plus": "1.0.0",
         "bunyan": "1.8.10",
         "bunyan-syslog": "0.2.2",
@@ -15,7 +15,7 @@
         "crc": "0.2.1",
         "dtrace-provider": "~0.8",
         "deep-equal": "0.0.0",
-        "fast": "2.3.0",
+        "fast": "https://github.com/joyent/node-fast#node-fast#11",
         "ip6addr": "0.1.1",
         "jsprim": "1.4.0",
         "kang": "1.2.0",
