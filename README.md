@@ -251,6 +251,9 @@ Each of the metrics returned include the following metadata labels:
 - Zone UUID
 - PID
 
+The request latency and request counter metrics additionally include a metadata
+label denoting the RPC method used (e.g. 'getbucket').
+
 The metric collection functionality is intended to be consumed by a monitoring
 service like a Prometheus or InfluxDB server.
 
