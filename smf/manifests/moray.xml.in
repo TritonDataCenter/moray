@@ -62,8 +62,8 @@
 
         <exec_method type="method"
                      name="stop"
-                     exec=":kill"
-                     timeout_seconds="30" />
+                     exec=":kill -TERM"
+                     timeout_seconds="0" />
 
         <property_group name="application" type="application" />
 
