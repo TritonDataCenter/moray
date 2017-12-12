@@ -964,22 +964,27 @@ API with a bucket and a filter, that is exactly the same syntax as
 
 ## Batch
 
-Allows you to transactionally write a list of put, update or delete operations.
+Allows you to write a list of operations to perform inside a single transaction,
+so that all or none succeed. The list of operations is an Array of objects
+containing an `"operation"` field set to:
 
-If the type is `put`, each request creates or overwrites a list of
-objects given a set of bucket/key/values.  The individual objects are
-pretty much exactly what you would send to `putObject`, but in a list.
-Note that all of the checks in putObject will be run, so you can send
-in `etag` (notably) and enforcement will be done on an individual
-record basis. Also, objects can span buckets in this API.
+- `"put"` (corresponds to [PutObject](#putobject)), to create or overwrite
+  `"key"` with the specified `"value"` in `"bucket"`.
+- `"delete"` (corresponds to [DeleteObject](#deleteobject)), to delete
+  `"key"` from `"bucket"`.
+- `"update"` (corresponds to [UpdateObjects](#updateobjects)), to update
+  all objects in `"bucket"` that match the given `"filter"` with the values
+  specified in `"fields"`.
+- `"deleteMany"` (corresponds to [DeleteMany](#deletemany)), to
+  delete all objects in `"bucket"` that match the given `"filter"`.
 
-If the operation is `delete`, along with the object bucket/key, you can also
-pass the same `opts` argument you do for `deleteObject`.
+All of these objects can have an `"options"` field passed in which will be
+interpreted in the same way they would be with the corresponding operation.
+This is useful when performing `"put"` or `"delete"` operations, since you
+can then specify an [etag](#option-etag) to check first, to avoid conflicts
+with concurrent RPCs.
 
-If the operation is `update`, you pass in what you would have to
-`updateObjects`.
-
-The default operation is `put`.
+If no `"operation"` is specified, then the field will default to `"put"`.
 
 ### API
 
@@ -997,6 +1002,10 @@ The default operation is `put`.
             email: 'mcavage@gmail.com'
         },
         filter: '(ismanager=false)'
+    }, {
+        bucket: 'jobs',
+        operation: 'deleteMany'
+        filter: '(state=finished)'
     }, {
         bucket: 'bar',
         operation: 'delete'
