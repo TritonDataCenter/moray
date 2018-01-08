@@ -15,7 +15,7 @@
         "crc": "0.2.1",
         "dtrace-provider": "~0.8",
         "deep-equal": "0.0.0",
-        "fast": "2.3.1",
+        "fast": "2.3.2",
         "ip6addr": "0.1.1",
         "jsprim": "1.4.0",
         "kang": "1.2.0",
