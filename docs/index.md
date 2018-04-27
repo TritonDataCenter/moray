@@ -543,14 +543,18 @@ looks like:
         }
     }
 
+If the update has been successfully applied, then the new `etag` will be
+returned to the client.
+
 ### API
 
     var data = {
         email: 'mark.cavage@joyent.com',
         ismanager: false
     };
-    client.putObject('foo', 'mcavage', data, function (err) {
+    client.putObject('foo', 'mcavage', data, function (err, res) {
         assert.ifError(err);
+        console.log(res.etag);
     });
 
 ### Inputs
