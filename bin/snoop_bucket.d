@@ -63,7 +63,7 @@ moray*:::getobject-done
 {
         printf("\n\nGET\n");
         printf("\tkey  => %s\n", key[arg0]);
-        printf("\tval  => %s\n", copyinstr(arg1));
+        printf("\tval  => %s\n", copyinstr(arg2));
         printf("\tcode => %s\n", code[arg0]);
         printf("\ttime => %dms\n", ((timestamp - req[arg0]) / 1000000));
 }
