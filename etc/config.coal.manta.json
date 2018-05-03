@@ -33,5 +33,6 @@
     "expiry": 60
   },
   "server_uuid": "fake-manta-coal-server-uuid",
-  "datacenter": "coal"
+  "datacenter": "coal",
+  "service_name": "1.moray.coal.joyent.us"
 }
