@@ -34,5 +34,6 @@
     "expiry": 60
   },
   "server_uuid": "{{auto.SERVER_UUID}}",
-  "datacenter": "{{DATACENTER}}"
+  "datacenter": "{{DATACENTER}}",
+  "service_name": "{{SERVICE_NAME}}"
 }
