@@ -60,8 +60,8 @@ Indexes can be defined to be of type `number`, `boolean`, `string`, `ip` or
 - Not end with an underscore.
 - When starting with an underscore, not contain any further underscores.
 - Not start with `moray`.
-- Not be a reserved name (`_etag`, `_id`, `_key`, `_atime`, `_ctime`, `_mtime`,
-  `_rver`, `_txn_snap`, `_value`, or `_vnode`).
+- Not be a reserved name (`_etag`, `_id`, `_idx`, `_key`, `_atime`, `_ctime`,
+  `_mtime`, `_rver`, `_txn_snap`, `_value`, or `_vnode`).
 
 Moray also supports multi-valued entries such that indexing still works (mostly)
 as expected.  There's an example later in this document under "Using Arrays".
