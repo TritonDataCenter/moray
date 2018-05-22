@@ -10,7 +10,7 @@
         "artedi": "1.3.0",
         "assert-plus": "1.0.0",
         "bunyan": "1.8.10",
-        "bunyan-syslog": "0.2.2",
+        "bunyan-syslog": "0.3.1",
         "clone": "0.1.11",
         "crc": "0.2.1",
         "cueball": "2.5.2",
@@ -22,12 +22,12 @@
         "kang": "1.2.0",
         "macaddr": "0.0.1",
         "moray-filter": "1.0.0",
-        "libuuid": "0.1.3",
+        "libuuid": "0.2.1",
         "lru-cache": "2.5.0",
         "node-manatee": "git+https://github.com/joyent/node-manatee.git#019e9ca0",
-        "manatee": "git+https://github.com/joyent/manatee.git#86ae52d",
+        "manatee": "git+https://github.com/joyent/manatee.git#MANATEE-406",
         "moray": "3.1.1",
-        "microtime": "0.5.1",
+        "microtime": "2.1.6",
         "once": "1.3.0",
         "pg": "6.2.4",
         "pg-parse-float": "0.0.1",
@@ -37,8 +37,8 @@
         "verror": "1.9.0"
     },
     "devDependencies": {
-        "eslint": "2.13.1",
-        "eslint-plugin-joyent": "1.3.0"
+        "eslint": "^4.13.1",
+        "eslint-plugin-joyent": "~2.0.0"
     },
     "sdcDependencies": {
         "config-agent": ">=1.2.0"
