@@ -29,10 +29,6 @@
       "user": "moray"
     }
   },
-  "cache": {
-    "size": 5000,
-    "expiry": 60
-  },
   "server_uuid": "{{auto.SERVER_UUID}}",
   "datacenter": "{{datacenter_name}}"
 }
