@@ -25,6 +25,9 @@
 {{#MORAY_MAX_QUEUE_LENGTH}}
       "maxQueueLength": {{MORAY_MAX_QUEUE_LENGTH}},
 {{/MORAY_MAX_QUEUE_LENGTH}}
+{{#MORAY_TARGET_CLAIM_DELAY}}
+      "targetClaimDelay": {{MORAY_TARGET_CLAIM_DELAY}},
+{{/MORAY_TARGET_CLAIM_DELAY}}
       "maxIdleTime": 270000,
       "user": "moray"
     }

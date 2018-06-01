@@ -1,19 +1,22 @@
 #!/usr/sbin/dtrace -Cs
-/* Run with -DMORAY_LEGACY on older moray systems */
-#ifdef MORAY_LEGACY
-#define PGPROBE pgpool-*
-#else
-#define PGPROBE moray-pgpool-*
-#endif
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/*
+ * Copyright (c) 2018, Joyent, Inc.
+ */
 
 #pragma D option quiet
 
-PGPROBE:::acquire
+moray*:::pool-checkout
 {
-        this->j = copyinstr(arg1);
-        @nconn[pid] = max(strtoll(json(this->j, "resources")) - strtoll(json(this->j, "available")));
-        @qlen[pid] = max(strtoll(json(this->j, "queue")));
+        @nconn[pid] = max(arg0 - arg1 - arg2);
+        @qlen[pid] = max(arg3);
 }
+
 moray*:::query-start
 {
         @query[pid] = count();
@@ -45,13 +48,10 @@ moray*:::batch-start
         @batch[pid] = count();
 }
 
-#ifndef MORAY_LEGACY
-/* not supported in older versions of moray */
 moray*:::reindex*-start
 {
         @reindex[pid] = count();
 }
-#endif
 
 BEGIN
 {
@@ -69,18 +69,10 @@ profile:::tick-1sec
 profile:::tick-1sec
 {
         lines -= 1;
-#ifndef MORAY_LEGACY
-        printa("%-8d %@4u %@4u %@4u  %@4u %@4u %@4u %@4u %@4u %@4d %@4d\n",
-                        @nconn, @qlen, @query,
-                        @gets, @finds, @puts, @upds, @dels, @batch, @reindex
-        );
-        clear(@reindex);
-#else
         printa("%-8d %@4u %@4u %@4u  %@4u %@4u %@4u %@4u %@4u %@4d    0\n",
                         @nconn, @qlen, @query,
                         @gets, @finds, @puts, @upds, @dels, @batch
         );
-#endif
         clear(@nconn);
         clear(@qlen);
         clear(@query);
