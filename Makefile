@@ -32,7 +32,8 @@ JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -C -f ./tools/jsstyle.conf
-SMF_MANIFESTS_IN = smf/manifests/haproxy.xml.in
+SMF_MANIFESTS_IN =	smf/manifests/haproxy.xml.in \
+			smf/manifests/pg-setup.xml.in
 BOOTSTRAP_MANIFESTS = 	sapi_manifests/registrar/template \
 			sdc/sapi_manifests/registrar/template
 
@@ -108,6 +109,7 @@ release: all docs $(SMF_MANIFESTS) $(BOOTSTRAP_MANIFESTS)
 		$(ROOT)/build \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
+		$(ROOT)/pg-setup.js \
 		$(ROOT)/node_modules \
 		$(ROOT)/package.json \
 		$(ROOT)/sapi_manifests \
