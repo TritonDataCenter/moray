@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<!--
+    Copyright (c) 2018, Joyent, Inc.
+-->
+
+<service_bundle type="manifest" name="pg-setup">
+  <service name="smartdc/moray-pg-setup" type="service" version="1">
+
+    <create_default_instance enabled="true" />
+    <single_instance/>
+
+    <dependency name="network" grouping="require_all" restart_on="error" type="service">
+      <service_fmri value="svc:/milestone/network:default" />
+    </dependency>
+
+    <dependency name="filesystem" grouping="require_all" restart_on="error" type="service">
+      <service_fmri value="svc:/system/filesystem/local" />
+    </dependency>
+
+    <dependency name="mdata" grouping="require_all" restart_on="none" type="service">
+      <service_fmri value="svc:/smartdc/mdata:execute" />
+    </dependency>
+
+    <dependency name="config-agent" grouping="optional_all" restart_on="none" type="service">
+      <service_fmri value="svc:/smartdc/application/config-agent" />
+    </dependency>
+
+    <exec_method
+      type="method"
+      name="start"
+      exec="/usr/bin/ctrun -l child -o noorphan node --abort-on-uncaught-exception pg-setup.js -f etc/config.json -r @@MORAY_FLAVOR@@"
+      timeout_seconds="0">
+      <method_context working_directory="/opt/smartdc/moray">
+        <method_credential user="nobody"
+                   group="nobody"
+                   privileges="basic"/>
+        <method_environment>
+          <envvar name="PATH"
+              value="/opt/smartdc/moray/build/node/bin:/opt/local/bin:/usr/bin:/usr/sbin:/bin"/>
+          <envvar name="LD_PRELOAD_32"
+              value="/usr/lib/extendedFILE.so.1" />
+        </method_environment>
+      </method_context>
+    </exec_method>
+
+    <exec_method type="method" name="restart" exec=":kill" timeout_seconds="60">
+      <method_context>
+        <method_credential user="root" group="staff"/>
+      </method_context>
+    </exec_method>
+
+    <exec_method type="method" name="stop" exec=":kill" timeout_seconds="60">
+      <method_context>
+        <method_credential user="root" group="staff"/>
+      </method_context>
+    </exec_method>
+
+    <property_group name="application" type="application" />
+
+    <stability value="Evolving" />
+
+    <template>
+      <common_name>
+        <loctext xml:lang="C">Joyent Postgres Setup Service</loctext>
+      </common_name>
+    </template>
+
+  </service>
+</service_bundle>

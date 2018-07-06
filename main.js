@@ -12,9 +12,9 @@ var assert = require('assert-plus');
 var bsyslog = require('bunyan-syslog');
 var bunyan = require('bunyan');
 var clone = require('clone');
-var fs = require('fs');
 var getopt = require('posix-getopt');
 var jsprim = require('jsprim');
+var mod_cmd = require('./lib/cmd');
 var VError = require('verror').VError;
 
 
@@ -26,26 +26,9 @@ var app = require('./lib');
 
 var MIN_PORT = 1;
 var MAX_PORT = 65535;
-var DEFAULTS = {
-    file: process.cwd() + '/etc/config.json',
-    monitorPort: 3020,
-    port: 2020,
-    bindip: '0.0.0.0'
-};
 var NAME = 'moray';
-var LOG_SERIALIZERS = {
-    err: bunyan.stdSerializers.err,
-    pg: function (client) {
-        return (client ? client._moray_id : undefined);
-    }
-};
 // We'll replace this with the syslog later, if applicable
-var LOG = bunyan.createLogger({
-    name: NAME,
-    level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr,
-    serializers: LOG_SERIALIZERS
-});
+var LOG = mod_cmd.setupLogger(NAME);
 var LOG_LEVEL_OVERRIDE = false;
 
 
@@ -68,7 +51,7 @@ function setupLogger(config) {
         var facility = bsyslog.facility[cfg_b.syslog.facility];
         LOG = bunyan.createLogger({
             name: NAME,
-            serializers: LOG_SERIALIZERS,
+            serializers: mod_cmd.LOG_SERIALIZERS,
             streams: [ {
                 level: level,
                 type: 'raw',
@@ -84,8 +67,9 @@ function setupLogger(config) {
     }
 
     if (cfg_b.level && !LOG_LEVEL_OVERRIDE) {
-        if (bunyan.resolveLevel(cfg_b.level))
+        if (bunyan.resolveLevel(cfg_b.level)) {
             LOG.level(cfg_b.level);
+        }
     }
 }
 
@@ -130,12 +114,8 @@ function parseOptions() {
             break;
 
         case 'v':
-            // Allows us to set -vvv -> this little hackery
-            // just ensures that we're never < TRACE
             LOG_LEVEL_OVERRIDE = true;
-            LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-            if (LOG.level() <= bunyan.DEBUG)
-                LOG = LOG.child({src: true});
+            LOG = mod_cmd.increaseVerbosity(LOG);
             break;
 
         case ':':
@@ -160,27 +140,6 @@ function parseOptions() {
     return (opts);
 }
 
-
-function readConfig(options) {
-    assert.object(options);
-
-    var cfg;
-
-    try {
-        cfg = JSON.parse(fs.readFileSync(options.file, 'utf8'));
-    } catch (e) {
-        LOG.fatal({
-            err: e,
-            file: options.file
-        }, 'Unable to read/parse configuration file');
-        throw new VError(e,
-            'Unable to parse configuration file %s', options.file);
-    }
-
-    return (jsprim.mergeObjects(cfg, options, DEFAULTS));
-}
-
-
 function run(options) {
     assert.object(options);
 
@@ -198,7 +157,7 @@ function run(options) {
 
 (function main() {
     var options = parseOptions();
-    var config = readConfig(options);
+    var config = mod_cmd.readConfig(options);
 
     LOG.debug({
         config: config,
