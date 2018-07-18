@@ -13,7 +13,7 @@
         "bunyan-syslog": "0.2.2",
         "clone": "0.1.11",
         "crc": "0.2.1",
-        "cueball": "2.5.2",
+        "cueball": "2.7.0",
         "dtrace-provider": "~0.8",
         "deep-equal": "0.0.0",
         "fast": "2.3.2",

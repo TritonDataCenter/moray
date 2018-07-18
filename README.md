@@ -243,6 +243,7 @@ The following metrics are always collected:
 - Backend request queue length
 - End-to-end latency for all requests
 - Count of requests completed
+- Count of of all Cueball failure events
 
 Each of the metrics returned include the following metadata labels:
 
