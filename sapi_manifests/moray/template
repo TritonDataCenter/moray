@@ -22,6 +22,9 @@
       "connectTimeout": 4000,
       "checkInterval": 90000,
       "maxConnections": {{MORAY_MAX_PG_CONNS}},
+{{#MORAY_MIN_PG_CONNS}}
+      "minSpareConnections": {{MORAY_MIN_PG_CONNS}},
+{{/MORAY_MIN_PG_CONNS}}
 {{#MORAY_MAX_QUEUE_LENGTH}}
       "maxQueueLength": {{MORAY_MAX_QUEUE_LENGTH}},
 {{/MORAY_MAX_QUEUE_LENGTH}}
