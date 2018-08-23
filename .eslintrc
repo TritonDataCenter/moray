@@ -15,5 +15,10 @@
         "node": true
     },
     "rules": {
+        "callback-return": "off",
+
+        // Style:
+        "func-style": [ "error", "declaration" ],
+        "multiline-comment-style": [ "error", "starred-block" ]
     }
 }
