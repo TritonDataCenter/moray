@@ -54,7 +54,8 @@ var LOG = mod_cmd.setupLogger(NAME);
 function query(opts, sql, args, callback) {
     opts.db.pg(function (cErr, pg) {
         if (cErr) {
-            callback(cErr);
+            callback(new VError(cErr,
+                'failed to acquire client for (sql=%j)', sql));
             return;
         }
 
@@ -266,7 +267,9 @@ function createDB(opts, callback) {
 
     mod_forkexec.forkExecWait({ argv: args }, function (err, info) {
         if (err) {
-            LOG.warn(info, 'failed to create moray database');
+            LOG.warn(info, 'failed to create %j database', DBNAME);
+        } else {
+            LOG.info(info, 'created new %j database', DBNAME);
         }
 
         /*
@@ -369,6 +372,8 @@ function main() {
     dbopts.manatee.log = LOG;
 
     var dbresolver = mod_manatee.createPrimaryResolver(dbopts.manatee);
+
+    LOG.info('Fetching Manatee state');
 
     /*
      * We wait indefinitely until the Manatee cluster is ready and we have a
