@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (c) 2018, Joyent, Inc.
+# Copyright (c) 2019, Joyent, Inc.
 #
 
 #
@@ -21,6 +21,8 @@
 # other projects too, you should add these to the original versions of the
 # included Makefiles (in eng.git) so that other teams can use them too.
 #
+
+NAME = moray
 
 #
 # Files
@@ -53,25 +55,34 @@ endif
 # RELENG-341: no npm cache is making builds unreliable
 NPM_FLAGS :=
 
-include ./tools/mk/Makefile.defs
+ENGBLD_USE_BUILDIMAGE	= true
+ENGBLD_REQUIRE		:= $(shell git submodule update --init deps/eng)
+include ./deps/eng/tools/mk/Makefile.defs
+TOP ?= $(error Unable to access eng.git submodule Makefiles.)
+
 ifeq ($(shell uname -s),SunOS)
-	include ./tools/mk/Makefile.node_prebuilt.defs
+	include ./deps/eng/tools/mk/Makefile.node_prebuilt.defs
+	include ./deps/eng/tools/mk/Makefile.agent_prebuilt.defs
 else
 	NODE := node
 	NPM := $(shell which npm)
 	NPM_EXEC=$(NPM)
 endif
-include ./tools/mk/Makefile.node_deps.defs
-include ./tools/mk/Makefile.smf.defs
+include ./deps/eng/tools/mk/Makefile.smf.defs
 
 #
 # MG Variables
 #
 
-RELEASE_TARBALL         := moray-pkg-$(STAMP).tar.bz2
+RELEASE_TARBALL         := $(NAME)-pkg-$(STAMP).tar.gz
 ROOT                    := $(shell pwd)
-RELSTAGEDIR                  := /tmp/$(STAMP)
+RELSTAGEDIR                  := /tmp/$(NAME)-$(STAMP)
 
+BASE_IMAGE_UUID = 04a48d7d-6bb5-4e83-8c3b-e60a99e0f48f
+BUILDIMAGE_NAME = manta-moray
+BUILDIMAGE_DESC	= Manta moray
+BUILDIMAGE_PKGSRC = haproxy-1.6.2 postgresql92-client-9.2.19
+AGENTS		= amon config registrar
 
 #
 # Env vars
@@ -122,29 +133,26 @@ release: all docs $(SMF_MANIFESTS) $(BOOTSTRAP_MANIFESTS)
 	    $(RELSTAGEDIR)/root/opt/smartdc/boot/scripts/
 	cp -R $(ROOT)/deps/sdc-scripts/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
 	cp -R $(ROOT)/boot/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
-	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root)
+	(cd $(RELSTAGEDIR) && $(TAR) -I pigz -cf $(ROOT)/$(RELEASE_TARBALL) root)
 	@rm -rf $(RELSTAGEDIR)
 
 
 .PHONY: publish
 publish: release
-	@if [[ -z "$(BITS_DIR)" ]]; then \
-		@echo "error: 'BITS_DIR' must be set for 'publish' target"; \
-		exit 1; \
-	fi
-	mkdir -p $(BITS_DIR)/moray
-	cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/moray/$(RELEASE_TARBALL)
+	mkdir -p $(ENGBLD_BITS_DIR)/moray
+	cp $(ROOT)/$(RELEASE_TARBALL) $(ENGBLD_BITS_DIR)/moray/$(RELEASE_TARBALL)
 
 %/template: %/template.in
 	sed -e 's/@@PORTS@@/2020/g' $< > $@
 
-include ./tools/mk/Makefile.deps
+include ./deps/eng/tools/mk/Makefile.deps
 ifeq ($(shell uname -s),SunOS)
-	include ./tools/mk/Makefile.node_prebuilt.targ
+	include ./deps/eng/tools/mk/Makefile.node_prebuilt.targ
+	include ./deps/eng/tools/mk/Makefile.agent_prebuilt.targ
 else
-	include ./tools/mk/Makefile.node.targ
+	include ./deps/eng/tools/mk/Makefile.node.targ
 endif
-include ./tools/mk/Makefile.smf.targ
-include ./tools/mk/Makefile.targ
+include ./deps/eng/tools/mk/Makefile.smf.targ
+include ./deps/eng/tools/mk/Makefile.targ
 
 sdc-scripts: deps/sdc-scripts/.git

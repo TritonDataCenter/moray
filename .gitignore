@@ -1,7 +1,9 @@
+/make_stamps
 core*
 node_modules
 tmp
-build
+/bits
+/build
 docs/*.json
 docs/*.html
 cscope.in.out
@@ -12,7 +14,7 @@ cscope.files
 logfile
 .coverage_data
 cover_html
-*.tar.bz2
+*.tar.gz
 smf/manifests/*.xml
 sapi_manifests/registrar/template
 sdc/sapi_manifests/registrar/template
