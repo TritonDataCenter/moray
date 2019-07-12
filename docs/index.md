@@ -52,8 +52,28 @@ write an object, the value of each indexed field is updated in the server-side
 index for that field.  You can update a bucket's indexes later, but objects
 already written in that bucket will need to be reindexed.
 
-Indexes can be defined to be of type `number`, `boolean`, `string`, `ip` or
-`subnet`.  Index names must:
+Indexes can be defined to be any of the following types:
+
+- `number`, a numeric value (e.g., `5` or `123.456`)
+- `boolean`, a boolean value (e.g., `true` or `false`)
+- `string`, a string value (e.g., `"hello world"`)
+- `uuid`, a UUID (e.g., `"3bfa93f9-012e-c14c-fc29-9042357e684d"`)
+- `date`, an [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) date
+  (e.g., `"2019-07-04T20:30:55.123Z"` or `"2019-07-04T14:30:00Z"`)
+- `mac`, a 48-bit MAC address (e.g., `"90:b8:d0:e6:be:e1"`)
+- `ip`, an IPv4 or IPv6 address (e.g., `"192.168.0.1"` or `"fd00::1"`)
+- `subnet`, an IPv4 or IPv6 subnet (e.g., `"192.168.4.0/24"` or `"fc00::/7"`)
+- `numrange`, a range of numbers (e.g., `"[5,10]"` or `"(5,9.5]"`)
+- `daterange`, a range of dates (e.g., `"[,2019-07-04T00:00:00Z)"` or
+  `"[2019-07-04T00:00:00Z,2019-07-05T00:00:00Z)"`)
+
+For information on using range types, see [Using Ranges](#using-ranges).
+
+Moray can also index fields containing arrays of the types listed above, with
+some limitations in how they may be searched. See [Using Arrays](#using-arrays)
+for more information.
+
+Indexed field names must:
 
 - Contain only Latin letters, Arabic numerals, and underscores.
 - Start with a Latin letter or an underscore.
@@ -63,9 +83,88 @@ Indexes can be defined to be of type `number`, `boolean`, `string`, `ip` or
 - Not be a reserved name (`_etag`, `_id`, `_idx`, `_key`, `_atime`, `_ctime`,
   `_mtime`, `_rver`, `_txn_snap`, `_value`, or `_vnode`).
 
-Moray also supports multi-valued entries such that indexing still works (mostly)
-as expected.  There's an example later in this document under "Using Arrays".
+## Filters
 
+Moray allows searching for objects using a filter language similar to LDAP's. To
+search on a field, you can use the following expressions:
+
+- Presence, `(field=*)`, which applies to objects where `field` has been
+  set and is non-null.
+- Equals, `(field=value)`, which applies to objects where `field` is the
+  given value.
+- Less than or equals, `(field<=value)`, which applies to objects where the
+  value of `field` is less than or equal to the given value.
+- Greater than or equals, `(field>=value)`, which applies to objects where the
+  value of `field` is greater than or equal to the given value.
+- Substring, which applies to objects where `field` contains the given
+  substrings; wildcard characters (`*`) may be placed within the string
+  wherever they are needed, allowing variations like `(field=prefix*)`,
+  `(field=*suffix)`, `(field=*infix*)`, `(field=*a*b*c*)`, and so on.
+
+When using `<=` and `>=`, values are compared according to Postgres's rules for
+that type. For strings, this is by codepoint value (`"Z"` is less than `"^"`,
+which is less than `"a"`, which in turn is less than `"𐐗"`). When comparing a
+string that is the proper prefix of another string, the prefix will sort before
+the longer string.
+
+Like in LDAP, you can join multiple filters to create more complex expressions:
+
+- Or, `(|(...)(...))`
+- And, `(&(...)(...))`
+- Negation, `(!(...))`
+
+Moray also supports the following extensible filters:
+
+- `(field:caseIgnoreMatch:=value)`, which applies to objects where `field` is
+  equal to `value` when ignoring case
+- `(field:caseIgnoreSubstringsMatch:=*value*)`, which applies to objects where
+  `field` contains the given string when ignoring case
+- `(field:overlaps:=range)`, which applies to objects where the range-type
+  `field` overlaps with the given range
+- `(field:contains:=value)`, which applies to objects where the range-type
+  `field` contains the given value
+- `(field:within:=range)`, which applies to objects where `field` is contained
+  within the given range
+
+When constructing filters based on user input, it's important to make sure that
+input is properly escaped. Unlike LDAP, which represents escaped characters as
+their hexadecimal ASCII values (e.g., a literal `(` is `\28`), Moray escapes
+the literal character (e.g., a literal `(` is `\(`). Consumers should consider
+using the [moray-filter](https://www.npmjs.com/package/moray-filter) library to
+make sure their queries escape unknown input correctly.
+
+Moray requires that at least one of the filters in a query be for an indexed
+field, so that Postgres always has the option to use its indexes. If a filter
+is given for a non-indexed field (or a field that is currently being indexed by
+[ReindexObjects](#reindexobjects)), then Moray will apply the filter itself to
+results returned from Postgres. While this can sometimes be a useful feature,
+it can also be extremely tricky for consumers to use safely. When filtering on
+fields without an index:
+
+- The `_count` field will likely be incorrect, since it represents the number
+  of rows that match the query sent to Postgres.
+- Zero objects may be returned even though there might be matching objects in
+  the bucket, since the [`limit` option](#option-limit) constrains the number
+  of objects returned from the database, which may then all be removed by the
+  filter on the non-indexed field. While using [`noLimit`](#option-limit) can
+  fix this issue, it introduces its own, more severe issues when dealing with
+  large tables.
+- Moray assumes non-indexed fields are strings, which means that other field
+  types cannot be reliably matched; for example, if a field on an object is
+  boolean `true`, and the filter is `(field=true)`, the object will not be
+  returned since `true` is not the same as `"true"`.
+
+To avoid these kinds of issues, it is recommended that consumers only use fully
+indexed fields. The [`requireIndexes` options](#option-requireIndexes) can be
+used to tell Moray to reject filters that include non-indexed or reindexing
+fields.
+
+In addition to the fields specified in the bucket's schema, you can search and
+[sort](#option-sort) on the following internal fields:
+
+- `_id`, an ID that Moray assigns to each row that is unique within the bucket
+- `_key`, the key of the object
+- `_mtime`, the modification time of the object
 
 # Basic MorayClient usage
 
@@ -722,7 +821,7 @@ expect to receive back up to N records from this call.
 - [req_id](#option-req_id)
 - [timeout](#option-timeout)
 
-##### requireIndexes
+##### <a name="option-requireIndexes">requireIndexes</a>
 
 When passing `requireIndexes: true`, `findObjects` requests will respond with a
 `NotIndexedError` error if at least one of the fields included in the search
@@ -755,6 +854,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
         "userid": 74265
       },
       "_id": 4,
+      "_count": 3,
       "_etag": "09D27A3F",
       "_mtime": 1343726032177,
       "_txn_snap": 7894
@@ -767,6 +867,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
         "userid": 54408
       },
       "_id": 1,
+      "_count": 3,
       "_etag": "D4DC3CFE",
       "_mtime": 1343724604354,
       "_txn_snap": 7882
@@ -779,6 +880,7 @@ Plus any currently unhandled Postgres Errors (such as relation already exists).
         "userid": 23175
       },
       "_id": 3,
+      "_count": 3,
       "_etag": "84C510D7",
       "_mtime": 13437260263184,
       "_txn_snap": 7894
@@ -990,6 +1092,48 @@ with concurrent RPCs.
 
 If no `"operation"` is specified, then the field will default to `"put"`.
 
+When Moray executes a batch operation, it will perform the operations in the
+specified order. This has some important implications: because updating a row
+grabs a lock on it, it is possible for two transactions to create a deadlock.
+For example, consider executing the two following updates in Postgres
+simultaneously:
+
+```
+var batch1 = [
+    {
+        bucket: 'foo',
+        key: 'a',
+        value: { n: 1 },
+        options: { etag: 'D903D93A' }
+    },
+    {
+        bucket: 'foo',
+        key: 'b',
+        value: { n: 1 },
+        options: { etag: 'C67C2A5A' }
+    }
+];
+var batch2 = [
+    {
+        bucket: 'foo',
+        key: 'b',
+        value: { n: 1 },
+        options: { etag: 'C67C2A5A' }
+    },
+    {
+        bucket: 'foo',
+        key: 'a',
+        value: { n: 1 },
+        options: { etag: 'D903D93A' }
+    }
+];
+```
+
+When this happens, Postgres will return a `"deadlock detected"` error. To
+prevent this from happening, make sure to place your updates in a consistent
+order, so that given bucket/key pairs are always updated and deleted in the
+same order.
+
 ### API
 
     var data = [{
@@ -1091,7 +1235,7 @@ The latter use-case (filling in gaps in the Moray API) is considered deprecated.
 
 # Additional features
 
-## Using Arrays
+## <a name="using-arrays">Using Arrays</a>
 
 Here's a small example demonstrating how to use arrays:
 
@@ -1130,6 +1274,100 @@ subclause.  There is one caveat:  _wildcard_ searches do not work (and can't).
 So doing `(name=f*)` will return an error to you.  The reason is that Postgres
 does not have any sane way of doing this (it is technically possible, but
 expensive, and not currently implemented in Moray).
+
+## <a name="using-ranges">Using Ranges</a>
+
+Moray has two types, `numrange` and `daterange`, which use Postgres's
+[range types](https://www.postgresql.org/docs/9.2/rangetypes.html). Using these
+types, you can describe ranges of numbers and dates in the following syntax:
+
+- `[a,b]`, an inclusive range from `a` to `b`
+- `(a,b)`, an exclusive range from `a` to `b`
+- `[a,b)`, a range from `a` (inclusive) to `b` (exclusive)
+- `(a,b]`, a range from `a` (exclusive) to `b` (inclusive)
+
+The left side of the range may be omitted to have no lower bound, and the right
+side may be omitted to have no upper bound. Omitting both sides (e.g., `[,]`)
+creates a range that contains all values.
+
+When using ranges, the extensible filters `overlaps`, `contains`, and `within`
+may be used to search for values within ranges. These filters may also be used
+with the `subnet` type, where values within a subnet are of type `ip`.
+
+### Example
+
+    $ putbucket -i numr:numrange -i num:number ranges
+    $ putobject -d '{"numr":"[1,4]","num":5}' ranges obj1
+    $ putobject -d '{"numr":"[3,10]","num":7}' ranges obj2
+    $ putobject -d '{"numr":"[8,15]","num":-6}' ranges obj3
+    $ findobjects ranges '(numr:overlaps:=\(3,7\))'
+    {
+      "bucket": "ranges",
+      "key": "obj1",
+      "value": {
+        "numr": "[1,4]",
+        "num": 5
+      },
+      "_id": 1,
+      "_etag": "2A7CFC8E",
+      "_mtime": 1562762031876,
+      "_txn_snap": null,
+      "_count": 2
+    }
+    {
+      "bucket": "ranges",
+      "key": "obj2",
+      "value": {
+        "numr": "[3,10]",
+        "num": 7
+      },
+      "_id": 2,
+      "_etag": "F4B3DD9D",
+      "_mtime": 1562762057352,
+      "_txn_snap": null,
+      "_count": 2
+    }
+    $ findobjects ranges '(numr:contains:=4)'
+    {
+      "bucket": "ranges",
+      "key": "obj1",
+      "value": {
+        "numr": "[1,4]",
+        "num": 5
+      },
+      "_id": 1,
+      "_etag": "2A7CFC8E",
+      "_mtime": 1562762031876,
+      "_txn_snap": null,
+      "_count": 2
+    }
+    {
+      "bucket": "ranges",
+      "key": "obj2",
+      "value": {
+        "numr": "[3,10]",
+        "num": 7
+      },
+      "_id": 2,
+      "_etag": "F4B3DD9D",
+      "_mtime": 1562762057352,
+      "_txn_snap": null,
+      "_count": 2
+    }
+    $ findobjects ranges '(num:within:=[,0])'
+    {
+      "bucket": "ranges",
+      "key": "obj3",
+      "value": {
+        "numr": "[8,15]",
+        "num": -6
+      },
+      "_id": 3,
+      "_etag": "373496EE",
+      "_mtime": 1562762059101,
+      "_txn_snap": null,
+      "_count": 1
+    }
 
 ## Triggers
 
