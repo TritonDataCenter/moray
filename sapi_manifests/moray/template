@@ -6,6 +6,14 @@
       "type": "udp"
     }
   },
+  "fast": {
+    {{#MORAY_FAST_CRC_MODE}}
+    "crc_mode": {{MORAY_FAST_CRC_MODE}}
+    {{/MORAY_FAST_CRC_MODE}}
+    {{^MORAY_FAST_CRC_MODE}}
+    "crc_mode": 2
+    {{/MORAY_FAST_CRC_MODE}}
+  },
   "manatee": {
     "manatee": {
       "path": "/manatee/{{SERVICE_NAME}}",
