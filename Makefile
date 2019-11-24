@@ -79,7 +79,7 @@ ROOT                    := $(shell pwd)
 RELSTAGEDIR                  := /tmp/$(NAME)-$(STAMP)
 
 BASE_IMAGE_UUID = 04a48d7d-6bb5-4e83-8c3b-e60a99e0f48f
-BUILDIMAGE_NAME = manta-moray
+BUILDIMAGE_NAME = mantav2-moray
 BUILDIMAGE_DESC	= Manta moray
 BUILDIMAGE_PKGSRC = haproxy-1.6.2 postgresql92-client-9.2.19
 AGENTS		= amon config registrar
