@@ -5,20 +5,33 @@
 -->
 
 <!--
-    Copyright 2017, Joyent, Inc.
+    Copyright 2019 Joyent, Inc.
 -->
 
 # Moray, the highly-available key-value store
+
+This repository is part of the Joyent Triton and Manta projects.
+For contribution guidelines, issues, and general documentation, visit the main
+[Triton](http://github.com/joyent/triton) and
+[Manta](http://github.com/joyent/manta) project pages.
 
 This repository contains Moray, the highly-available key-value store from
 Joyent.  The Moray service provides a simple put/get/search/delete abstraction
 on top of Postgres 9.x, over plain TCP using
 [node-fast](https://github.com/joyent/node-fast).
 
-This repository is part of the Joyent Manta and Triton projects. For
-contribution guidelines, issues, and general documentation, visit the main
-[Triton](http://github.com/joyent/triton) and
-[Manta](http://github.com/joyent/manta) project pages.
+
+## Active Branches
+
+There are currently two active branches of this repository, for the two
+active major versions of Manta. See the [mantav2 overview
+document](https://github.com/joyent/manta/blob/master/docs/mantav2.md) for
+details on major Manta versions.
+
+- [`master`](../../tree/master/) - For development of mantav2, the latest
+  version of Manta. This is the version used by Triton.
+- [`mantav1`](../../tree/mantav1/) - For development of mantav1, the long
+  term support maintenance version of Manta.
 
 
 ## Introduction
@@ -60,8 +73,8 @@ automated failover.  Multiple Moray instances are typically deployed atop that.
 Here's a diagram of the containers used in a typical Manatee/Moray _shard_:
 
              +-------+     +-------+     +-------+
-             | moray |     | moray |     | moray | ...          
-             +-+---+-+     +-+---+-+     +-+---+-+              
+             | moray |     | moray |     | moray | ...
+             +-+---+-+     +-+---+-+     +-+---+-+
                |   |         |   |         |   +--------------------------+
                |   |         |   +-------- | ---------------------------+ |
                |   +-------- | ----------- | -------------------------+ | |
@@ -73,11 +86,11 @@ Here's a diagram of the containers used in a typical Manatee/Moray _shard_:
                |||   |             +--------------------------- + Cluster   |
                |||   |             |             +------------- +           |
             +--+++---+-+  +--------+-+  +--------+-+            +-----------+
-            | manatee  |  | manatee  |  | manatee  |  
+            | manatee  |  | manatee  |  | manatee  |
             |----------+  |----------+  |----------+ ...
-            | postgres |  | postgres |  | postgres |  
+            | postgres |  | postgres |  | postgres |
             | primary  |  | sync     |  | async    |
-            +----------+  +----------+  +----------+  
+            +----------+  +----------+  +----------+
 
 This works as follows:
 
