@@ -181,6 +181,19 @@ function setup_moray {
             fatal "unable to start $moray_instance"
     done
 
+    #
+    # We join the metric ports in a comma-separated list, then add this list as
+    # metricPorts mdata to allow scraping by cmon-agent.
+    #
+    # The metricPorts values are derived from the moray service's "SIZE"
+    # SAPI metadata. We don't need to worry about keeping the metricPorts
+    # updated if this variable changes, because such a change does not affect
+    # already-provisioned zones. This is because moray zones pull the "SIZE"
+    # variable from /var/tmp/metadata.json, which is only written once, when the
+    # zone is provisioned -- it is not managed by config-agent.
+    #
+    mdata-put metricPorts $(IFS=','; echo "${kangs[*]}")
+
     unset IFS
 }
 
