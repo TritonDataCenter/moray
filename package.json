@@ -1,13 +1,13 @@
 {
     "name": "moray-server",
     "description": "SmartDataCenter H/A Key/Value store",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "author": "Joyent (joyent.com)",
     "private": true,
     "main": "lib/index.js",
     "dependencies": {
         "ajv": "4.11.4",
-        "artedi": "1.3.0",
+        "artedi": "2.0.0",
         "assert-plus": "1.0.0",
         "bunyan": "1.8.10",
         "bunyan-syslog": "~0.3.2",
