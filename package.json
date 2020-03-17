@@ -10,7 +10,6 @@
         "artedi": "2.0.0",
         "assert-plus": "1.0.0",
         "bunyan": "1.8.10",
-        "bunyan-syslog": "~0.3.2",
         "clone": "0.1.11",
         "crc": "0.2.1",
         "cueball": "~2.7.1",

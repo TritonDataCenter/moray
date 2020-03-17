@@ -1,11 +1,7 @@
 {
     "port": 2020,
     "bunyan": {
-        "level": "info",
-        "syslog": {
-            "facility": "local0",
-            "type": "udp"
-        }
+        "level": "info"
     },
     "manatee": {
         "manatee": {

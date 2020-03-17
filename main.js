@@ -5,11 +5,10 @@
  */
 
 /*
- * Copyright (c) 2018, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var assert = require('assert-plus');
-var bsyslog = require('bunyan-syslog');
 var bunyan = require('bunyan');
 var clone = require('clone');
 var getopt = require('posix-getopt');
@@ -27,7 +26,7 @@ var app = require('./lib');
 var MIN_PORT = 1;
 var MAX_PORT = 65535;
 var NAME = 'moray';
-// We'll replace this with the syslog later, if applicable
+
 var LOG = mod_cmd.setupLogger(NAME);
 var LOG_LEVEL_OVERRIDE = false;
 
@@ -39,32 +38,6 @@ function setupLogger(config) {
     var cfg_b = config.bunyan;
     assert.object(cfg_b, 'config.bunyan');
     assert.optionalString(cfg_b.level, 'config.bunyan.level');
-    assert.optionalObject(cfg_b.syslog, 'config.bunyan.syslog');
-
-    var level = LOG.level();
-
-    if (cfg_b.syslog && !LOG_LEVEL_OVERRIDE) {
-        assert.string(cfg_b.syslog.facility,
-                      'config.bunyan.syslog.facility');
-        assert.string(cfg_b.syslog.type, 'config.bunyan.syslog.type');
-
-        var facility = bsyslog.facility[cfg_b.syslog.facility];
-        LOG = bunyan.createLogger({
-            name: NAME,
-            serializers: mod_cmd.LOG_SERIALIZERS,
-            streams: [ {
-                level: level,
-                type: 'raw',
-                stream: bsyslog.createBunyanStream({
-                    name: NAME,
-                    facility: facility,
-                    host: cfg_b.syslog.host,
-                    port: cfg_b.syslog.port,
-                    type: cfg_b.syslog.type
-                })
-            } ]
-        });
-    }
 
     if (cfg_b.level && !LOG_LEVEL_OVERRIDE) {
         if (bunyan.resolveLevel(cfg_b.level)) {
