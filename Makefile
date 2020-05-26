@@ -84,6 +84,9 @@ BUILDIMAGE_DESC	= Manta moray
 BUILDIMAGE_PKGSRC = haproxy-1.6.2 postgresql92-client-9.2.19
 AGENTS		= amon config registrar
 
+# For mantav1, specify the branch to compare copyrights with
+ENGBLD_CHECK_COPYRIGHT_ARGS = -b mantav1
+
 #
 # Env vars
 #
