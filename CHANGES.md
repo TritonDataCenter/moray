@@ -1,5 +1,11 @@
 # moray Changelog
 
+## 2.5.0
+
+- TRITON-2142: Added moray.listen() RPC to allow moray clients to listen for
+  PostgreSQL notifications. The RPC connection will be held open to stream
+  back notifications. The moray.unlisten() RPC can be used to stop listening.
+
 ## 2.4.1
 
 - MANTA-5155: Moray batch operations were apparently inadvertently changed with
