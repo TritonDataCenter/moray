@@ -1233,6 +1233,130 @@ The latter use-case (filling in gaps in the Moray API) is considered deprecated.
     }
 
 
+## listen
+
+Listen for
+[PostreSQL notifications](https://www.postgresql.org/docs/9.0/sql-notify.html)
+on the given channel.
+
+The Moray server uses a dedicated PostgreSQL connection for the listener, to
+avoid using any connections in the regular Moray server connection pool.
+
+The Moray client will return a readable object stream, each read will return
+a notification object.
+
+### API
+
+    var listener = client.listen('the_channel');
+    listener.on('readable', function _onReadable() {
+      var notification = listener.read();
+      while (notification) {
+        // Do something with notification.
+        doSomething(notification);
+        notification = listener.read();
+      }
+    })
+
+    // The listener provides a convenience method to unlisten.
+    setTimeout(listener.unlisten.bind(listener), 10000);
+
+### Inputs
+
+| Field    | Type   | Description                          |
+| -------- | ------ | ------------------------------------ |
+| channel  | string | The channel name to listen on        |
+| options  | object | any optional parameters, see below   |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
+
+### Notification Object
+
+Each notification object will consist of the following fields:
+
+| Field    | Type   | Description                           |
+| -------- | ------ | ------------------------------------- |
+| channel  | string | The channel name for the notification |
+| payload  | string | Arbitrary data string                 |
+
+
+### CLI
+
+    $ moraylisten the_channel
+    Connected - listening for notifications
+    {"field": "Example string or data"}
+    {"something": "else here", "other": data"}
+    ^C Caught interrupt signal - shutting down
+
+
+## unlisten
+
+Unlistens from the particular channel listener.
+
+When the moray client has established a listener, it will add a convenience
+`unlisten` method to the listener handler, which can be used to stop listening
+for notifications. Under the hood the moray client will tell the moray server
+to stop the listener with the given request id - the request id returned from
+the original listen RPC call.
+
+Note that the unlisten RPC call must be sent to the same moray that handled the
+original listen call - which is what the listener.unlisten() helper is designed
+to do.
+
+### API
+
+    var listener = client.listen('the_channel');
+
+    // The listener provides a convenience method to unlisten.
+    listener.unlisten(function _onUnlisten(err) {
+    });
+
+### Inputs
+
+| Field    | Type     | Description          |
+| -------- | -------- | -------------------- |
+| callback | function | The callback handler when listening has finished |
+| options  | object   | optional parameters, see below |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
+
+
+## notify
+
+The client notify() call can be used to send a notification on a particular
+channel. Under the hood this will invoke a moray.sql() RPC call to send the
+notification. Note the maximum payload length is restricted to 8000 bytes.
+
+### API
+
+    client.notify('channel', 'payload', function _onNotified(err) {});
+
+### Inputs
+
+| Field    | Type     | Description                             |
+| -------  | -------- | --------------------------------------- |
+| channel  | string   | The channel to send the payload to      |
+| payload  | string   | The data to send to the channel. Maximum payload length is 8000 bytes. |
+| options  | object   | Optional parameters, see below          |
+| callback | function | Callback func when notification is sent |
+
+#### Options
+
+- [req_id](#option-req_id)
+- [timeout](#option-timeout)
+
+### CLI
+
+    $ moraynotify the_channel '{"field": "Example string or data"}'
+    $ moraynotify the_channel '{"something": "else here", "other": "data"}'
+    $ moraynotify my_status running
+
+
 # Additional features
 
 ## <a name="using-arrays">Using Arrays</a>

@@ -1,7 +1,7 @@
 {
     "name": "moray-server",
     "description": "SmartDataCenter H/A Key/Value store",
-    "version": "2.4.1",
+    "version": "2.5.0",
     "author": "Joyent (joyent.com)",
     "private": true,
     "main": "lib/index.js",
@@ -17,7 +17,7 @@
         "dtrace-provider": "~0.8",
         "deep-equal": "0.0.0",
         "exeunt": "^1.1.1",
-        "fast": "3.0.0",
+        "fast": "3.1.1",
         "forkexec": "^1.1.0",
         "ip6addr": "0.2.2",
         "jsprim": "1.4.0",

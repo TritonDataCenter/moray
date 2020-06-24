@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright 2020 Joyent, Inc.
 #
 
 #
@@ -14,14 +14,21 @@
 # listening to port 2222 for testing.
 #
 
-export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-set -o xtrace
+set -o errexit
+set -o pipefail
+
+if [[ -n "$TRACE" ]]; then
+    export PS4='${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+    set -o xtrace
+fi
 
 MANATEE=$(/opt/smartdc/bin/sdc-vmname manatee)
+CREATEDB="/opt/postgresql/current/bin/createdb"
+PSQL="/opt/postgresql/current/bin/psql"
 
-zlogin $MANATEE "/opt/local/bin/createdb -U postgres -O moray moray_test"
+zlogin $MANATEE "$CREATEDB -U postgres -O moray moray_test"
 
-zlogin $MANATEE "/opt/local/bin/psql -U postgres moray_test --command='
+zlogin $MANATEE "$PSQL -U postgres moray_test --command='
     CREATE TABLE buckets_config (
         name text PRIMARY KEY,
         index text NOT NULL,
@@ -31,7 +38,7 @@ zlogin $MANATEE "/opt/local/bin/psql -U postgres moray_test --command='
         mtime timestamp without time zone DEFAULT now() NOT NULL
     );'"
 
-zlogin $MANATEE "/opt/local/bin/psql -U postgres -c 'alter table buckets_config owner to moray' moray_test > /dev/null"
+zlogin $MANATEE "$PSQL -U postgres -c 'alter table buckets_config owner to moray' moray_test > /dev/null"
 
 MORAY=$(/opt/smartdc/bin/sdc-vmname moray)
 
@@ -45,7 +52,11 @@ zlogin $MORAY "/opt/local/bin/gsed -i -e \"s|smartdc-moray|smartdc-moray-test|\"
 
 zlogin $MORAY "/opt/local/bin/gsed -i -e \"s|smartdc/application/moray|smartdc/application/moray-test|\" $MORAY_TEST_SMF"
 
+# Change the moray listening port.
 zlogin $MORAY "/opt/local/bin/gsed -i -e \"s|2021|2222|\" $MORAY_TEST_SMF"
+
+# Change the moray metrics port.
+zlogin $MORAY "/opt/local/bin/gsed -i -e \"s|3021|3222|\" $MORAY_TEST_SMF"
 
 zlogin $MORAY "/opt/local/bin/gsed -i -e \"s|value=\\\"/usr/lib/extendedFILE.so.1\\\" />|value=\\\"/usr/lib/extendedFILE.so.1\\\" /><envvar name=\\\"MORAY_DB_NAME\\\" value=\\\"moray_test\\\" />|\" $MORAY_TEST_SMF"
 
