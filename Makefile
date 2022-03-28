@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright 2021 Joyent, Inc.
+# Copyright 2022 Joyent, Inc.
 #
 
 #
@@ -30,8 +30,7 @@ NAME = moray
 DOC_FILES	 = index.md
 JS_FILES	:= $(shell ls *.js) $(shell find lib -name '*.js' | grep -v sql.js)
 ESLINT_FILES	:= $(JS_FILES)
-JSL_CONF_NODE	 = tools/jsl.node.conf
-JSL_FILES_NODE   = $(JS_FILES)
+ESLINT_FILES     = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -C -f ./tools/jsstyle.conf
 SMF_MANIFESTS_IN =	smf/manifests/haproxy.xml.in
@@ -46,10 +45,10 @@ CLEAN_FILES	+= node_modules cscope.files \
 #
 
 ifeq ($(shell uname -s),SunOS)
-	# Allow building on a SmartOS image other than sdc-*-multiarch 15.4.1.
-	NODE_PREBUILT_IMAGE	= 18b094b0-eb01-11e5-80c1-175dac7ddf02
-	NODE_PREBUILT_TAG	= zone
-	NODE_PREBUILT_VERSION	:= v6.17.0
+	# minimal-64-lts@21.4.0
+	NODE_PREBUILT_IMAGE	= a7199134-7e94-11ec-be67-db6f482136c2
+	NODE_PREBUILT_TAG	= zone64
+	NODE_PREBUILT_VERSION	:= v6.17.1
 endif
 
 # RELENG-341: no npm cache is making builds unreliable
@@ -59,6 +58,8 @@ ENGBLD_USE_BUILDIMAGE	= true
 ENGBLD_REQUIRE		:= $(shell git submodule update --init deps/eng)
 include ./deps/eng/tools/mk/Makefile.defs
 TOP ?= $(error Unable to access eng.git submodule Makefiles.)
+
+BUILD_PLATFORM  = 20210826T002459Z
 
 ifeq ($(shell uname -s),SunOS)
 	include ./deps/eng/tools/mk/Makefile.node_prebuilt.defs
@@ -78,11 +79,12 @@ RELEASE_TARBALL         := $(NAME)-pkg-$(STAMP).tar.gz
 ROOT                    := $(shell pwd)
 RELSTAGEDIR                  := /tmp/$(NAME)-$(STAMP)
 
-BASE_IMAGE_UUID = 04a48d7d-6bb5-4e83-8c3b-e60a99e0f48f
+# triton-origin-x86_64-21.4.0
+BASE_IMAGE_UUID = 502eeef2-8267-489f-b19c-a206906f57ef
 BUILDIMAGE_NAME = mantav2-moray
 BUILDIMAGE_DESC	= Manta moray
 BUILDIMAGE_DO_PKGSRC_UPGRADE = true
-BUILDIMAGE_PKGSRC = haproxy-1.6.2 postgresql92-client-9.2.19
+BUILDIMAGE_PKGSRC = haproxy-2.5.0 postgresql96-client-9.6.24nb1
 AGENTS		= amon config registrar
 
 #
