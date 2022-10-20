@@ -6,6 +6,7 @@
 
 #
 # Copyright 2022 Joyent, Inc.
+# Copryight 2022 MNX Cloud, Inc.
 #
 
 #
@@ -84,7 +85,7 @@ BASE_IMAGE_UUID = 502eeef2-8267-489f-b19c-a206906f57ef
 BUILDIMAGE_NAME = mantav2-moray
 BUILDIMAGE_DESC	= Manta moray
 BUILDIMAGE_DO_PKGSRC_UPGRADE = true
-BUILDIMAGE_PKGSRC = haproxy-2.5.0 postgresql96-client-9.6.24nb1
+BUILDIMAGE_PKGSRC = haproxy-2.6.1 postgresql96-client-9.6.24nb1
 AGENTS		= amon config registrar
 
 #
