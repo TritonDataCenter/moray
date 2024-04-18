@@ -6,27 +6,28 @@
 
 <!--
     Copyright 2019 Joyent, Inc.
+    Copyright 2024 MNX Cloud, Inc.
 -->
 
 # Moray, the highly-available key-value store
 
 This repository is part of the Joyent Triton and Manta projects.
 For contribution guidelines, issues, and general documentation, visit the main
-[Triton](http://github.com/joyent/triton) and
-[Manta](http://github.com/joyent/manta) project pages.
+[Triton](http://github.com/TritonDataCenter/triton) and
+[Manta](http://github.com/TritonDataCenter/manta) project pages.
 
 This repository contains Moray, the highly-available key-value store from
 Joyent.  The Moray service provides a simple put/get/search/delete abstraction
 on top of Postgres 9.x, over plain TCP using
-[node-fast](https://github.com/joyent/node-fast).
+[node-fast](https://github.com/TritonDataCenter/node-fast).
 
 
 ## Active Branches
 
 There are currently two active branches of this repository, for the two
 active major versions of Manta. See the [mantav2 overview
-document](https://github.com/joyent/manta/blob/master/docs/mantav2.md) for
-details on major Manta versions.
+document](https://github.com/TritonDataCenter/manta/blob/master/docs/mantav2.md)
+for details on major Manta versions.
 
 - [`master`](../../tree/master/) - For development of mantav2, the latest
   version of Manta. This is the version used by Triton.
@@ -38,7 +39,7 @@ details on major Manta versions.
 
 For basic information about how to use Moray and what operations Moray supports,
 see the moray(1) and related manual pages in the [Moray
-client](https://github.com/joyent/node-moray/) repository.
+client](https://github.com/TritonDataCenter/node-moray/) repository.
 
 For reference documentation about the RPC calls and the node-moray library calls
 used to invoke them, see the [developer reference](./docs/index.md)
@@ -63,8 +64,8 @@ several functions:
   extended periods.  The Moray server multiplexes incoming requests over some
   fixed number of PostgreSQL connections.
 * In a database cluster deployed using
-  [Manatee](https://github.com/joyent/manatee), Moray is responsible for
-  tracking the cluster state so that queries are always dispatched to the
+  [Manatee](https://github.com/TritonDataCenter/manatee), Moray is responsible
+  for tracking the cluster state so that queries are always dispatched to the
   current PostgreSQL primary.
 
 In Triton and Manta, PostgreSQL is typically deployed atop Manatee, which
@@ -162,16 +163,16 @@ and run Moray using your configuration file:
     node main.js -f YOUR_CONFIG_FILE -v 2>&1 | bunyan
 
 By default, Moray listens on port 2020.  You can use the CLI tools in
-[node-moray](https://github.com/joyent/node-moray) to start working with the
-server.  Those tools have detailed manual pages.
+[node-moray](https://github.com/TritonDataCenter/node-moray) to start working
+with the server.  Those tools have detailed manual pages.
 
 
 ## Testing
 
 For testing, see the separate
-[moray-test-suite](https://github.com/joyent/moray-test-suite) repository.  You
-will need to build and run a Moray instance as described above, and then follow
-the instructions in that repository to test it.
+[moray-test-suite](https://github.com/TritonDataCenter/moray-test-suite)
+repository.  You will need to build and run a Moray instance as described above,
+and then follow the instructions in that repository to test it.
 
 You should consider pointing your testing instance at a different DB than
 `moray` to avoid interfering with operations in your Triton or Manta deployment.
@@ -193,8 +194,8 @@ Postgres database without using Manatee. A single function is exported,
 - `audit`, a boolean indicating whether to log the result and duration of all
   requests
 - `kangPort`, the port the Kang server should listen on
-- `collector`, an [artedi](https://github.com/joyent/node-artedi) metric
-  collector
+- `collector`, an [artedi](https://github.com/TritonDataCenter/node-artedi)
+  metric collector
 - `standalone`, an object specifying the standalone server's configuration:
     * `pg`, an object which specifies the Postgres client pool confguration:
         - `queryTimeout`, how long (in milliseconds) before a query is timed out

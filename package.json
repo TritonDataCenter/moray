@@ -1,8 +1,8 @@
 {
     "name": "moray-server",
-    "description": "SmartDataCenter H/A Key/Value store",
-    "version": "2.6.0",
-    "author": "Joyent (joyent.com)",
+    "description": "Triton H/A Key/Value store",
+    "version": "2.6.1",
+    "author": "MNX Cloud (mnx.io)",
     "private": true,
     "main": "lib/index.js",
     "dependencies": {
@@ -26,7 +26,7 @@
         "moray-filter": "1.0.0",
         "libuuid": "0.2.1",
         "lru-cache": "2.5.0",
-        "node-manatee": "git+https://github.com/joyent/node-manatee.git#262828a8",
+        "node-manatee": "git+https://github.com/TritonDataCenter/node-manatee.git#262828a8",
         "moray": "3.8.1",
         "microtime": "2.1.6",
         "once": "1.3.0",
@@ -54,6 +54,6 @@
     "license": "MPL-2.0",
     "repository": {
         "type": "git",
-        "url": "git@github.com:joyent/moray.git"
+        "url": "git@github.com:TritonDataCenter/moray.git"
     }
 }
