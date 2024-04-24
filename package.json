@@ -6,7 +6,7 @@
     "private": true,
     "main": "lib/index.js",
     "dependencies": {
-        "ajv": "4.11.4",
+        "ajv": "6.12.3",
         "artedi": "2.0.0",
         "assert-plus": "1.0.0",
         "bunyan": "1.8.10",
