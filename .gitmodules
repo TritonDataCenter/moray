@@ -1,18 +1,18 @@
 [submodule "deps/javascriptlint"]
 	path = deps/javascriptlint
-	url = https://github.com/davepacheco/javascriptlint.git
+	url = https://github.com/TritonDataCenter/javascriptlint.git
 [submodule "deps/jsstyle"]
 	path = deps/jsstyle
-	url = https://github.com/joyent/jsstyle.git
+	url = https://github.com/TritonDataCenter/jsstyle.git
 [submodule "deps/restdown"]
 	path = deps/restdown
-	url = https://github.com/trentm/restdown.git
+	url = https://github.com/TritonDataCenter/restdown.git
 [submodule "deps/manta-scripts"]
 	path = deps/manta-scripts
-	url = https://github.com/joyent/manta-scripts.git
+	url = https://github.com/TritonDataCenter/manta-scripts.git
 [submodule "deps/sdc-scripts"]
 	path = deps/sdc-scripts
-	url = https://github.com/joyent/sdc-scripts.git
+	url = https://github.com/TritonDataCenter/sdc-scripts.git
 [submodule "deps/eng"]
 	path = deps/eng
-	url = https://github.com/joyent/eng.git
+	url = https://github.com/TritonDataCenter/eng.git

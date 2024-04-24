@@ -7,9 +7,9 @@ apisections: Buckets, Objects
 # Moray
 
 This is the reference documentation for Moray, which is a key-value store built
-on top of [Manatee](https://github.com/joyent/manatee/) and
-[fast](https://github.com/joyent/node-fast).  For general information about
-Moray, see the [README](https://github.com/joyent/moray).
+on top of [Manatee](https://github.com/TritonDataCenter/manatee/) and
+[fast](https://github.com/TritonDataCenter/node-fast).  For general information
+about Moray, see the [README](https://github.com/TritonDataCenter/moray).
 
 This documentation provides descriptions of the APIs that Moray offers, as well
 as how to use the (node.js) [client SDK](https://mo.joyent.com/node-moray) to
